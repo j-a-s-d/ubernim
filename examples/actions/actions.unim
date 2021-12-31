@@ -1,0 +1,58 @@
+# ubernim / ACTIONS EXAMPLE #
+#---------------------------#
+
+# this example is to show the build actions that ubernim offers
+
+.# to understand the following lines, check the directives example
+.nimc:project actions.nim
+.nimc:define hello
+.nimc:switch -r
+
+.# the exec commnad is into the SHELLCMD Preprod feature,
+.# so you can disable it by a simple line: '.$ FEATURE SHELLCMD off'
+
+.# the rest of commnads shown ahead are packed into the FSACCESS Preprod feature,
+.# so you can disable them by a simple line: '.$ FEATURE FSACCESS off'
+
+.# create a file called test.txt with the content "hello-"
+.write test.txt hello-
+
+.# append that file with the content "world!"
+.append test.txt world!
+
+.# create a directory called testing
+.mkdir testing
+
+.# move the file test.txt into the directory testing as test1.txt
+.move test.txt testing/test1.txt
+
+.# copy test1.txt to test2.txt
+.copy testing/test1.txt testing/test2.txt
+
+.# delete the test1.txt file
+.remove testing/test1.txt
+
+.# copy the directory testing with all of it's content (test2.txt) to testing2
+.cpdir testing testing2
+
+.# change current directory to testing
+.chdir testing
+
+.# execute a command dir
+.exec dir
+
+.# remove test2.txt file
+.remove test2.txt
+
+.# change current directory back to parent
+.chdir ..
+
+.# remove the directory testing
+.rmdir testing
+
+.# remove the directory testing2 with all it's contents (test2.txt)
+.rmdir testing2
+
+.# regular nim code
+when defined(hello):
+  echo "Hello world!"

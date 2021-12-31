@@ -1,0 +1,226 @@
+# ubernim / CODING EXAMPLE #
+#--------------------------#
+
+# this example is to show the language tools that ubernim offers
+
+.# to understand the following lines, check the directives example
+.nimc:project coding.nim
+.nimc:config coding.nim.cfg
+.nimc:define hello
+.nimc:switch -r
+
+.# the require commnad is into the REQUIRES Preprod feature,
+.# so you can disable it by a simple line: '.$ FEATURE REQUIRES off'
+
+.# the rest of commnads shown ahead are packed into the LANGUAGE Preprod feature,
+.# so you can disable them by a simple line: '.$ FEATURE LANGUAGE off'
+
+.require compounds.unim
+.require interfaces.unim
+
+.record Duper # a record is translated to a tuple
+.fields
+  bbb: bool
+.end
+
+.record Super
+.implies Duper # implies injects the specified into the current
+.fields
+  aaa: bool
+.end
+
+.protocol M0ABCT # a protocol can have fields and methods
+.fields
+  m0: string
+.methods
+  abc[T](): T
+.end
+
+.record Example
+.pragmas final
+.implies Super
+.applies Base # applies forces a compound, interface or protocol to be satisfied
+.applies Stringable
+.applies M0ABCT
+.fields
+  f1: int # satisfy Base compound
+     m0: string
+.methods
+  toString (   ) : string # satisfy Stringable interface
+  toString2(): string
+toString3():string
+  abc[T](): T
+.docs # you can specifiy documentation inplace
+  This is an example record.
+  Applying compound Base, interface Stringable and protocol M0ABCT, plus implying record Super.
+.templates
+  foo(code: untyped): untyped
+.end
+
+.method Example.abc[T](): T = # empty methods will be filled with discard
+.end
+
+.method Example.toString(): string
+.docs
+  This is an example method of a record.
+.code # after the .code line you can write your nim code as usual
+  "[" & $self.f1 & ", " & self.m0 & ", " & $self.aaa & ", " & $self.bbb & "]"
+.end
+
+.method Example.toString2(): string
+.pragmas noSideEffect, deprecated: "do not use it"
+.docs
+blah
+.end
+
+.method Example.toString3(): string
+.end
+
+.template Example.foo(code: untyped): untyped
+.docs
+  This is an example template of a record.
+.code
+  code
+.end
+
+# this is just regular nim code
+let ex: Example = (f1: 123, m0: "abc", aaa: true, bbb: false)
+echo ex.toString()
+ex.foo:
+  echo "RECORD TEMPLATE ***********************************************"
+
+.note
+  You can insert a note into the emitted source code.
+  Just like this.
+.end
+
+.protocol BaseProtocol
+.applies Base
+.fields
+  f2*: int
+.end
+
+.interface Test
+.methods
+  something(): int
+.end
+
+.protocol TestProtocol
+.extends BaseProtocol
+.applies Test
+.fields
+  #f3: float
+.methods
+  testing(a: int): bool
+  testing2*(a: int, b: string): float
+.end
+
+.class BaseClass # you can try to mark this class as sealed (with the ! prefix) to stop the compilation of MedClass which is extending it
+.fields
+  fA: string
+.methods
+  getA*(): string # you can try to mark this method as sealed (with the ! prefix) to stop the compilation of TestClass which is overriding it
+  say*()
+.end
+
+.method BaseClass.getA*(): string
+.code
+  echo "PARENT"
+  self.fA
+.end
+
+.method BaseClass.say*()
+.code
+  echo self.fA
+.end
+
+.class MedClass
+.extends BaseClass
+.fields
+  fB: string
+.end
+
+.class TestClass*
+.extends MedClass
+.docs
+  This is an example class.
+  Applying TestProtocol and extending MedClass.
+  
+  Blah 123.
+.applies TestProtocol
+.fields
+  f0: int
+  f1*: int
+  f2*: int
+.methods
+  +create*()
+  +create*(test: int, testing: string)
+  testing*(a: int): bool
+.fields
+  f4: int
+.methods
+  testing2(a: int): float
+  getA*(): string
+.templates
+  bar(code: untyped): untyped
+.end
+
+.constructor TestClass.create*(test: int, testing: string)
+.code
+  self.f0 = test
+  echo testing
+  self.fA = "hey"
+.end
+
+.constructor TestClass.create*()
+.pragmas noSideEffect
+.docs
+  This is an example constructor of a class.
+
+  Blah 123.
+.code
+  self.f0 = 123 # self is allowed in constructors
+.end
+
+.method TestClass.getA*(): string
+.code
+  echo "SELF"
+  self.fA
+.end
+
+.method TestClass.testing*(a: int): bool
+.docs
+  This is an example method of a class.
+.code
+  echo self.f0 + 1
+  echo parent.getA() # in methods you can access self and parent fields and methods
+  echo self.getA()
+  true
+.end
+
+.template TestClass.bar(code: untyped): untyped
+.docs
+  This is an example template of a class.
+.code
+  echo "you can access self in templates too: " & $self.f0
+  code
+.end
+
+# and this is just regular nim code again
+let aaa = TestClass.create(1, "+++++++++++++++++++++++++++++++++++++++++++++++")
+aaa.bar:
+  echo "CLASS TEMPLATE ***********************************************"
+if aaa.testing(1):
+  echo "EXECUTED !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+
+.routine makeGreetingMessageTo(name: string): string # you can define top level routines too
+.pragmas deprecated: "do not use it", noSideEffect
+.docs
+  This is a global routine.
+.code
+  "hello " & name & "!"
+.end
+
+.# and more regular nim code
+when defined(hello):
+  echo makeGreetingMessageTo("world")

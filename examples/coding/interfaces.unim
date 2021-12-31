@@ -1,0 +1,7 @@
+.# ubernim / CODING EXAMPLE #
+.#--------------------------#
+
+.interface Stringable* # an interface can only have methods
+.methods
+  toString(): string
+.end

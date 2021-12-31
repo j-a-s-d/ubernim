@@ -1,0 +1,25 @@
+# ubernim / DIRECTIVES EXAMPLE #
+#------------------------------#
+
+# this example is to show the compiler directives, configuration and invokation options that ubernim offers
+
+.# the nimc:* commnads are packed into the SWITCHES Preprod feature,
+.# so you can disable them by a simple '.$ FEATURE SWITCHES off'
+
+.# if you comment the following line the transpile will be done but the nim compiler won't be invoked
+.nimc:project directives.nim
+
+.# if you comment the following line the defines and switches will be passed via command line
+.nimc:config directives.nim.cfg
+
+.# you can specify none, one or more defines, just like in the command line
+.nimc:define release
+.nimc:define hello
+
+.# you can specifiy none, one or more switches, just like in the command line
+.nimc:switch --threads:on
+.nimc:switch -r
+
+.# and now some regular nim code
+when defined(hello):
+  echo "Hello world!"

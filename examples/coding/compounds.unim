@@ -1,0 +1,13 @@
+.# ubernim / CODING EXAMPLE #
+.#--------------------------#
+
+.compound Base* # a compound can only have fields
+.fields
+  f1: int
+.end
+
+.compound Lalala*
+.fields
+  yeah: string
+  something: float
+.end
