@@ -2,9 +2,10 @@
 #---------------------#
 
 import
-  os,
+  os, strutils,
   xam, preprod,
-  core
+  core, errors,
+  language / [header, member, division, state]
 
 # TEMPLATES
 
@@ -19,15 +20,15 @@ template callback(kind: CbKind, name, code: untyped): untyped =
       case kind:
       of TOP:
         if state.hasPropertyValue(KEY_DIVISION):
-          return BAD("this can only be defined in the top level")
+          return errors.ONLY_TOP_LEVEL
       of CHILD:
         if not state.hasPropertyValue(KEY_DIVISION):
-          return BAD("this can not be defined in the top level")
+          return errors.DONT_TOP_LEVEL
       of RAW:
         discard
       code
     except:
-      return BAD("an unexpected error ocurred: " & getCurrentExceptionMsg())
+      return errors.UNEXPECTED(getCurrentExceptionMsg())
 
 template rawCallback(name, code: untyped): untyped =
   callback RAW, name:
@@ -83,7 +84,7 @@ rawCallback doMkDir:
     if not dirExists(parameters[0]):
       createDir(parameters[0])
     if not dirExists(parameters[0]):
-      return BAD("can not create directory " & apostrophe(parameters[0]))
+      return errors.CANT_CREATE_DIRECTORY(apostrophe(parameters[0]))
   return OK
 
 rawCallback doCpDir:
@@ -109,19 +110,19 @@ rawCallback doMove:
 rawCallback doAppend:
   if state.isPreviewing():
     if not appendToFile(parameters[0], if parameters.len == 1: STRINGS_EMPTY else: spaced(parameters[1..^1])):
-      return BAD("can not append file " & apostrophe(parameters[0]))
+      return errors.CANT_APPEND_FILE(apostrophe(parameters[0]))
   return OK
 
 rawCallback doWrite:
   if state.isPreviewing():
     if not writeToFile(parameters[0], if parameters.len == 1: STRINGS_EMPTY else: spaced(parameters[1..^1])):
-      return BAD("can not write file " & apostrophe(parameters[0]))
+      return errors.CANT_WRITE_FILE(apostrophe(parameters[0]))
   return OK
 
 rawCallback doRemove:
   if state.isPreviewing():
     if not tryRemoveFile(parameters[0]):
-      return BAD("can not remove file " & apostrophe(parameters[0]))
+      return errors.CANT_REMOVE_FILE(apostrophe(parameters[0]))
   return OK
 
 # REQUIRES
@@ -131,7 +132,7 @@ rawCallback doRequire:
   if state.isPreviewing():
     let ls = loadLanguageState(state)
     if ls.unit == parameters[0]:
-      return BAD("recursive require instruction is not allowed")
+      return errors.NO_RECURSIVE_REQUIRE
     let stls = makeLanguageState()
     stls.unit = parameters[0]
     stls.version = ls.version
@@ -140,7 +141,7 @@ rawCallback doRequire:
       if d.public and not d.imported:
         let p = ls.getDivision(d.name)
         if assigned(p):
-          result = BAD("already defined " & apostrophe(d.name))
+          result = errors.ALREADY_DEFINED(apostrophe(d.name))
           break
         d.imported = true
         ls.divisions.add(d)
@@ -153,8 +154,8 @@ proc startDivision(state: var PreprodState, division, subdivision, id: string): 
   let ls = loadLanguageState(state)
   if state.isPreviewing():
     let p = ls.getDivision(id)
-    if p != nil:
-      return BAD("already defined " & apostrophe(id))
+    if assigned(p):
+      return errors.ALREADY_DEFINED(apostrophe(id))
   state.setPropertyValue(KEY_DIVISION, division)
   state.setPropertyValue(KEY_SUBDIVISION, subdivision)
   openDivision(state, division, id)
@@ -175,7 +176,7 @@ topCallback doClass:
     let ls = loadLanguageState(state)
     let p = ls.getDivision(ls.currentName)
     if not assigned(p):
-      return BAD("bad state")
+      return errors.BAD_STATE
     let v = ls.validateDivision(p)
     if not v.ok:
       return v
@@ -190,7 +191,7 @@ topCallback doRecord:
     let ls = loadLanguageState(state)
     let p = ls.getDivision(ls.currentName)
     if not assigned(p):
-      return BAD("bad state")
+      return errors.BAD_STATE
     let v = ls.validateDivision(p)
     if not v.ok:
       return v
@@ -204,14 +205,15 @@ childCallback doApplies:
     let ls = loadLanguageState(state)
     var p = ls.getDivision(ls.currentName)
     if not assigned(p):
-      return BAD("bad state")
+      return errors.BAD_STATE
     let ld = ls.getDivision(parameters[0])
     if not assigned(ld):
-      return BAD("the referred " & apostrophe(parameters[0]) & " is undefined")
+      return errors.UNDEFINED_REFERENCE(apostrophe(parameters[0]))
     if ld.kind != DIVISIONS_COMPOUND and ld.kind != DIVISIONS_INTERFACE and ld.kind != DIVISIONS_PROTOCOL:
-      return BAD("the referred " & apostrophe(parameters[0]) & " is not a compound, interface or protocol")
-    if parameters[0] notin p.applies:
-      p.applies.add(parameters[0])
+      return errors.NOT_APPLICABLE
+    if parameters[0] in p.applies:
+      return errors.ALREADY_APPLYING(apostrophe(parameters[0]))
+    p.applies.add(parameters[0])
   return OK
 
 childCallback doImplies:
@@ -220,14 +222,14 @@ childCallback doImplies:
     let ls = loadLanguageState(state)
     var p = ls.getDivision(ls.currentName)
     if not assigned(p):
-      return BAD("bad state")
+      return errors.BAD_STATE
     let ld = ls.getDivision(parameters[0])
     if not assigned(ld):
-      return BAD("the referred " & apostrophe(parameters[0]) & " is undefined")
+      return errors.UNDEFINED_REFERENCE(apostrophe(parameters[0]))
     if ld.kind != d:
-      return BAD("the referred " & apostrophe(parameters[0]) & " is not of the same type as " & apostrophe(ls.currentName))
+      return errors.NOT_IMPLIABLE
     if hasContent(p.implies):
-      return BAD("this is already impliying " & apostrophe(p.implies))
+      return errors.ALREADY_IMPLYING(apostrophe(p.implies))
     p.implies = parameters[0]
   return OK
 
@@ -235,18 +237,18 @@ childCallback doExtends:
   if state.isPreviewing():
     let d = state.getPropertyValue(KEY_DIVISION)
     if d == DIVISIONS_RECORD:
-      return BAD("records can not be extended, try to imply if it's possible")
+      return errors.RECORDS_CANT_EXTEND
     let ls = loadLanguageState(state)
     var p = ls.getDivision(ls.currentName)
     if not assigned(p):
-      return BAD("bad state")
+      return errors.BAD_STATE
     if hasContent(p.extends):
-      return BAD("this is already extending " & apostrophe(p.extends))
+      return errors.ALREADY_EXTENDING(apostrophe(p.extends))
     let x = ls.getDivision(parameters[0])
     if not assigned(x):
-      return BAD("can not extend from inexistent " & apostrophe(parameters[0]))
+      return errors.CANT_EXTEND_INEXISTENT(apostrophe(parameters[0]))
     if x.data_sealed:
-      return BAD("can not extend from sealed " & apostrophe(parameters[0]))
+      return errors.CANT_EXTEND_SEALED(apostrophe(parameters[0]))
     p.extends = parameters[0]
   return OK
 
@@ -255,52 +257,52 @@ childCallback doPragmas:
   if state.isPreviewing():
     if d != DIVISIONS_CONSTRUCTOR and d != DIVISIONS_METHOD and d != DIVISIONS_ROUTINE:
       if d != DIVISIONS_CLASS and d != DIVISIONS_RECORD:
-        return BAD("this can not have pragmas")
+        return errors.CANT_HAVE_PRAGMAS
       let ls = loadLanguageState(state)
       var p = ls.getDivision(ls.currentName)
       if not assigned(p):
-        return BAD("bad state")
+        return errors.BAD_STATE
       if hasContent(p.pragmas):
-        return BAD("pragmas were already defined")
+        return errors.ALREADY_DEFINED(WORDS_PRAGMAS)
       p.pragmas = spaced(parameters)
   elif state.isTranslating():
     if d != DIVISIONS_CLASS and d != DIVISIONS_RECORD:
       if d != DIVISIONS_CONSTRUCTOR and d != DIVISIONS_METHOD and d != DIVISIONS_ROUTINE:
-        return BAD("this can not have pragmas")
+        return errors.CANT_HAVE_PRAGMAS
       let ls = loadLanguageState(state)
       var p = ls.getDivision(ls.currentName)
       if not assigned(p):
-        return BAD("bad state")
+        return errors.BAD_STATE
       if hasContent(ls.currentImplementation.pragmas):
-        return BAD("pragmas were already defined")
+        return errors.ALREADY_DEFINED(WORDS_PRAGMAS)
       ls.currentImplementation.pragmas = spaced(parameters)
   return OK
 
 childCallback doFields:
   let d = state.getPropertyValue(KEY_DIVISION)
   if d notin DIVISIONS_WITH_FIELDS:
-    return BAD("this can not have fields")
+    return errors.CANT_HAVE_FIELDS
   state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_FIELDS)
   return OK
 
 childCallback doMethods:
   let d = state.getPropertyValue(KEY_DIVISION)
   if d notin DIVISIONS_WITH_METHODS:
-    return BAD("this can not have methods")
+    return errors.CANT_HAVE_METHODS
   state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_METHODS)
   return OK
 
 childCallback doTemplates:
   let d = state.getPropertyValue(KEY_DIVISION)
   if d notin DIVISIONS_WITH_TEMPLATES:
-    return BAD("this can not have templates")
+    return errors.CANT_HAVE_TEMPLATES
   state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_TEMPLATES)
   return OK
 
 childCallback doDocs:
   let d = state.getPropertyValue(KEY_DIVISION)
   if d notin DIVISIONS_WITH_DOCS:
-    return BAD("this can not output documentation")
+    return errors.CANT_OUTPUT_DOCS
   state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_DOCS)
   return OK
 
@@ -315,21 +317,21 @@ topCallback doConstructor:
   if state.isTranslating():
     let parts = parameters.join(STRINGS_SPACE).split(STRINGS_PERIOD)
     if parts.len != 2:
-      return BAD("bad constructor definition")
+      return errors.WRONGLY_DEFINED(WORDS_CONSTRUCTOR)
     let ls = loadLanguageState(state)
     var p = ls.getDivision(parts[0])
     if not assigned(p):
-      return BAD("never defined " & apostrophe(parts[0]))
+      return errors.NEVER_DEFINED(apostrophe(parts[0]))
     var lm = newLanguageMember(SUBDIVISIONS_METHODS)
     if not lm.read(STRINGS_PLUS & parts[1]):
-      return BAD("bad constructor definition")
+      return errors.WRONGLY_DEFINED(WORDS_CONSTRUCTOR)
     if not ls.hasMethod(p, lm.name):
-      return BAD("never defined constructor " & apostrophe(parts[1]))
+      return errors.NEVER_DEFINED(spaced(WORDS_CONSTRUCTOR, apostrophe(parts[1])))
     let pm = ls.getMember(p, SUBDIVISIONS_METHODS, lm.name)
     if not assigned(pm):
-      return BAD("bad state")
+      return errors.BAD_STATE
     if pm.public != lm.public:
-      return BAD("visibility does not match for constructor " & apostrophe(lm.name & parenthesize(lm.data_extra)) & " at " & apostrophe(p.name))
+      return errors.VISIBILITY_DOESNT_MATCH(spaced(WORDS_FOR, WORDS_CONSTRUCTOR, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
     ls.currentName = p.name
     ls.currentImplementation = lm
   return OK
@@ -340,21 +342,21 @@ topCallback doMethod:
   if state.isTranslating():
     let parts = parameters.join(STRINGS_SPACE).split(STRINGS_PERIOD)
     if parts.len != 2:
-      return BAD("bad method definition")
+      return errors.WRONGLY_DEFINED(WORDS_METHOD)
     let ls = loadLanguageState(state)
     var p = ls.getDivision(parts[0])
     if not assigned(p):
-      return BAD("never defined " & apostrophe(parts[0]))
+      return errors.NEVER_DEFINED(apostrophe(parts[0]))
     var lm = newLanguageMember(SUBDIVISIONS_METHODS)
     if not lm.read(parts[1]):
-      return BAD("bad method definition")
+      return errors.WRONGLY_DEFINED(WORDS_METHOD)
     if not ls.hasMethod(p, lm.name):
-      return BAD("never defined method " & apostrophe(parts[1]))
+      return errors.NEVER_DEFINED(spaced(WORDS_METHOD, apostrophe(parts[1])))
     let pm = ls.getMember(p, SUBDIVISIONS_METHODS, lm.name)
     if not assigned(pm):
-      return BAD("bad state")
+      return errors.BAD_STATE
     if pm.public != lm.public:
-      return BAD("visibility does not match for method " & apostrophe(lm.name & parenthesize(lm.data_extra)) & " at " & apostrophe(p.name))
+      return errors.VISIBILITY_DOESNT_MATCH(spaced(WORDS_FOR, WORDS_METHOD, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
     ls.currentName = p.name
     ls.currentImplementation = lm
   return OK
@@ -365,21 +367,21 @@ topCallback doTemplate:
   if state.isTranslating():
     let parts = parameters.join(STRINGS_SPACE).split(STRINGS_PERIOD)
     if parts.len != 2:
-      return BAD("bad template definition")
+      return errors.WRONGLY_DEFINED(WORDS_TEMPLATE)
     let ls = loadLanguageState(state)
     var p = ls.getDivision(parts[0])
     if not assigned(p):
-      return BAD("never defined " & apostrophe(parts[0]))
+      return errors.NEVER_DEFINED(apostrophe(parts[0]))
     var lm = newLanguageMember(SUBDIVISIONS_TEMPLATES)
     if not lm.read(parts[1]):
-      return BAD("bad template definition")
+      return errors.WRONGLY_DEFINED(WORDS_TEMPLATE)
     if not ls.hasTemplate(p, lm.name):
-      return BAD("never defined template " & apostrophe(parts[1]))
+      return errors.NEVER_DEFINED(spaced(WORDS_TEMPLATE, apostrophe(parts[1])))
     let pm = ls.getMember(p, SUBDIVISIONS_TEMPLATES, lm.name)
     if not assigned(pm):
-      return BAD("bad state")
+      return errors.BAD_STATE
     if pm.public != lm.public:
-      return BAD("visibility does not match for template " & apostrophe(lm.name & parenthesize(lm.data_extra)) & " at " & apostrophe(p.name))
+      return errors.VISIBILITY_DOESNT_MATCH(spaced(WORDS_FOR, WORDS_TEMPLATE, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
     ls.currentName = p.name
     ls.currentImplementation = lm
   return OK
@@ -391,16 +393,16 @@ topCallback doRoutine:
     let full = parameters.join(STRINGS_SPACE)
     let parts = full.split(STRINGS_PERIOD)
     if parts.len == 2:
-      return BAD("bad routine definition")
+      return errors.WRONGLY_DEFINED(WORDS_ROUTINE)
     let ls = loadLanguageState(state)
     var p = ls.getDivision(SCOPE_GLOBAL)
     if not assigned(p):
-      return BAD("bad state")
+      return errors.BAD_STATE
     var lm = newLanguageMember(SUBDIVISIONS_TEMPLATES)
     if not lm.read(full):
-      return BAD("bad routine definition")
+      return errors.WRONGLY_DEFINED(WORDS_ROUTINE)
     if ls.hasMethod(p, lm.name):
-      return BAD("already defined routine " & apostrophe(full))
+      return errors.ALREADY_DEFINED(spaced(WORDS_ROUTINE, apostrophe(full)))
     ls.currentName = p.name
     ls.currentImplementation = lm
   return OK
@@ -408,13 +410,13 @@ topCallback doRoutine:
 childCallback doCode:
   let d = state.getPropertyValue(KEY_DIVISION)
   if d notin DIVISIONS_WITH_CODE:
-    return BAD("this can not output code")
+    return errors.CANT_OUTPUT_CODE
   state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_BODY)
   if state.isTranslating():
     let ls = loadLanguageState(state)
     var p = ls.getDivision(ls.currentName)
     if not assigned(p):
-      return BAD("bad state")
+      return errors.BAD_STATE
     let lc = p.kind == DIVISIONS_CLASS
     let lp = p.extends
     let ln = ls.currentName

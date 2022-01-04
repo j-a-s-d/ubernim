@@ -9,8 +9,6 @@ import
 when defined(js):
   {.error: "This application needs to be compiled with a c/cpp-like backend".}
 
-let app = newRodsterApplication("ubernim", "0.1.0")
-app.setInitializationHandler(onInitialize)
-app.setMainRoutine(programRun)
-app.setFinalizationHandler(onFinalize)
-app.run()
+withIt newRodsterApplication("ubernim", "0.1.1"):
+  it.setEvents(appEvents)
+  it.run()

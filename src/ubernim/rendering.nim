@@ -2,9 +2,17 @@
 #---------------------#
 
 import
-  xam
+  xam,
+  language / header
+
+use sequtils,filterIt
+use strutils,split
+use strutils,strip
+use strutils,join
+use strutils,find
 
 const
+  NIMLANG_NOSIDEEFFECT = "noSideEffect"
   CODEGEN_INDENT* = STRINGS_SPACE & STRINGS_SPACE
   CODEGEN_STATIC* = "static"
   CODEGEN_ECHO* = "echo"
@@ -79,3 +87,49 @@ func renderParent*(parentClass: string): string =
     CODEGEN_TEMPLATE & STRINGS_SPACE & CODEGEN_PARENT & STRINGS_COLON & STRINGS_SPACE &
       parentClass & STRINGS_SPACE & STRINGS_EQUAL & STRINGS_SPACE & CODEGEN_PROCCALL & STRINGS_SPACE &
       CODEGEN_CAST & bracketize(parentClass) & parenthesize(CODEGEN_SELF)
+
+func renderConstructorBegin*(m: LanguageMember, isClass: bool, className: string): string =
+  let kw = if m.pragmas.find(NIMLANG_NOSIDEEFFECT) != -1: CODEGEN_FUNC else: CODEGEN_PROC
+  let args = CODEGEN_DATATYPE & STRINGS_COLON & STRINGS_SPACE & CODEGEN_TYPEDESC & bracketize(className) & (
+    if hasContent(m.data_extra): STRINGS_COMMA & STRINGS_SPACE & m.data_extra else: STRINGS_EMPTY
+  )
+  let pragmas = renderPragmas(m.pragmas.split(STRINGS_COMMA).filterIt(it.strip() != NIMLANG_NOSIDEEFFECT).join(STRINGS_COMMA).strip())
+  let stub = if isClass: renderSelf(className) else: STRINGS_EMPTY
+  renderRoutine(kw, renderId(m.name, m.public, m.generics), args, className, pragmas) & renderDocs(m.docs) & stub
+
+func renderConstructorEnd*(): string =
+  #CODEGEN_INDENT & CODEGEN_SELF &
+  STRINGS_EOL
+
+func renderMethodBegin*(m: LanguageMember, isClass: bool, className: string, parentName: string): string =
+  let kw = if m.pragmas.find(NIMLANG_NOSIDEEFFECT) != -1: CODEGEN_FUNC else: CODEGEN_PROC
+  let args = CODEGEN_SELF & STRINGS_COLON & STRINGS_SPACE & className & (
+    if hasContent(m.data_extra): STRINGS_COMMA & STRINGS_SPACE & m.data_extra else: STRINGS_EMPTY
+  )
+  let pragmas = renderPragmas(m.pragmas.split(STRINGS_COMMA).filterIt(it.strip() != NIMLANG_NOSIDEEFFECT).join(STRINGS_COMMA).strip())
+  let stub = if isClass and hasContent(parentName): renderParent(parentName) else: STRINGS_EMPTY
+  renderRoutine(kw, renderId(m.name, m.public, m.generics), args, m.data_type, pragmas) & renderDocs(m.docs) & stub
+
+func renderMethodEnd*(): string =
+  STRINGS_EOL
+
+func renderTemplateBegin*(m: LanguageMember, className: string): string =
+  let args = CODEGEN_SELF & STRINGS_COLON & STRINGS_SPACE & className & (
+    if hasContent(m.data_extra): STRINGS_COMMA & STRINGS_SPACE & m.data_extra else: STRINGS_EMPTY
+  )
+  renderRoutine(
+    CODEGEN_TEMPLATE, renderId(m.name, m.public, m.generics), args, m.data_type, renderPragmas(m.pragmas.strip())
+  ) & renderDocs(m.docs)
+
+func renderTemplateEnd*(): string =
+  STRINGS_EOL
+
+func renderRoutineBegin*(m: LanguageMember): string =
+  let kw = if m.pragmas.find(NIMLANG_NOSIDEEFFECT) != -1: CODEGEN_FUNC else: CODEGEN_PROC
+  let pragmas = renderPragmas(m.pragmas.split(STRINGS_COMMA).filterIt(it.strip() != NIMLANG_NOSIDEEFFECT).join(STRINGS_COMMA).strip())
+  renderRoutine(
+    kw, renderId(m.name, m.public, m.generics), m.data_extra, m.data_type, pragmas
+  ) & renderDocs(m.docs)
+
+func renderRoutineEnd*(): string =
+  STRINGS_EOL

@@ -4,6 +4,11 @@
 import
   rodster, xam
 
+const
+  APP_VERSION_KEY* = "version"
+  APP_INPUT_KEY* = "input"
+  APP_ERRORLEVEL_KEY* = "errorlevel"
+
 template err*(msg: string) =
   die ansiRed("* [ERROR] ") & msg
 
@@ -12,7 +17,7 @@ template done*(errorlevel: int) =
 
 proc showHelp*(app: RodsterApplication) =
   let kvm = app.getKvm()
-  echo kvm["version"]
+  echo kvm[APP_VERSION_KEY]
   echo ""
   echo "usage"
   echo "-----"
