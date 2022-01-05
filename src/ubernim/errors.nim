@@ -8,6 +8,7 @@ import
 const
   WORDS_AT* = "at"
   WORDS_FOR* = "for"
+  WORDS_WITH* = "with"
   WORDS_FIELD* = "field"
   WORDS_METHOD* = "method"
   WORDS_MEMBER* = "member"
@@ -15,12 +16,14 @@ const
   WORDS_PRAGMAS* = "pragmas"
   WORDS_ROUTINE* = "routine"
   WORDS_TEMPLATE* = "template"
+  WORDS_GENERATED* = "generated"
   WORDS_CONSTRUCTOR* = "constructor"
 
 template error(id: untyped, msg: string): untyped =
   template id*(extra: string = STRINGS_EMPTY): PreprodResult {.inject.} = BAD(spaced(msg, extra))
 
 error UNEXPECTED, "an unexpected error occurred"
+error BAD_VERSION, "a newer version is required"
 error BAD_STATE, "bad state"
 error BAD_STATE_IN_PREVIEW, "bad state in preview"
 error ONLY_TOP_LEVEL, "this can only be defined in the top level"

@@ -19,63 +19,71 @@ and all this via a simple preprocessing approach (built on top of Preprod, Rodst
 
 ## COMMANDS
 
+### UNIMCMDS feature commands:
+
+* **unim:version** *(since 0.2.0)*
+
+See them working in the *directives* example.
+
 ### SWITCHES feature commands:
 
-* nimc:project
-* nimc:config
-* nimc:define
-* nimc:switch
+* **nimc:project** *(since 0.1.0)*
+* **nimc:config** *(since 0.1.0)*
+* **nimc:define** *(since 0.1.0)*
+* **nimc:switch** *(since 0.1.0)*
 
 See them working in the *directives* example.
 
 ### SHELLCMD feature commands:
 
-* exec
+* **exec** *(since 0.1.0)*
 
 See them working in the *actions* example.
 
 ### FSACCESS feature commands:
 
-* write
-* append
-* copy
-* move
-* remove
-* mkdir
-* cpdir
-* rmdir
-* chdir
+* **write** *(since 0.1.0)*
+* **append** *(since 0.1.0)*
+* **copy** *(since 0.1.0)*
+* **move** *(since 0.1.0)*
+* **remove** *(since 0.1.0)*
+* **mkdir** *(since 0.1.0)*
+* **cpdir** *(since 0.1.0)*
+* **rmdir** *(since 0.1.0)*
+* **chdir** *(since 0.1.0)*
 
 See them working in the *actions* example.
 
 ### REQUIRES feature commands:
 
-* require
+* **require** *(since 0.1.0)*
 
 See them working in the *coding* example.
 
 ### LANGUAGE feature commands:
 
-* compound
-* interface
-* protocol
-* class
-* record
-* pragmas
-* applies
-* implies
-* extends
-* fields
-* methods
-* templates
-* docs
-* constructor
-* method
-* template
-* routine
-* code
-* end
-* note
+* **compound** *(since 0.1.0)*
+* **interface** *(since 0.1.0)*
+* **protocol** *(since 0.1.0)*
+* **class** *(since 0.1.0)*
+* **record** *(since 0.1.0)*
+* **pragmas** *(since 0.1.0)*
+* **applies** *(since 0.1.0)*
+* **implies** *(since 0.1.0)*
+* **extends** *(since 0.1.0)*
+* **fields** *(since 0.1.0)*
+* **methods** *(since 0.1.0)*
+* **templates** *(since 0.1.0)*
+* **docs** *(since 0.1.0)*
+* **constructor** *(since 0.1.0)*
+* **method** *(since 0.1.0)*
+* **template** *(since 0.1.0)*
+* **routine** *(since 0.1.0)*
+* **code** *(since 0.1.0)*
+* **end** *(since 0.1.0)*
+* **note** *(since 0.1.0)*
+* **push** *(since 0.2.0)*
+* **pop** *(since 0.2.0)*
 
 See them working in the *coding* example.
 
@@ -90,12 +98,20 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
-* 04-01-22 *[0.1.1]*
+* 05-01-22 **[0.2.0]**
+	- changed version signature to "FILE generated with ubernim vX.Y.Z"
+	- added version signature also to .cfg generated files as a comment
+	- added UNIMCMDS preprod feature
+	- added .unim:version command to UNIMCMDS feature to enforce a minimum version to process
+	- added .push/.pop commands to LANGUAGE feature to wrap the native pragma pair {.push ?.}/{.pop.}
+	- general improvements
+* 04-01-22 **[0.1.1]**
 	- improved error handling
 	- improved project name handling
 	- general improvements
 	- updated xam dependency
-* 31-12-21 *[0.1.0]*
+	- updated rodster dependency
+* 31-12-21 **[0.1.0]**
 	- first public release
-* 08-12-21 *[0.0.1]*
+* 08-12-21 **[0.0.1]**
 	- started coding

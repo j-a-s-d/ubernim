@@ -22,6 +22,8 @@ const
   CODEGEN_OF* = "of"
   CODEGEN_REF* = "ref"
   CODEGEN_VAR* = "var"
+  CODEGEN_POP* = "pop"
+  CODEGEN_PUSH* = "push"
   CODEGEN_SELF* = "self"
   CODEGEN_TYPE* = "type"
   CODEGEN_PROC* = "proc"
@@ -63,8 +65,11 @@ func renderId*(name: string, public: bool, generics: string): string =
   if hasContent(generics):
     result &= bracketize(generics)
 
-func renderPragmas*(text: string): string =
-  if hasContent(text): STRINGS_SPACE & brace(enclose(text, STRINGS_PERIOD)) else: STRINGS_EMPTY
+func renderPragmas*(text: string; prefixSpace: bool = true): string =
+  if hasContent(text):
+    (if prefixSpace: STRINGS_SPACE else: STRINGS_EMPTY) & brace(enclose(text.strip(), STRINGS_PERIOD))
+  else:
+    STRINGS_EMPTY
 
 func renderSelf*(className: string): string =
   STRINGS_EOL & CODEGEN_INDENT &
@@ -93,7 +98,7 @@ func renderConstructorBegin*(m: LanguageMember, isClass: bool, className: string
   let args = CODEGEN_DATATYPE & STRINGS_COLON & STRINGS_SPACE & CODEGEN_TYPEDESC & bracketize(className) & (
     if hasContent(m.data_extra): STRINGS_COMMA & STRINGS_SPACE & m.data_extra else: STRINGS_EMPTY
   )
-  let pragmas = renderPragmas(m.pragmas.split(STRINGS_COMMA).filterIt(it.strip() != NIMLANG_NOSIDEEFFECT).join(STRINGS_COMMA).strip())
+  let pragmas = renderPragmas(m.pragmas.split(STRINGS_COMMA).filterIt(it.strip() != NIMLANG_NOSIDEEFFECT).join(STRINGS_COMMA))
   let stub = if isClass: renderSelf(className) else: STRINGS_EMPTY
   renderRoutine(kw, renderId(m.name, m.public, m.generics), args, className, pragmas) & renderDocs(m.docs) & stub
 
@@ -118,7 +123,7 @@ func renderTemplateBegin*(m: LanguageMember, className: string): string =
     if hasContent(m.data_extra): STRINGS_COMMA & STRINGS_SPACE & m.data_extra else: STRINGS_EMPTY
   )
   renderRoutine(
-    CODEGEN_TEMPLATE, renderId(m.name, m.public, m.generics), args, m.data_type, renderPragmas(m.pragmas.strip())
+    CODEGEN_TEMPLATE, renderId(m.name, m.public, m.generics), args, m.data_type, renderPragmas(m.pragmas)
   ) & renderDocs(m.docs)
 
 func renderTemplateEnd*(): string =
@@ -126,10 +131,16 @@ func renderTemplateEnd*(): string =
 
 func renderRoutineBegin*(m: LanguageMember): string =
   let kw = if m.pragmas.find(NIMLANG_NOSIDEEFFECT) != -1: CODEGEN_FUNC else: CODEGEN_PROC
-  let pragmas = renderPragmas(m.pragmas.split(STRINGS_COMMA).filterIt(it.strip() != NIMLANG_NOSIDEEFFECT).join(STRINGS_COMMA).strip())
+  let pragmas = renderPragmas(m.pragmas.split(STRINGS_COMMA).filterIt(it.strip() != NIMLANG_NOSIDEEFFECT).join(STRINGS_COMMA))
   renderRoutine(
     kw, renderId(m.name, m.public, m.generics), m.data_extra, m.data_type, pragmas
   ) & renderDocs(m.docs)
 
 func renderRoutineEnd*(): string =
   STRINGS_EOL
+
+func renderPush*(pragmas: string): string =
+  if hasContent(pragmas): renderPragmas(spaced(CODEGEN_PUSH, pragmas), false) else: STRINGS_EMPTY
+
+func renderPop*(): string =
+  renderPragmas(CODEGEN_POP, false)

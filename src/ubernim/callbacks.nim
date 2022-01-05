@@ -9,76 +9,73 @@ import
 
 # TEMPLATES
 
-type CbKind = enum
-  RAW, TOP, CHILD
-
-template callback(kind: CbKind, name, code: untyped): untyped =
+template callback(name, code: untyped): untyped =
   let name* {.inject.}: PreprodCallback = proc (ustate: var PreprodState, params: StringSeq): PreprodResult =
     var state {.inject, used.} = ustate
     let parameters {.inject, used.} = params
     try:
-      case kind:
-      of TOP:
-        if state.hasPropertyValue(KEY_DIVISION):
-          return errors.ONLY_TOP_LEVEL
-      of CHILD:
-        if not state.hasPropertyValue(KEY_DIVISION):
-          return errors.DONT_TOP_LEVEL
-      of RAW:
-        discard
       code
     except:
       return errors.UNEXPECTED(getCurrentExceptionMsg())
 
-template rawCallback(name, code: untyped): untyped =
-  callback RAW, name:
-    code
-
 template topCallback(name, code: untyped): untyped =
-  callback TOP, name:
+  callback name:
+    if state.hasPropertyValue(KEY_DIVISION):
+      return errors.ONLY_TOP_LEVEL
     code
 
 template childCallback(name, code: untyped): untyped =
-  callback CHILD, name:
+  callback name:
+    if not state.hasPropertyValue(KEY_DIVISION):
+      return errors.DONT_TOP_LEVEL
     code
+
+# UNIMCMDS
+
+topCallback doVersion:
+  if state.isPreviewing():
+    let ls = loadLanguageState(state)
+    if newSemanticVersion(parameters[0]).isNewerThan(ls.semver):
+      return errors.BAD_VERSION(parenthesize(parameters[0]))
+  return OK
 
 # SWITCHES
 
-rawCallback doProject:
+topCallback doProject:
   if state.isTranslating():
     state.setPropertyValue(NIMC_PROJECT_KEY, parameters[0])
   return OK
 
-rawCallback doConfig:
+topCallback doConfig:
   if state.isTranslating():
     state.setPropertyValue(NIMC_CFGFILE_KEY, parameters[0])
   return OK
 
-rawCallback doSwitch:
+topCallback doSwitch:
   if state.isTranslating():
     state.appendPropertyValueAsSequence(NIMC_SWITCHES_KEY, parameters[0])
   return OK
 
-rawCallback doDefine:
+topCallback doDefine:
   if state.isTranslating():
     state.appendPropertyValueAsSequence(NIMC_DEFINES_KEY, parameters[0])
   return OK
 
 # SHELLCMD
 
-rawCallback doExec:
+topCallback doExec:
   if state.isPreviewing():
     discard execShellCmd(spaced(parameters))
   return OK
 
 # FSACCESS
 
-rawCallback doChDir:
+topCallback doChDir:
   if state.isPreviewing():
     setCurrentDir(parameters[0])
   return OK
 
-rawCallback doMkDir:
+topCallback doMkDir:
   if state.isPreviewing():
     # NOTE: avoid using existsOrCreateDir
     if not dirExists(parameters[0]):
@@ -87,39 +84,39 @@ rawCallback doMkDir:
       return errors.CANT_CREATE_DIRECTORY(apostrophe(parameters[0]))
   return OK
 
-rawCallback doCpDir:
+topCallback doCpDir:
   if state.isPreviewing():
     copyDir(parameters[0], parameters[1])
   return OK
 
-rawCallback doRmDir:
+topCallback doRmDir:
   if state.isPreviewing():
     removeDir(parameters[0])
   return OK
 
-rawCallback doCopy:
+topCallback doCopy:
   if state.isPreviewing():
     copyfile(parameters[0], parameters[1])
   return OK
 
-rawCallback doMove:
+topCallback doMove:
   if state.isPreviewing():
     movefile(parameters[0], parameters[1])
   return OK
 
-rawCallback doAppend:
+topCallback doAppend:
   if state.isPreviewing():
     if not appendToFile(parameters[0], if parameters.len == 1: STRINGS_EMPTY else: spaced(parameters[1..^1])):
       return errors.CANT_APPEND_FILE(apostrophe(parameters[0]))
   return OK
 
-rawCallback doWrite:
+topCallback doWrite:
   if state.isPreviewing():
     if not writeToFile(parameters[0], if parameters.len == 1: STRINGS_EMPTY else: spaced(parameters[1..^1])):
       return errors.CANT_WRITE_FILE(apostrophe(parameters[0]))
   return OK
 
-rawCallback doRemove:
+topCallback doRemove:
   if state.isPreviewing():
     if not tryRemoveFile(parameters[0]):
       return errors.CANT_REMOVE_FILE(apostrophe(parameters[0]))
@@ -127,7 +124,7 @@ rawCallback doRemove:
 
 # REQUIRES
 
-rawCallback doRequire:
+topCallback doRequire:
   result = OK
   if state.isPreviewing():
     let ls = loadLanguageState(state)
@@ -135,8 +132,8 @@ rawCallback doRequire:
       return errors.NO_RECURSIVE_REQUIRE
     let stls = makeLanguageState()
     stls.unit = parameters[0]
-    stls.version = ls.version
-    var st = preprocess(parameters[0], stls)
+    stls.signature = ls.signature
+    var st = preprocessPerformer(parameters[0], stls)
     stls.divisions.each d:
       if d.public and not d.imported:
         let p = ls.getDivision(d.name)
@@ -209,7 +206,7 @@ childCallback doApplies:
     let ld = ls.getDivision(parameters[0])
     if not assigned(ld):
       return errors.UNDEFINED_REFERENCE(apostrophe(parameters[0]))
-    if ld.kind != DIVISIONS_COMPOUND and ld.kind != DIVISIONS_INTERFACE and ld.kind != DIVISIONS_PROTOCOL:
+    if ld.kind notin DIVISIONS_ON_APPLY:
       return errors.NOT_APPLICABLE
     if parameters[0] in p.applies:
       return errors.ALREADY_APPLYING(apostrophe(parameters[0]))
@@ -458,4 +455,14 @@ childCallback doEnd:
       return GOOD(p & renderRoutineEnd())
     elif d == DIVISIONS_NOTE:
       return GOOD(STRINGS_EOL)
+  return OK
+
+topCallback doPush:
+  if state.isTranslating():
+    return GOOD(STRINGS_EOL & renderPush(spaced(parameters)))
+  return OK
+
+topCallback doPop:
+  if state.isTranslating():
+    return GOOD(renderPop() & STRINGS_EOL)
   return OK

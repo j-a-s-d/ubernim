@@ -11,7 +11,8 @@ use strutils,strip
 
 template makeLanguageState*(): LanguageState =
   var ads = TLanguageState(
-    version: STRINGS_EMPTY,
+    semver: newSemanticVersion(),
+    signature: STRINGS_EMPTY,
     unit: STRINGS_EMPTY,
     currentName: STRINGS_EMPTY,
     currentKind: STRINGS_EMPTY,
@@ -23,18 +24,18 @@ template makeLanguageState*(): LanguageState =
 template loadLanguageState*(state: var PreprodState): LanguageState =
   cast[LanguageState](state.tag)
 
-template storeLanguageState*(state: var PreprodState, langState: LanguageState) =
-  state.tag = addr(langState[])
+template storeLanguageState*(state: var PreprodState, ls: LanguageState) =
+  state.tag = addr(ls[])
 
 template freeLanguageState*(state: var PreprodState) =
   if assigned(state.tag):
     reset(state.tag)
 
-func getDivision*(langState: LanguageState, name: string): LanguageDivision =
+func getDivision*(ls: LanguageState, name: string): LanguageDivision =
   let l = name.strip()
   let m = if l.endsWith(STRINGS_ASTERISK): dropRight(l, 1) else: l
   let n = if m.startsWith(STRINGS_EXCLAMATION): dropLeft(m, 1) else: m
-  langState.divisions.each p:
+  ls.divisions.each p:
     if p.name == n:
       return p
   return nil
@@ -68,8 +69,8 @@ proc hasMethod*(ls: LanguageState, d: LanguageDivision, name: string, examiner: 
 proc hasTemplate*(ls: LanguageState, d: LanguageDivision, name: string, examiner: SingleArgProc[LanguageMember, bool] = DUMMY_EXAMINER): bool =
   ls.hasMember(d, SUBDIVISIONS_TEMPLATES, name, examiner)
 
-func isDivisionInherited*(langState: LanguageState, name: string): bool =
-  langState.divisions.each p:
+func isDivisionInherited*(ls: LanguageState, name: string): bool =
+  ls.divisions.each p:
     if p.extends == name:
       return true
   return false

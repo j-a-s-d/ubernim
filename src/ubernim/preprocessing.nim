@@ -7,6 +7,7 @@ import
   language / [header, member, state]
 
 const
+  FEATURE_UNIMCMDS* = "UNIMCMDS" # ubernim general commands
   FEATURE_SWITCHES* = "SWITCHES" # nim compiler command line switches
   FEATURE_SHELLCMD* = "SHELLCMD" # os shell commands execution
   FEATURE_FSACCESS* = "FSACCESS" # os filesystem access
@@ -16,6 +17,7 @@ const
 var ppOptions: PreprodOptions = PREPROD_DEFAULT_OPTIONS
 ppOptions.keepBlankLines = false
 ppOptions.initialEnabledFeatures &= @[
+  FEATURE_UNIMCMDS,
   FEATURE_SWITCHES,
   FEATURE_SHELLCMD,
   FEATURE_FSACCESS,
@@ -23,7 +25,8 @@ ppOptions.initialEnabledFeatures &= @[
   FEATURE_LANGUAGE
 ]
 
-var ppCommands: PreprodCommands = @[
+let ppCommands: PreprodCommands = @[
+  makeCommand(FEATURE_UNIMCMDS, "unim:version", PreprodArguments.uaOne, doVersion),
   makeCommand(FEATURE_SWITCHES, "nimc:project", PreprodArguments.uaOne, doProject),
   makeCommand(FEATURE_SWITCHES, "nimc:config", PreprodArguments.uaOne, doConfig),
   makeCommand(FEATURE_SWITCHES, "nimc:define", PreprodArguments.uaOne, doDefine),
@@ -40,6 +43,8 @@ var ppCommands: PreprodCommands = @[
   makeCommand(FEATURE_FSACCESS, "rmdir", PreprodArguments.uaOne, doRmDir),
   makeCommand(FEATURE_REQUIRES, "require", PreprodArguments.uaOne, doRequire),
   makeCommand(FEATURE_LANGUAGE, "note", PreprodArguments.uaNone, doNote),
+  makeCommand(FEATURE_LANGUAGE, "push", PreprodArguments.uaNonZero, doPush),
+  makeCommand(FEATURE_LANGUAGE, "pop", PreprodArguments.uaNone, doPop),
   makeCommand(FEATURE_LANGUAGE, "pragmas", PreprodArguments.uaNonZero, doPragmas),
   makeCommand(FEATURE_LANGUAGE, "class", PreprodArguments.uaNonZero, doClass),
   makeCommand(FEATURE_LANGUAGE, "record", PreprodArguments.uaOne, doRecord),
@@ -61,7 +66,7 @@ var ppCommands: PreprodCommands = @[
   makeCommand(FEATURE_LANGUAGE, "end", PreprodArguments.uaNone, doEnd)
 ]
 
-var ppPreviewer: PreprodPreviewer = proc (state: var PreprodState, r: PreprodResult): PreprodResult =
+let ppPreviewer: PreprodPreviewer = proc (state: var PreprodState, r: PreprodResult): PreprodResult =
   result = r
   if hasContent(r.output) and state.hasPropertyValue(KEY_DIVISION):
     let d = state.getPropertyValue(KEY_DIVISION)
@@ -92,7 +97,7 @@ var ppPreviewer: PreprodPreviewer = proc (state: var PreprodState, r: PreprodRes
             return errors.ALREADY_DEFINED(spaced(WORDS_SEALED, WORDS_METHOD, apostrophe(lm.name)))
           ld.members.add(lm)
 
-var ppTranslater: PreprodTranslater = proc (state: var PreprodState, r: PreprodResult): PreprodResult =
+let ppTranslater: PreprodTranslater = proc (state: var PreprodState, r: PreprodResult): PreprodResult =
   result = r
   if state.hasPropertyValue(KEY_DIVISION):
     let s = state.getPropertyValue(KEY_SUBDIVISION)
