@@ -39,6 +39,11 @@ topCallback doVersion:
       return errors.BAD_VERSION(parenthesize(parameters[0]))
   return OK
 
+topCallback doFlush:
+  if state.isTranslating():
+    state.setPropertyValue(UNIM_FLUSH_KEY, parameters[0])
+  return OK
+
 # SWITCHES
 
 topCallback doProject:
@@ -133,6 +138,7 @@ topCallback doRequire:
     let stls = makeLanguageState()
     stls.unit = parameters[0]
     stls.signature = ls.signature
+    stls.semver = ls.semver
     var st = preprocessPerformer(parameters[0], stls)
     stls.divisions.each d:
       if d.public and not d.imported:

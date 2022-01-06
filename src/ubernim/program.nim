@@ -39,13 +39,15 @@ preprocessPerformer = proc (filename: string, ls: LanguageState): var PreprodSta
   var pp = makePreprocessor(filename)
   storeLanguageState(pp.state, ls)
   pp.state.setPropertyValue(NIMC_PROJECT_KEY, filename.changeFileExt(NIM_EXTENSION))
+  pp.state.setPropertyValue(UNIM_FLUSH_KEY, WORDS_YES);
   # run preprocessor
   var r = pp.run()
   if not r.ok:
     errorHandler(r.output)
   # emit output
-  if not writeToFile(pp.state.getPropertyValue(NIMC_PROJECT_KEY), renderVersion(spaced(ls.unit, ls.signature)) & r.output):
-    errorHandler(errors.CANT_WRITE_OUTPUT.output)
+  if pp.state.getPropertyValue(UNIM_FLUSH_KEY) == WORDS_YES:
+    if not writeToFile(pp.state.getPropertyValue(NIMC_PROJECT_KEY), renderVersion(spaced(ls.unit, ls.signature)) & r.output):
+      errorHandler(errors.CANT_WRITE_OUTPUT.output)
   pp.state
 
 compilerInvoker = proc (project: string, defines: StringSeq): int =

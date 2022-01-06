@@ -2,11 +2,12 @@
 #------------------#
 
 import
-  xam,
-  preprod
+  xam, preprod
 
 const
   WORDS_AT* = "at"
+  WORDS_NO* = "no"
+  WORDS_YES* = "yes"
   WORDS_FOR* = "for"
   WORDS_WITH* = "with"
   WORDS_FIELD* = "field"

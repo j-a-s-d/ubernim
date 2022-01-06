@@ -3,6 +3,12 @@
 
 # this example is to show the compiler directives, configuration and invokation options that ubernim offers
 
+.# the unim:* commnads are packed into the UNIMCMDS Preprod feature,
+.# so you can disable them by a simple '.$ FEATURE UNIMCMDS off'
+
+.# you can specify the minimum version of ubernim required to process this file
+.unim:version 0.2.0
+
 .# the nimc:* commnads are packed into the SWITCHES Preprod feature,
 .# so you can disable them by a simple '.$ FEATURE SWITCHES off'
 

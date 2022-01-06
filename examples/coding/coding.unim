@@ -213,6 +213,9 @@ aaa.bar:
 if aaa.testing(1):
   echo "EXECUTED !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 
+.# you can use the push/pop pragma wrappers
+.push inline
+
 .routine makeGreetingMessageTo(name: string): string # you can define top level routines too
 .pragmas deprecated: "do not use it", noSideEffect
 .docs
@@ -220,6 +223,8 @@ if aaa.testing(1):
 .code
   "hello " & name & "!"
 .end
+
+.pop
 
 .# and more regular nim code
 when defined(hello):

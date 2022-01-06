@@ -27,6 +27,7 @@ ppOptions.initialEnabledFeatures &= @[
 
 let ppCommands: PreprodCommands = @[
   makeCommand(FEATURE_UNIMCMDS, "unim:version", PreprodArguments.uaOne, doVersion),
+  makeCommand(FEATURE_UNIMCMDS, "unim:flush", PreprodArguments.uaOne, doFlush),
   makeCommand(FEATURE_SWITCHES, "nimc:project", PreprodArguments.uaOne, doProject),
   makeCommand(FEATURE_SWITCHES, "nimc:config", PreprodArguments.uaOne, doConfig),
   makeCommand(FEATURE_SWITCHES, "nimc:define", PreprodArguments.uaOne, doDefine),
