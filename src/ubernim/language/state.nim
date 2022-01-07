@@ -14,6 +14,7 @@ template makeLanguageState*(): LanguageState =
     semver: newSemanticVersion(),
     signature: STRINGS_EMPTY,
     unit: STRINGS_EMPTY,
+    main: false,
     currentName: STRINGS_EMPTY,
     currentKind: STRINGS_EMPTY,
     currentImplementation: nil,

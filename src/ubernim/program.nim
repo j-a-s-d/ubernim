@@ -71,6 +71,7 @@ appEvents.main = proc (app: RodsterApplication) =
   ls.semver = nfo.getVersion()
   ls.signature = spaced(WORDS_GENERATED, WORDS_WITH, kvm[APP_VERSION_KEY])
   ls.unit = kvm[APP_INPUT_KEY]
+  ls.main = true
   var state = preprocessPerformer(ls.unit, ls)
   try:
     kvm[APP_ERRORLEVEL_KEY] = $compilationPerformer(state)

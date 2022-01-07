@@ -41,6 +41,9 @@ topCallback doVersion:
 
 topCallback doFlush:
   if state.isTranslating():
+    let flag = parameters[0].toLower()
+    if flag notin [WORDS_YES, WORDS_NO]:
+      return errors.BAD_FLAG
     state.setPropertyValue(UNIM_FLUSH_KEY, parameters[0])
   return OK
 
@@ -69,19 +72,19 @@ topCallback doDefine:
 # SHELLCMD
 
 topCallback doExec:
-  if state.isPreviewing():
+  if state.isTranslating():
     discard execShellCmd(spaced(parameters))
   return OK
 
 # FSACCESS
 
 topCallback doChDir:
-  if state.isPreviewing():
+  if state.isTranslating():
     setCurrentDir(parameters[0])
   return OK
 
 topCallback doMkDir:
-  if state.isPreviewing():
+  if state.isTranslating():
     # NOTE: avoid using existsOrCreateDir
     if not dirExists(parameters[0]):
       createDir(parameters[0])
@@ -90,39 +93,39 @@ topCallback doMkDir:
   return OK
 
 topCallback doCpDir:
-  if state.isPreviewing():
+  if state.isTranslating():
     copyDir(parameters[0], parameters[1])
   return OK
 
 topCallback doRmDir:
-  if state.isPreviewing():
+  if state.isTranslating():
     removeDir(parameters[0])
   return OK
 
 topCallback doCopy:
-  if state.isPreviewing():
+  if state.isTranslating():
     copyfile(parameters[0], parameters[1])
   return OK
 
 topCallback doMove:
-  if state.isPreviewing():
+  if state.isTranslating():
     movefile(parameters[0], parameters[1])
   return OK
 
 topCallback doAppend:
-  if state.isPreviewing():
+  if state.isTranslating():
     if not appendToFile(parameters[0], if parameters.len == 1: STRINGS_EMPTY else: spaced(parameters[1..^1])):
       return errors.CANT_APPEND_FILE(apostrophe(parameters[0]))
   return OK
 
 topCallback doWrite:
-  if state.isPreviewing():
+  if state.isTranslating():
     if not writeToFile(parameters[0], if parameters.len == 1: STRINGS_EMPTY else: spaced(parameters[1..^1])):
       return errors.CANT_WRITE_FILE(apostrophe(parameters[0]))
   return OK
 
 topCallback doRemove:
-  if state.isPreviewing():
+  if state.isTranslating():
     if not tryRemoveFile(parameters[0]):
       return errors.CANT_REMOVE_FILE(apostrophe(parameters[0]))
   return OK
@@ -136,6 +139,7 @@ topCallback doRequire:
     if ls.unit == parameters[0]:
       return errors.NO_RECURSIVE_REQUIRE
     let stls = makeLanguageState()
+    stls.main = false
     stls.unit = parameters[0]
     stls.signature = ls.signature
     stls.semver = ls.semver
@@ -151,7 +155,93 @@ topCallback doRequire:
     freeLanguageState(st)
     reset(st)
 
+topCallback doRequirable:
+  if state.isPreviewing():
+    let flag = parameters[0].toLower()
+    if flag notin [WORDS_YES, WORDS_NO]:
+      return errors.BAD_FLAG
+    let ls = loadLanguageState(state)
+    if not ls.main and flag == WORDS_NO:
+      return errors.CANT_BE_REQUIRED
+  return OK
+
 # LANGUAGE
+
+# DIVISION
+
+func validateDivision(ls: LanguageState, d: LanguageDivision): PreprodResult =
+  result = OK
+  # check extensions to exist and be of the same type -- redundant?
+  var m: LanguageDivision = nil
+  if hasContent(d.extends):
+    m = ls.getDivision(d.extends)
+    if not assigned(m):
+      return errors.UNDEFINED_REFERENCE(apostrophe(d.extends))
+    else:
+      while assigned(m):
+        if m.kind != d.kind:
+          return BAD("the referred " & apostrophe(d.extends) & " is not of the same type as " & apostrophe(d.name))
+        m = ls.getDivision(m.extends)
+  # check inherited classes not to imply the same classes -- redundant?
+  m = d
+  var s = newStringSeq()
+  while assigned(m):
+    if hasContent(m.implies):
+      if m.implies notin s:
+        s.add(m.implies)
+      else:
+        return BAD("an ancestor class of " & apostrophe(d.name) & " implies " & apostrophe(m.implies) & " which is already implied")
+    m = ls.getDivision(m.extends)
+  # check for the presence of the applies against the fields of own division, from implies and from extensions
+  m = d
+  var r: LanguageMembers = @[]
+  func isPresent(b: LanguageMember): bool =
+    result = false
+    r.each x:
+      result = x.name == b.name and x.kind == b.kind and x.data_type == b.data_type# and x.public == b.public
+      if result:
+        break
+  while assigned(m):
+    m.members.each b:
+      r.add(b)
+    m = ls.getDivision(m.extends)
+  m = d
+  while assigned(m):
+    m.applies.each a:
+      let p = ls.getDivision(a)
+      if not assigned(p):
+        return errors.UNDEFINED_REFERENCE(apostrophe(a))
+      else:
+        p.members.each b:
+          if not isPresent(b):
+            return BAD("the member " & apostrophe(b.name) & " from " & apostrophe(a) & " is not present in " & apostrophe(m.name))
+    m = ls.getDivision(m.extends)
+
+func renderDivision(ls: LanguageState, d: LanguageDivision): string =
+  func buildFields(indent: string, allowVisibility: bool): string =
+    func writeFields(members: LanguageMembers): string =
+      result = STRINGS_EMPTY
+      members.each f:
+        if f.kind == SUBDIVISIONS_FIELDS:
+          let v = if allowVisibility and f.public: STRINGS_ASTERISK else: STRINGS_EMPTY
+          result &= STRINGS_EOL & indent & f.name & v & STRINGS_COLON & STRINGS_SPACE & f.data_type
+    result = STRINGS_EMPTY
+    var m = d
+    while assigned(m):
+      result &= writeFields(m.members)
+      m = ls.getDivision(m.implies)
+  case d.kind:
+  of DIVISIONS_CLASS:
+    var typedef = CODEGEN_REF & STRINGS_SPACE & CODEGEN_OBJECT
+    if hasContent(d.extends):
+      typedef &= STRINGS_SPACE & CODEGEN_OF & STRINGS_SPACE & d.extends
+    elif ls.isDivisionInherited(d.name):
+      typedef &= STRINGS_SPACE & CODEGEN_OF & STRINGS_SPACE & CODEGEN_ROOTOBJ
+    return renderType(renderId(d.name, d.public, d.generics), renderPragmas(d.pragmas), typedef) & renderDocs(d.docs) & buildFields(CODEGEN_INDENT, true) & STRINGS_EOL
+  of DIVISIONS_RECORD:
+    return renderType(renderId(d.name, d.public, d.generics), renderPragmas(d.pragmas), CODEGEN_TUPLE) & renderDocs(d.docs) & buildFields(CODEGEN_INDENT, false) & STRINGS_EOL
+  else:
+    return STRINGS_EMPTY
 
 proc startDivision(state: var PreprodState, division, subdivision, id: string): PreprodResult =
   let ls = loadLanguageState(state)
@@ -163,6 +253,8 @@ proc startDivision(state: var PreprodState, division, subdivision, id: string): 
   state.setPropertyValue(KEY_SUBDIVISION, subdivision)
   openDivision(state, division, id)
   return OK
+
+# CALLBACKS
 
 topCallback doProtocol:
   return startDivision(state, DIVISIONS_PROTOCOL, SUBDIVISIONS_CLAUSES, parameters[0])

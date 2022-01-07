@@ -58,6 +58,7 @@ See them working in the *actions* example.
 ### REQUIRES feature commands:
 
 * **.require** *(since 0.1.0)*
+* **.requirable** *(since 0.2.2)*
 
 See them working in the *coding* example.
 
@@ -99,6 +100,9 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 07-01-22 **[0.2.2]**
+	- added .requirable command to REQUIRES feature to disallow the processing of files that should not be required
+	- general improvements
 * 06-01-22 **[0.2.1]**
 	- added .unim:flush command to UNIMCMDS feature to allow the processing of files without content output
 * 05-01-22 **[0.2.0]**

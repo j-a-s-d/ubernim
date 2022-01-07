@@ -70,6 +70,7 @@ type
     semver*: SemanticVersion
     signature*: string
     unit*: string
+    main*: bool
     currentName*: string
     currentKind*: string
     currentImplementation*: LanguageMember

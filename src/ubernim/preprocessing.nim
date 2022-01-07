@@ -3,69 +3,27 @@
 
 import
   xam, preprod,
-  callbacks, errors,
+  features, errors,
   language / [header, member, state]
-
-const
-  FEATURE_UNIMCMDS* = "UNIMCMDS" # ubernim general commands
-  FEATURE_SWITCHES* = "SWITCHES" # nim compiler command line switches
-  FEATURE_SHELLCMD* = "SHELLCMD" # os shell commands execution
-  FEATURE_FSACCESS* = "FSACCESS" # os filesystem access
-  FEATURE_REQUIRES* = "REQUIRES" # ubernim external files requirement (differs from INCLUDE in that the required modules are preprocessed separatelly)
-  FEATURE_LANGUAGE* = "LANGUAGE" # ubernim language extensions
 
 var ppOptions: PreprodOptions = PREPROD_DEFAULT_OPTIONS
 ppOptions.keepBlankLines = false
 ppOptions.initialEnabledFeatures &= @[
-  FEATURE_UNIMCMDS,
-  FEATURE_SWITCHES,
-  FEATURE_SHELLCMD,
-  FEATURE_FSACCESS,
-  FEATURE_REQUIRES,
-  FEATURE_LANGUAGE
+  UbernimFeatures.UNIMCMDS.name,
+  UbernimFeatures.SWITCHES.name,
+  UbernimFeatures.SHELLCMD.name,
+  UbernimFeatures.FSACCESS.name,
+  UbernimFeatures.REQUIRES.name,
+  UbernimFeatures.LANGUAGE.name
 ]
 
-let ppCommands: PreprodCommands = @[
-  makeCommand(FEATURE_UNIMCMDS, "unim:version", PreprodArguments.uaOne, doVersion),
-  makeCommand(FEATURE_UNIMCMDS, "unim:flush", PreprodArguments.uaOne, doFlush),
-  makeCommand(FEATURE_SWITCHES, "nimc:project", PreprodArguments.uaOne, doProject),
-  makeCommand(FEATURE_SWITCHES, "nimc:config", PreprodArguments.uaOne, doConfig),
-  makeCommand(FEATURE_SWITCHES, "nimc:define", PreprodArguments.uaOne, doDefine),
-  makeCommand(FEATURE_SWITCHES, "nimc:switch", PreprodArguments.uaOne, doSwitch),
-  makeCommand(FEATURE_SHELLCMD, "exec", PreprodArguments.uaNonZero, doExec),
-  makeCommand(FEATURE_FSACCESS, "copy", PreprodArguments.uaTwo, doCopy),
-  makeCommand(FEATURE_FSACCESS, "move", PreprodArguments.uaTwo, doMove),
-  makeCommand(FEATURE_FSACCESS, "remove", PreprodArguments.uaOne, doRemove),
-  makeCommand(FEATURE_FSACCESS, "write", PreprodArguments.uaNonZero, doWrite),
-  makeCommand(FEATURE_FSACCESS, "append", PreprodArguments.uaNonZero, doAppend),
-  makeCommand(FEATURE_FSACCESS, "mkdir", PreprodArguments.uaOne, doMkDir),
-  makeCommand(FEATURE_FSACCESS, "chdir", PreprodArguments.uaOne, doChDir),
-  makeCommand(FEATURE_FSACCESS, "cpdir", PreprodArguments.uaTwo, doCpDir),
-  makeCommand(FEATURE_FSACCESS, "rmdir", PreprodArguments.uaOne, doRmDir),
-  makeCommand(FEATURE_REQUIRES, "require", PreprodArguments.uaOne, doRequire),
-  makeCommand(FEATURE_LANGUAGE, "note", PreprodArguments.uaNone, doNote),
-  makeCommand(FEATURE_LANGUAGE, "push", PreprodArguments.uaNonZero, doPush),
-  makeCommand(FEATURE_LANGUAGE, "pop", PreprodArguments.uaNone, doPop),
-  makeCommand(FEATURE_LANGUAGE, "pragmas", PreprodArguments.uaNonZero, doPragmas),
-  makeCommand(FEATURE_LANGUAGE, "class", PreprodArguments.uaNonZero, doClass),
-  makeCommand(FEATURE_LANGUAGE, "record", PreprodArguments.uaOne, doRecord),
-  makeCommand(FEATURE_LANGUAGE, "compound", PreprodArguments.uaOne, doCompound),
-  makeCommand(FEATURE_LANGUAGE, "interface", PreprodArguments.uaOne, doInterface),
-  makeCommand(FEATURE_LANGUAGE, "protocol", PreprodArguments.uaOne, doProtocol),
-  makeCommand(FEATURE_LANGUAGE, "applies", PreprodArguments.uaOne, doApplies),
-  makeCommand(FEATURE_LANGUAGE, "implies", PreprodArguments.uaOne, doImplies),
-  makeCommand(FEATURE_LANGUAGE, "extends", PreprodArguments.uaOne, doExtends),
-  makeCommand(FEATURE_LANGUAGE, "fields", PreprodArguments.uaNone, doFields),
-  makeCommand(FEATURE_LANGUAGE, "methods", PreprodArguments.uaNone, doMethods),
-  makeCommand(FEATURE_LANGUAGE, "templates", PreprodArguments.uaNone, doTemplates),
-  makeCommand(FEATURE_LANGUAGE, "docs", PreprodArguments.uaNone, doDocs),
-  makeCommand(FEATURE_LANGUAGE, "constructor", PreprodArguments.uaNonZero, doConstructor),
-  makeCommand(FEATURE_LANGUAGE, "method", PreprodArguments.uaNonZero, doMethod),
-  makeCommand(FEATURE_LANGUAGE, "template", PreprodArguments.uaNonZero, doTemplate),
-  makeCommand(FEATURE_LANGUAGE, "routine", PreprodArguments.uaNonZero, doRoutine),
-  makeCommand(FEATURE_LANGUAGE, "code", PreprodArguments.uaNone, doCode),
-  makeCommand(FEATURE_LANGUAGE, "end", PreprodArguments.uaNone, doEnd)
-]
+let ppCommands: PreprodCommands =
+  UbernimFeatures.UNIMCMDS.commands &
+  UbernimFeatures.SWITCHES.commands &
+  UbernimFeatures.SHELLCMD.commands &
+  UbernimFeatures.FSACCESS.commands &
+  UbernimFeatures.REQUIRES.commands &
+  UbernimFeatures.LANGUAGE.commands
 
 let ppPreviewer: PreprodPreviewer = proc (state: var PreprodState, r: PreprodResult): PreprodResult =
   result = r
