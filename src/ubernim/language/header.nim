@@ -17,16 +17,18 @@ const
   DIVISIONS_RECORD* = "RECORD"
   DIVISIONS_CLASS* = "CLASS"
   DIVISIONS_CONSTRUCTOR* = "CONSTRUCTOR" # implementation
+  DIVISIONS_GETTER* = "GETTER" # implementation
+  DIVISIONS_SETTER* = "SETTER" # implementation
   DIVISIONS_METHOD* = "METHOD" # implementation
   DIVISIONS_TEMPLATE* = "TEMPLATE" # implementation
   DIVISIONS_ROUTINES* = "ROUTINES" # global
   DIVISIONS_ROUTINE* = "ROUTINE" # implementation
   DIVISIONS_ON_APPLY* = [DIVISIONS_COMPOUND, DIVISIONS_INTERFACE, DIVISIONS_PROTOCOL]
-  DIVISIONS_WITH_CODE* = [DIVISIONS_CONSTRUCTOR, DIVISIONS_METHOD, DIVISIONS_TEMPLATE, DIVISIONS_ROUTINE]
+  DIVISIONS_WITH_CODE* = [DIVISIONS_CONSTRUCTOR, DIVISIONS_GETTER, DIVISIONS_SETTER, DIVISIONS_METHOD, DIVISIONS_TEMPLATE, DIVISIONS_ROUTINE]
   DIVISIONS_WITH_FIELDS* = [DIVISIONS_CLASS, DIVISIONS_RECORD, DIVISIONS_PROTOCOL, DIVISIONS_COMPOUND]
   DIVISIONS_WITH_METHODS* = [DIVISIONS_CLASS, DIVISIONS_RECORD, DIVISIONS_PROTOCOL, DIVISIONS_INTERFACE]
   DIVISIONS_WITH_TEMPLATES* = [DIVISIONS_CLASS, DIVISIONS_RECORD]
-  DIVISIONS_WITH_DOCS* = [DIVISIONS_CLASS, DIVISIONS_RECORD, DIVISIONS_CONSTRUCTOR, DIVISIONS_METHOD, DIVISIONS_TEMPLATE, DIVISIONS_ROUTINE]
+  DIVISIONS_WITH_DOCS* = [DIVISIONS_CLASS, DIVISIONS_RECORD, DIVISIONS_CONSTRUCTOR, DIVISIONS_GETTER, DIVISIONS_SETTER, DIVISIONS_METHOD, DIVISIONS_TEMPLATE, DIVISIONS_ROUTINE]
   SUBDIVISIONS_BODY* = "BODY" # implementation
   SUBDIVISIONS_DOCS* = "DOCS"
   SUBDIVISIONS_CLAUSES* = "CLAUSES" # where attribute clauses can appear (ex. extends, applies, etc)
@@ -47,6 +49,9 @@ type
     data_type*: string # methods: return type & fields: value type
     data_extra*: string # methods: parameters & class fields: initialization value
     data_constructor*: bool # methods: constructor flag & fields: unused
+    data_getter*: bool # methods: getter flag & fields: unused
+    data_setter*: bool # methods: setter flag & fields: unused
+    data_var*: bool # method: var flag & fields: unused
     data_sealed*: bool # class and methods: sealed flag & fields: unused
     pragmas*: string
     docs*: StringSeq

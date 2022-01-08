@@ -431,11 +431,72 @@ topCallback doConstructor:
     ls.currentImplementation = lm
   return OK
 
+topCallback doGetter:
+  state.setPropertyValue(KEY_DIVISION, DIVISIONS_GETTER)
+  state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_CLAUSES)
+  if state.isTranslating():
+    let parts = parameters.join(STRINGS_SPACE).split(STRINGS_PERIOD)
+    if parts.len != 2:
+      return errors.WRONGLY_DEFINED(WORDS_GETTER)
+    let ls = loadLanguageState(state)
+    var p = ls.getDivision(parts[0])
+    if not assigned(p):
+      return errors.NEVER_DEFINED(apostrophe(parts[0]))
+    var lm = newLanguageMember(SUBDIVISIONS_METHODS)
+    # NOTE: due to the differences between definition and implementation special flag has to be set
+    lm.data_getter = true # before reading (for the getter)
+    if not lm.read(parts[1]):
+      return errors.WRONGLY_DEFINED(WORDS_GETTER)
+    if not isValidNimIdentifier(lm.name):
+      return errors.INVALID_IDENTIFIER
+    if not ls.hasMethod(p, lm.name, (member: LanguageMember) => member.data_getter):
+      return errors.NEVER_DEFINED(spaced(WORDS_GETTER, apostrophe(parts[1])))
+    let pm = ls.getMember(p, SUBDIVISIONS_METHODS, lm.name)
+    if not assigned(pm):
+      return errors.BAD_STATE
+    if pm.public != lm.public:
+      return errors.VISIBILITY_DOESNT_MATCH(spaced(WORDS_FOR, WORDS_GETTER, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
+    ls.currentName = p.name
+    ls.currentImplementation = lm
+  return OK
+
+topCallback doSetter:
+  state.setPropertyValue(KEY_DIVISION, DIVISIONS_SETTER)
+  state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_CLAUSES)
+  if state.isTranslating():
+    let isVar = parameters[0] == CODEGEN_VAR
+    let parts = (if isVar: parameters[1..^1] else: parameters).join(STRINGS_SPACE).split(STRINGS_PERIOD)
+    if parts.len != 2:
+      return errors.WRONGLY_DEFINED(WORDS_SETTER)
+    let ls = loadLanguageState(state)
+    var p = ls.getDivision(parts[0])
+    if not assigned(p):
+      return errors.NEVER_DEFINED(apostrophe(parts[0]))
+    var lm = newLanguageMember(SUBDIVISIONS_METHODS)
+    if not lm.read(parts[1]):
+      return errors.WRONGLY_DEFINED(WORDS_SETTER)
+    # NOTE: due to the differences between definition and implementation special flag has to be set
+    lm.data_setter = true # after reading (for the setter)
+    if not isValidNimIdentifier(lm.name):
+      return errors.INVALID_IDENTIFIER
+    if not ls.hasMethod(p, lm.name, (member: LanguageMember) => member.data_setter):
+      return errors.NEVER_DEFINED(spaced(WORDS_SETTER, apostrophe(parts[1])))
+    let pm = ls.getMember(p, SUBDIVISIONS_METHODS, lm.name)
+    if not assigned(pm):
+      return errors.BAD_STATE
+    if pm.public != lm.public:
+      return errors.VISIBILITY_DOESNT_MATCH(spaced(WORDS_FOR, WORDS_SETTER, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
+    ls.currentName = p.name
+    lm.data_var = isVar
+    ls.currentImplementation = lm
+  return OK
+
 topCallback doMethod:
   state.setPropertyValue(KEY_DIVISION, DIVISIONS_METHOD)
   state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_CLAUSES)
   if state.isTranslating():
-    let parts = parameters.join(STRINGS_SPACE).split(STRINGS_PERIOD)
+    let isVar = parameters[0] == CODEGEN_VAR
+    let parts = (if isVar: parameters[1..^1] else: parameters).join(STRINGS_SPACE).split(STRINGS_PERIOD)
     if parts.len != 2:
       return errors.WRONGLY_DEFINED(WORDS_METHOD)
     let ls = loadLanguageState(state)
@@ -453,6 +514,7 @@ topCallback doMethod:
     if pm.public != lm.public:
       return errors.VISIBILITY_DOESNT_MATCH(spaced(WORDS_FOR, WORDS_METHOD, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
     ls.currentName = p.name
+    lm.data_var = isVar
     ls.currentImplementation = lm
   return OK
 
@@ -519,7 +581,7 @@ childCallback doCode:
     lm.rendered = true
     if d == DIVISIONS_CONSTRUCTOR:
       return GOOD(renderConstructorBegin(lm, lc, ln))
-    elif d == DIVISIONS_METHOD:
+    elif d == DIVISIONS_METHOD or d == DIVISIONS_GETTER or d == DIVISIONS_SETTER:
       return GOOD(renderMethodBegin(lm, lc, ln, lp))
     elif d == DIVISIONS_TEMPLATE:
       return GOOD(renderTemplateBegin(lm, ln))
@@ -540,8 +602,14 @@ childCallback doEnd:
   closeDivision(state)
   if state.isTranslating():
     if d == DIVISIONS_CONSTRUCTOR:
-      let p = if lm.rendered: STRINGS_EMPTY else: renderConstructorBegin(lm, lc, ln)
+      let p = if lm.rendered: STRINGS_EMPTY else: renderConstructorBegin(lm, lc, ln) & STRINGS_EOL & CODEGEN_INDENT & CODEGEN_DISCARD
       return GOOD(p & renderConstructorEnd())
+    elif d == DIVISIONS_GETTER:
+      let p = if lm.rendered: STRINGS_EMPTY else: renderMethodBegin(lm, lc, ln, lp) & STRINGS_EOL & CODEGEN_INDENT & CODEGEN_DISCARD
+      return GOOD(p & renderMethodEnd())
+    elif d == DIVISIONS_SETTER:
+      let p = if lm.rendered: STRINGS_EMPTY else: renderMethodBegin(lm, lc, ln, lp) & STRINGS_EOL & CODEGEN_INDENT & CODEGEN_DISCARD
+      return GOOD(p & renderMethodEnd())
     elif d == DIVISIONS_METHOD:
       let p = if lm.rendered: STRINGS_EMPTY else: renderMethodBegin(lm, lc, ln, lp) & STRINGS_EOL & CODEGEN_INDENT & CODEGEN_DISCARD
       return GOOD(p & renderMethodEnd())

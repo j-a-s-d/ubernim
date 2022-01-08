@@ -57,7 +57,8 @@ proc hasMember*(ls: LanguageState, d: LanguageDivision, kind, name: string, exam
   while assigned(m):
     m.members.each f:
       if f.kind == kind and f.name == name:
-        return examiner(f)
+        if examiner(f):
+          return true
     m = ls.getDivision(m.extends)
   return false
 

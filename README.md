@@ -78,6 +78,8 @@ See them working in the *coding* example.
 * **.templates** *(since 0.1.0)*
 * **.docs** *(since 0.1.0)*
 * **.constructor** *(since 0.1.0)*
+* **.getter** *(since 0.3.0)*
+* **.setter** *(since 0.3.0)*
 * **.method** *(since 0.1.0)*
 * **.template** *(since 0.1.0)*
 * **.routine** *(since 0.1.0)*
@@ -100,6 +102,9 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 08-01-22 **[0.3.0]**
+	- added .getter/.setter commands to LANGUAGE feature to wrap the native way of defining properties
+	- added var modifier for .method and .setter commands
 * 07-01-22 **[0.2.2]**
 	- added .requirable command to REQUIRES feature to disallow the processing of files that should not be required
 	- general improvements

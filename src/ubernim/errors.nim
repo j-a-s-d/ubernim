@@ -11,6 +11,8 @@ const
   WORDS_FOR* = "for"
   WORDS_WITH* = "with"
   WORDS_FIELD* = "field"
+  WORDS_GETTER* = "getter"
+  WORDS_SETTER* = "setter"
   WORDS_METHOD* = "method"
   WORDS_MEMBER* = "member"
   WORDS_SEALED* = "sealed"

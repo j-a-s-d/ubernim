@@ -90,6 +90,8 @@ proc initLANGUAGE(): UbernimFeature =
       makeCommand(FEATURE, "templates", PreprodArguments.uaNone, doTemplates),
       makeCommand(FEATURE, "docs", PreprodArguments.uaNone, doDocs),
       makeCommand(FEATURE, "constructor", PreprodArguments.uaNonZero, doConstructor),
+      makeCommand(FEATURE, "getter", PreprodArguments.uaNonZero, doGetter),
+      makeCommand(FEATURE, "setter", PreprodArguments.uaNonZero, doSetter),
       makeCommand(FEATURE, "method", PreprodArguments.uaNonZero, doMethod),
       makeCommand(FEATURE, "template", PreprodArguments.uaNonZero, doTemplate),
       makeCommand(FEATURE, "routine", PreprodArguments.uaNonZero, doRoutine),

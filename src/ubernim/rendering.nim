@@ -12,6 +12,7 @@ use strutils,join
 use strutils,find
 
 const
+  STRINGS_BACKTICK = "`"
   NIMLANG_NOSIDEEFFECT = "noSideEffect"
   CODEGEN_INDENT* = STRINGS_SPACE & STRINGS_SPACE
   CODEGEN_STATIC* = "static"
@@ -25,6 +26,7 @@ const
   CODEGEN_POP* = "pop"
   CODEGEN_PUSH* = "push"
   CODEGEN_SELF* = "self"
+  CODEGEN_AUTO* = "auto"
   CODEGEN_TYPE* = "type"
   CODEGEN_PROC* = "proc"
   CODEGEN_FUNC* = "func"
@@ -71,7 +73,7 @@ func renderPragmas*(text: string; prefixSpace: bool = true): string =
   else:
     STRINGS_EMPTY
 
-func renderSelf*(className: string): string =
+func renderClassSelf*(className: string): string =
   STRINGS_EOL & CODEGEN_INDENT &
     # alternatives for self
     # 1. var self = class() \ code \ self -- 2 lines with var, user code goes in the middle
@@ -81,6 +83,15 @@ func renderSelf*(className: string): string =
       CODEGEN_RESULT & STRINGS_SPACE & STRINGS_EQUAL & STRINGS_SPACE &
       className & CODEGEN_CALL & STRINGS_SEMICOLON & STRINGS_SPACE & CODEGEN_RESULT
     )
+
+func renderRecordSelf*(className: string): string =
+  STRINGS_EOL & CODEGEN_INDENT &
+    # alternatives for self
+    # 1. var self = class() \ code \ self -- 2 lines with var, user code goes in the middle
+    # 2. template self: auto = result \ self = class() \ code -- 2 lines with template, user code goes after [CURRENT]
+    # 3. var self = (result = class(); result) \ code -- 1 line with var, user code goes after
+    CODEGEN_TEMPLATE & STRINGS_SPACE & CODEGEN_SELF & STRINGS_COLON & STRINGS_SPACE &
+      CODEGEN_AUTO & STRINGS_SPACE & STRINGS_EQUAL & STRINGS_SPACE & CODEGEN_RESULT
 
 func renderParent*(parentClass: string): string =
   STRINGS_EOL & CODEGEN_INDENT &
@@ -99,21 +110,24 @@ func renderConstructorBegin*(m: LanguageMember, isClass: bool, className: string
     if hasContent(m.data_extra): STRINGS_COMMA & STRINGS_SPACE & m.data_extra else: STRINGS_EMPTY
   )
   let pragmas = renderPragmas(m.pragmas.split(STRINGS_COMMA).filterIt(it.strip() != NIMLANG_NOSIDEEFFECT).join(STRINGS_COMMA))
-  let stub = if isClass: renderSelf(className) else: STRINGS_EMPTY
+  let stub = if isClass: renderClassSelf(className) else: renderRecordSelf(className)
   renderRoutine(kw, renderId(m.name, m.public, m.generics), args, className, pragmas) & renderDocs(m.docs) & stub
 
 func renderConstructorEnd*(): string =
   #CODEGEN_INDENT & CODEGEN_SELF &
   STRINGS_EOL
 
-func renderMethodBegin*(m: LanguageMember, isClass: bool, className: string, parentName: string): string =
+proc renderMethodBegin*(m: LanguageMember, isClass: bool, className: string, parentName: string): string =
   let kw = if m.pragmas.find(NIMLANG_NOSIDEEFFECT) != -1: CODEGEN_FUNC else: CODEGEN_PROC
-  let args = CODEGEN_SELF & STRINGS_COLON & STRINGS_SPACE & className & (
+  let args = CODEGEN_SELF & STRINGS_COLON & STRINGS_SPACE & (
+    if m.data_var: CODEGEN_VAR & STRINGS_SPACE else: STRINGS_EMPTY
+  ) & className & (
     if hasContent(m.data_extra): STRINGS_COMMA & STRINGS_SPACE & m.data_extra else: STRINGS_EMPTY
   )
   let pragmas = renderPragmas(m.pragmas.split(STRINGS_COMMA).filterIt(it.strip() != NIMLANG_NOSIDEEFFECT).join(STRINGS_COMMA).strip())
   let stub = if isClass and hasContent(parentName): renderParent(parentName) else: STRINGS_EMPTY
-  renderRoutine(kw, renderId(m.name, m.public, m.generics), args, m.data_type, pragmas) & renderDocs(m.docs) & stub
+  let name = if m.data_setter: enclose(m.name & STRINGS_EQUAL, STRINGS_BACKTICK) else: m.name
+  renderRoutine(kw, renderId(name, m.public, m.generics), args, m.data_type, pragmas) & renderDocs(m.docs) & stub
 
 func renderMethodEnd*(): string =
   STRINGS_EOL

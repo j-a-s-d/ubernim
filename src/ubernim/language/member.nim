@@ -16,6 +16,8 @@ func `$`*(mbr: LanguageMember): string =
     "data_type: " & quote(mbr.data_type),
     "data_extra: " & quote(mbr.data_extra),
     "data_constructor: " & $mbr.data_constructor,
+    "data_getter: " & $mbr.data_getter,
+    "data_setter: " & $mbr.data_setter,
     "data_sealed: " & $mbr.data_sealed,
     "generics: " & $mbr.generics,
     "pragmas: " & $mbr.pragmas,
@@ -49,17 +51,25 @@ proc readField(fld: LanguageMember, line: string): bool =
 
 proc readMethod(mtd: LanguageMember, line: string): bool =
   result = true
-  if line.find(STRINGS_PARENTHESES_OPEN) == -1 or line.find(STRINGS_PARENTHESES_CLOSE) == -1:
-    return false
+  let z = stripLeft(line)
+  if not mtd.data_getter:
+    # definition
+    if line.find(STRINGS_PARENTHESES_OPEN) == -1 or line.find(STRINGS_PARENTHESES_CLOSE) == -1:
+      mtd.data_getter = z.startsWith(STRINGS_MINOR)
+      return if mtd.data_getter: readField(mtd, dropLeft(z, 1)) else: false
+  else:
+    # from getter implementation
+    return readField(mtd, z)
   let x = line.split(STRINGS_PARENTHESES_OPEN)
   if x.len != 2:
     return false
   let m = strip(x[0])
   if not hasContent(m):
     return false
+  let s = m.startsWith(STRINGS_MAJOR)
   let c = m.startsWith(STRINGS_PLUS)
   let f = m.startsWith(STRINGS_EXCLAMATION)
-  let n = if c or f: dropLeft(m, 1) else: m
+  let n = if s or c or f: dropLeft(m, 1) else: m
   let y = strip(x[1]).split(STRINGS_PARENTHESES_CLOSE)
   if y.len != 2:
     return false
@@ -73,6 +83,7 @@ proc readMethod(mtd: LanguageMember, line: string): bool =
   mtd.setupItem(n)
   mtd.data_type = t
   mtd.data_constructor = c
+  mtd.data_setter = s
   mtd.data_sealed = f
   mtd.data_extra = a
 

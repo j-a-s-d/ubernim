@@ -46,13 +46,11 @@ let ppPreviewer: PreprodPreviewer = proc (state: var PreprodState, r: PreprodRes
             return errors.WRONGLY_DEFINED(WORDS_MEMBER)
           if not isValidNimIdentifier(lm.name):
             return errors.INVALID_IDENTIFIER
-          if lm.public and d == DIVISIONS_RECORD:
+          if lm.public and d == DIVISIONS_RECORD and lm.kind == SUBDIVISIONS_FIELDS:
             return errors.RECORDS_DONT_ASTERISK
           if lm.kind == SUBDIVISIONS_FIELDS and ls.hasField(ld, lm.name):
             return errors.ALREADY_DEFINED(spaced(WORDS_FIELD, apostrophe(lm.name)))
-          proc sealedExaminer(member: LanguageMember): bool =
-            not member.data_constructor and member.data_sealed
-          if lm.kind == SUBDIVISIONS_METHODS and ls.hasMethod(ld, lm.name, sealedExaminer):
+          if lm.kind == SUBDIVISIONS_METHODS and ls.hasMethod(ld, lm.name, (member: LanguageMember) => not member.data_constructor and not member.data_getter and not member.data_setter and member.data_sealed):
             return errors.ALREADY_DEFINED(spaced(WORDS_SEALED, WORDS_METHOD, apostrophe(lm.name)))
           ld.members.add(lm)
 
