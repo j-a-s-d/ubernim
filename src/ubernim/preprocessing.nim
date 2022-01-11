@@ -46,12 +46,16 @@ let ppPreviewer: PreprodPreviewer = proc (state: var PreprodState, r: PreprodRes
             return errors.WRONGLY_DEFINED(WORDS_MEMBER)
           if not isValidNimIdentifier(lm.name):
             return errors.INVALID_IDENTIFIER
-          if lm.public and d == DIVISIONS_RECORD and lm.kind == SUBDIVISIONS_FIELDS:
-            return errors.RECORDS_DONT_ASTERISK
-          if lm.kind == SUBDIVISIONS_FIELDS and ls.hasField(ld, lm.name):
-            return errors.ALREADY_DEFINED(spaced(WORDS_FIELD, apostrophe(lm.name)))
-          if lm.kind == SUBDIVISIONS_METHODS and ls.hasMethod(ld, lm.name, (member: LanguageMember) => not member.data_constructor and not member.data_getter and not member.data_setter and member.data_sealed):
-            return errors.ALREADY_DEFINED(spaced(WORDS_SEALED, WORDS_METHOD, apostrophe(lm.name)))
+          if lm.kind == SUBDIVISIONS_FIELDS:
+            if lm.public and d == DIVISIONS_RECORD:
+              return errors.RECORDS_DONT_ASTERISK
+            if ls.hasField(ld, lm.name):
+              return errors.ALREADY_DEFINED(spaced(WORDS_FIELD, apostrophe(lm.name)))
+            if ls.hasMethod(ld, lm.name, (member: LanguageMember) => not member.data_constructor and not member.data_getter and not member.data_setter and member.data_sealed):
+              return errors.ALREADY_DEFINED(spaced(WORDS_SEALED, WORDS_METHOD, apostrophe(lm.name)))
+          else:
+            if (lm.data_getter or lm.data_setter) and ls.hasField(ld, lm.name):
+              return errors.ALREADY_DEFINED(spaced(WORDS_FIELD, apostrophe(lm.name)))
           ld.members.add(lm)
 
 let ppTranslater: PreprodTranslater = proc (state: var PreprodState, r: PreprodResult): PreprodResult =

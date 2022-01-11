@@ -19,77 +19,8 @@ and all this via a simple preprocessing approach (built on top of Preprod, Rodst
 
 ## COMMANDS
 
-### UNIMCMDS feature commands:
-
-* **.unim:version** *(since 0.2.0)*
-* **.unim:flush** *(since 0.2.1)*
-
-See them working in the *directives* example.
-
-### SWITCHES feature commands:
-
-* **.nimc:project** *(since 0.1.0)*
-* **.nimc:config** *(since 0.1.0)*
-* **.nimc:define** *(since 0.1.0)*
-* **.nimc:switch** *(since 0.1.0)*
-
-See them working in the *directives* example.
-
-### SHELLCMD feature commands:
-
-* **.exec** *(since 0.1.0)*
-
-See them working in the *actions* example.
-
-### FSACCESS feature commands:
-
-* **.write** *(since 0.1.0)*
-* **.append** *(since 0.1.0)*
-* **.copy** *(since 0.1.0)*
-* **.move** *(since 0.1.0)*
-* **.remove** *(since 0.1.0)*
-* **.mkdir** *(since 0.1.0)*
-* **.cpdir** *(since 0.1.0)*
-* **.rmdir** *(since 0.1.0)*
-* **.chdir** *(since 0.1.0)*
-
-See them working in the *actions* example.
-
-### REQUIRES feature commands:
-
-* **.require** *(since 0.1.0)*
-* **.requirable** *(since 0.2.2)*
-
-See them working in the *coding* example.
-
-### LANGUAGE feature commands:
-
-* **.compound** *(since 0.1.0)*
-* **.interface** *(since 0.1.0)*
-* **.protocol** *(since 0.1.0)*
-* **.class** *(since 0.1.0)*
-* **.record** *(since 0.1.0)*
-* **.pragmas** *(since 0.1.0)*
-* **.applies** *(since 0.1.0)*
-* **.implies** *(since 0.1.0)*
-* **.extends** *(since 0.1.0)*
-* **.fields** *(since 0.1.0)*
-* **.methods** *(since 0.1.0)*
-* **.templates** *(since 0.1.0)*
-* **.docs** *(since 0.1.0)*
-* **.constructor** *(since 0.1.0)*
-* **.getter** *(since 0.3.0)*
-* **.setter** *(since 0.3.0)*
-* **.method** *(since 0.1.0)*
-* **.template** *(since 0.1.0)*
-* **.routine** *(since 0.1.0)*
-* **.code** *(since 0.1.0)*
-* **.end** *(since 0.1.0)*
-* **.note** *(since 0.1.0)*
-* **.push** *(since 0.2.0)*
-* **.pop** *(since 0.2.0)*
-
-See them working in the *coding* example.
+All the preprocessing work is specified via commands.
+Check the full available [`commands`](docs/commands.md) list.
 
 ## RELATED
 
@@ -102,6 +33,9 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 11-01-22 **[0.3.1]**
+	- added docs/commands.md documentation file
+	- improved name clash detection for properties
 * 08-01-22 **[0.3.0]**
 	- added .getter/.setter commands to LANGUAGE feature to wrap the native way of defining properties
 	- added var modifier for .method and .setter commands

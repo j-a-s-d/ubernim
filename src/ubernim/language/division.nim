@@ -12,13 +12,13 @@ func newLanguageDivision*(kind: string, name: string): LanguageDivision =
   result.kind = kind
   result.data_sealed = kind == DIVISIONS_CLASS and name.startsWith(STRINGS_EXCLAMATION)
   let n = if result.data_sealed: dropLeft(name, 1) else: name
-  result.setupItem(n)
+  result.setupMember(n)
   result.members = @[]
 
 func openDivision*(state: var PreprodState, kind: string, name: string) =
   let ls = loadLanguageState(state)
   var item = LanguageMember()
-  item.setupItem(name)
+  item.setupMember(name)
   let p = ls.getDivision(item.name)
   if not assigned(p):
     ls.divisions.add(newLanguageDivision(kind, name))

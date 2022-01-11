@@ -18,6 +18,7 @@ func `$`*(mbr: LanguageMember): string =
     "data_constructor: " & $mbr.data_constructor,
     "data_getter: " & $mbr.data_getter,
     "data_setter: " & $mbr.data_setter,
+    "data_var: " & $mbr.data_var,
     "data_sealed: " & $mbr.data_sealed,
     "generics: " & $mbr.generics,
     "pragmas: " & $mbr.pragmas,
@@ -25,7 +26,7 @@ func `$`*(mbr: LanguageMember): string =
     "rendered: " & $mbr.rendered
   ].join(STRINGS_COMMA & STRINGS_SPACE))
 
-func setupItem*(item: LanguageMember, name: string) =
+func setupMember*(item: LanguageMember, name: string) =
   item.public = name.endsWith(STRINGS_ASTERISK)
   item.name = if item.public: dropRight(name, 1) else: name
   if item.name.find(STRINGS_BRACKETS_OPEN) > -1 and item.name.find(STRINGS_BRACKETS_CLOSE) > -1:
@@ -44,7 +45,7 @@ proc readField(fld: LanguageMember, line: string): bool =
   let t = strip(lp[1])
   if not haveContent(n, t) or t.find(STRINGS_EQUAL) != -1:
     return false
-  fld.setupItem(n)
+  fld.setupMember(n)
   if fld.kind == DIVISIONS_RECORD and fld.public:
     return false
   fld.data_type = t
@@ -80,7 +81,7 @@ proc readMethod(mtd: LanguageMember, line: string): bool =
   let t = d.replace(STRINGS_COLON, STRINGS_EMPTY).replace(STRINGS_EQUAL, STRINGS_EMPTY).strip()
   #if (not c and not hasContent(t)): # or t.find(STRINGS_EQUAL) != -1:
   #  return false
-  mtd.setupItem(n)
+  mtd.setupMember(n)
   mtd.data_type = t
   mtd.data_constructor = c
   mtd.data_setter = s
