@@ -3,7 +3,7 @@
 
 import
   xam, preprod,
-  features, errors,
+  features, errors, constants,
   language / [header, member, state]
 
 var ppOptions: PreprodOptions = PREPROD_DEFAULT_OPTIONS
@@ -60,24 +60,27 @@ let ppPreviewer: PreprodPreviewer = proc (state: var PreprodState, r: PreprodRes
 
 let ppTranslater: PreprodTranslater = proc (state: var PreprodState, r: PreprodResult): PreprodResult =
   result = r
-  if state.hasPropertyValue(KEY_DIVISION):
-    let s = state.getPropertyValue(KEY_SUBDIVISION)
-    if state.getPropertyValue(KEY_DIVISION) == DIVISIONS_NOTE:
-      if s == SUBDIVISIONS_BODY:
-        state.setPropertyValue(KEY_SUBDIVISION, STRINGS_EMPTY)
+  if hasText(r.output):
+    if state.hasPropertyValue(KEY_DIVISION):
+      let s = state.getPropertyValue(KEY_SUBDIVISION)
+      if state.getPropertyValue(KEY_DIVISION) == DIVISIONS_NOTE:
+        if s == SUBDIVISIONS_BODY:
+          state.setPropertyValue(KEY_SUBDIVISION, STRINGS_EMPTY)
+          return OK
+        else:
+          return GOOD(STRINGS_NUMERAL & STRINGS_SPACE & r.output)
+      if s == SUBDIVISIONS_DOCS:
+        let ls = loadLanguageState(state)
+        let lm = ls.currentImplementation
+        if assigned(lm) and (hasContent(lm.docs) or hasContent(r.output)):
+          lm.docs.add(r.output)
+        return OK
+      elif s != SUBDIVISIONS_CLAUSES and s != SUBDIVISIONS_BODY:
         return OK
       else:
-        return GOOD(STRINGS_NUMERAL & STRINGS_SPACE & r.output)
-    if s == SUBDIVISIONS_DOCS:
-      let ls = loadLanguageState(state)
-      let lm = ls.currentImplementation
-      if assigned(lm) and (hasContent(lm.docs) or hasContent(r.output)):
-        lm.docs.add(r.output)
-      return OK
-    elif s != SUBDIVISIONS_CLAUSES and s != SUBDIVISIONS_BODY:
-      return OK
-    else:
-      state.setPropertyValue(PREPROD_LINE_APPENDIX_KEY, STRINGS_EOL)
+        state.setPropertyValue(PREPROD_LINE_APPENDIX_KEY, STRINGS_EOL)
+    elif state.getPropertyValue(UNIM_MODE_KEY) == MODE_STRICT:
+      return errors.STRICT_MODE
 
 proc makePreprocessor*(filename: string): PreprodPreprocessor =
   newPreprodPreprocessor(filename, ppOptions, ppCommands, ppTranslater, ppPreviewer)

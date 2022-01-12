@@ -16,7 +16,8 @@ proc initUNIMCMDS(): UbernimFeature =
     name: FEATURE,
     commands: @[
       makeCommand(FEATURE, "unim:version", PreprodArguments.uaOne, doVersion),
-      makeCommand(FEATURE, "unim:flush", PreprodArguments.uaOne, doFlush)
+      makeCommand(FEATURE, "unim:flush", PreprodArguments.uaOne, doFlush),
+      makeCommand(FEATURE, "unim:mode", PreprodArguments.uaOne, doMode)
     ]
   )
 

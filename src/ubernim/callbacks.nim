@@ -4,7 +4,7 @@
 import
   os, strutils,
   xam, preprod,
-  core, errors,
+  performers, errors, rendering, constants,
   language / [header, member, division, state]
 
 # TEMPLATES
@@ -44,7 +44,15 @@ topCallback doFlush:
     let flag = parameters[0].toLower()
     if flag notin [WORDS_YES, WORDS_NO]:
       return errors.BAD_FLAG
-    state.setPropertyValue(UNIM_FLUSH_KEY, parameters[0])
+    state.setPropertyValue(UNIM_FLUSH_KEY, flag)
+  return OK
+
+topCallback doMode:
+  if state.isTranslating():
+    let mode = parameters[0].toLower()
+    if mode notin [MODE_FREE, MODE_STRICT]:
+      return errors.BAD_MODE
+    state.setPropertyValue(UNIM_MODE_KEY, mode)
   return OK
 
 # SWITCHES
@@ -136,14 +144,16 @@ topCallback doRequire:
   result = OK
   if state.isPreviewing():
     let ls = loadLanguageState(state)
+    if ls.main == parameters[0]:
+      return errors.CANT_BE_REQUIRED
     if ls.unit == parameters[0]:
       return errors.NO_RECURSIVE_REQUIRE
     let stls = makeLanguageState()
-    stls.main = false
     stls.unit = parameters[0]
+    stls.main = ls.main
     stls.signature = ls.signature
     stls.semver = ls.semver
-    var st = preprocessPerformer(parameters[0], stls)
+    var st = preprocessDoer(parameters[0], stls)
     stls.divisions.each d:
       if d.public and not d.imported:
         let p = ls.getDivision(d.name)
@@ -161,7 +171,7 @@ topCallback doRequirable:
     if flag notin [WORDS_YES, WORDS_NO]:
       return errors.BAD_FLAG
     let ls = loadLanguageState(state)
-    if not ls.main and flag == WORDS_NO:
+    if ls.main != ls.unit and flag == WORDS_NO:
       return errors.CANT_BE_REQUIRED
   return OK
 
@@ -244,10 +254,9 @@ func renderDivision(ls: LanguageState, d: LanguageDivision): string =
     return STRINGS_EMPTY
 
 proc startDivision(state: var PreprodState, division, subdivision, id: string): PreprodResult =
-  let ls = loadLanguageState(state)
   if state.isPreviewing():
-    let p = ls.getDivision(id)
-    if assigned(p):
+    let ls = loadLanguageState(state)
+    if ls.hasDivision(id):
       return errors.ALREADY_DEFINED(apostrophe(id))
   state.setPropertyValue(KEY_DIVISION, division)
   state.setPropertyValue(KEY_SUBDIVISION, subdivision)

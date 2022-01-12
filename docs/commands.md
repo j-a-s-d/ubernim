@@ -13,20 +13,26 @@ This is the documentation of the ubernim commands (separated by preprod features
 * **.unim:flush** *(since 0.2.1)*
 	- specifies if the current file will emit output as a file
 	- values: yes/no (default: yes)
-	- example: `.unim:flush: no`
+	- note: this is useful for files where compounds, interfaces or protocols are defined and exported
+	- example: `.unim:flush no`
+* **.unim:mode** *(since 0.3.2)*
+	- specifies if the following lines in the file can be not ubernim lines
+	- values: free/strict (default: free)
+	- note: this is useful to restrict portions or entire files from containing nim code
+	- example: `.unim:mode strict`
 
-See them working in the *directives* example.
+See them working in the *coding* example.
 
 ### SWITCHES feature commands:
 
 * **.nimc:project** *(since 0.1.0)*
 	- specifies the project file name for the nim compile command, if you don't specify any file name the transpile will be done but the nim compiler won't be invoked
 	- values: any valid file name (typically a .nim extension file)
-	- example: `.nimc:project: file.nim`
+	- example: `.nimc:project file.nim`
 * **.nimc:config** *(since 0.1.0)*
 	- specifies the project configuration file name for the nim compile command, if you don't specify any file name the defines and switches will be passed via command line on compiler invokation
 	- values: any valid file name (typically a .nim.cfg extension file)
-	- example: `.nimc:config: file.nim.cfg`
+	- example: `.nimc:config file.nim.cfg`
 * **.nimc:define** *(since 0.1.0)*
 	- specifies a define name to be passed to the nim compiler
 	- values: any valid define name
@@ -97,6 +103,7 @@ See them working in the *actions* example.
 * **.requirable** *(since 0.2.2)*
 	- specifies if the current ubernim file can be required from other ubernim file
 	- values: yes/no (default: yes)
+	- note: the main file is not requirable by default and that can not be changed
 	- example: `.requirable no`
 
 See them working in the *coding* example.
@@ -132,7 +139,7 @@ See them working in the *coding* example.
 	- values: any valid existing compound, interface or protocol
 	- example: `.applies SomeInterface`
 * **.implies** *(since 0.1.0)*
-	- specifies a class or record which structure and items will be copied inside the current class or record
+	- specifies a class or record which fields will be copied inside the current class or record
 	- values: any valid existing class or record (type must match)
 	- example: `.implies AnotherClass`
 * **.extends** *(since 0.1.0)*

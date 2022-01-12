@@ -3,7 +3,7 @@
 
 import
   rodster, xam, preprod,
-  core, preprocessing, errors,
+  performers, preprocessing, rendering, errors, constants, compilation,
   language / [header, division, state]
 
 use os,paramCount
@@ -34,12 +34,13 @@ template done(errorlevel: int) = quit(ansiGreen("* DONE " & parenthesize($errorl
 
 errorHandler = (msg: string) => err msg
 
-preprocessPerformer = proc (filename: string, ls: LanguageState): var PreprodState =
+preprocessDoer = proc (filename: string, ls: LanguageState): var PreprodState =
   # setup preprocessor
   var pp = makePreprocessor(filename)
   storeLanguageState(pp.state, ls)
   pp.state.setPropertyValue(NIMC_PROJECT_KEY, filename.changeFileExt(NIM_EXTENSION))
-  pp.state.setPropertyValue(UNIM_FLUSH_KEY, WORDS_YES);
+  pp.state.setPropertyValue(UNIM_FLUSH_KEY, WORDS_YES)
+  pp.state.setPropertyValue(UNIM_MODE_KEY, MODE_FREE)
   # run preprocessor
   var r = pp.run()
   if not r.ok:
@@ -71,8 +72,8 @@ appEvents.main = proc (app: RodsterApplication) =
   ls.semver = nfo.getVersion()
   ls.signature = spaced(WORDS_GENERATED, WORDS_WITH, kvm[APP_VERSION_KEY])
   ls.unit = kvm[APP_INPUT_KEY]
-  ls.main = true
-  var state = preprocessPerformer(ls.unit, ls)
+  ls.main = ls.unit
+  var state = preprocessDoer(ls.unit, ls)
   try:
     kvm[APP_ERRORLEVEL_KEY] = $compilationPerformer(state)
   finally:

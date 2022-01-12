@@ -14,7 +14,7 @@ template makeLanguageState*(): LanguageState =
     semver: newSemanticVersion(),
     signature: STRINGS_EMPTY,
     unit: STRINGS_EMPTY,
-    main: false,
+    main: STRINGS_EMPTY,
     currentName: STRINGS_EMPTY,
     currentKind: STRINGS_EMPTY,
     currentImplementation: nil,
@@ -41,7 +41,7 @@ func getDivision*(ls: LanguageState, name: string): LanguageDivision =
       return p
   return nil
 
-proc getMember*(ls: LanguageState, d: LanguageDivision, kind, name: string): LanguageMember =
+func getMember*(ls: LanguageState, d: LanguageDivision, kind, name: string): LanguageMember =
   var m = d
   while assigned(m):
     m.members.each f:
@@ -50,9 +50,12 @@ proc getMember*(ls: LanguageState, d: LanguageDivision, kind, name: string): Lan
     m = ls.getDivision(m.extends)
   return nil
 
-const DUMMY_EXAMINER = proc (member: LanguageMember): bool = true
+const DUMMY_EXAMINER = func (member: LanguageMember): bool = true
 
-proc hasMember*(ls: LanguageState, d: LanguageDivision, kind, name: string, examiner: SingleArgProc[LanguageMember, bool] = DUMMY_EXAMINER): bool =
+func hasDivision*(ls: LanguageState, name: string): bool =
+  assigned(getDivision(ls, name))
+
+func hasMember*(ls: LanguageState, d: LanguageDivision, kind, name: string, examiner: SingleArgProc[LanguageMember, bool] = DUMMY_EXAMINER): bool =
   var m = d
   while assigned(m):
     m.members.each f:
@@ -62,13 +65,13 @@ proc hasMember*(ls: LanguageState, d: LanguageDivision, kind, name: string, exam
     m = ls.getDivision(m.extends)
   return false
 
-proc hasField*(ls: LanguageState, d: LanguageDivision, name: string, examiner: SingleArgProc[LanguageMember, bool] = DUMMY_EXAMINER): bool =
+func hasField*(ls: LanguageState, d: LanguageDivision, name: string, examiner: SingleArgProc[LanguageMember, bool] = DUMMY_EXAMINER): bool =
   ls.hasMember(d, SUBDIVISIONS_FIELDS, name, examiner)
 
-proc hasMethod*(ls: LanguageState, d: LanguageDivision, name: string, examiner: SingleArgProc[LanguageMember, bool] = DUMMY_EXAMINER): bool =
+func hasMethod*(ls: LanguageState, d: LanguageDivision, name: string, examiner: SingleArgProc[LanguageMember, bool] = DUMMY_EXAMINER): bool =
   ls.hasMember(d, SUBDIVISIONS_METHODS, name, examiner)
 
-proc hasTemplate*(ls: LanguageState, d: LanguageDivision, name: string, examiner: SingleArgProc[LanguageMember, bool] = DUMMY_EXAMINER): bool =
+func hasTemplate*(ls: LanguageState, d: LanguageDivision, name: string, examiner: SingleArgProc[LanguageMember, bool] = DUMMY_EXAMINER): bool =
   ls.hasMember(d, SUBDIVISIONS_TEMPLATES, name, examiner)
 
 func isDivisionInherited*(ls: LanguageState, name: string): bool =

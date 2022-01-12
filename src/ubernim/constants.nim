@@ -1,0 +1,14 @@
+# ubernim / CONSTANTS #
+#---------------------#
+
+const
+  UNIM_FLUSH_KEY* = "UNIM_FLUSH"
+  UNIM_MODE_KEY* = "UNIM_MODE"
+  MODE_FREE* = "free"
+  MODE_STRICT* = "strict"
+  NIMC_DEFINES_KEY* = "NIMC_DEFINES"
+  NIMC_SWITCHES_KEY* = "NIMC_SWITCHES"
+  NIMC_CFGFILE_KEY* = "NIMC_CFGFILE"
+  NIMC_PROJECT_KEY* = "NIMC_PROJECT"
+  NIMC_INVOKATION* = "nim c"
+  NIMC_DEFINE* = "--define:"

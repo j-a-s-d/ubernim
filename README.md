@@ -33,6 +33,9 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 12-01-22 **[0.3.2]**
+	- added .unim:mode command to UNIMCMDS feature to disallow the processing of files that contain raw nim code
+	- general improvements
 * 11-01-22 **[0.3.1]**
 	- added docs/commands.md documentation file
 	- improved name clash detection for properties

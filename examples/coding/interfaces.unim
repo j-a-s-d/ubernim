@@ -1,6 +1,14 @@
 .# ubernim / CODING EXAMPLE #
 .#--------------------------#
 
+.# the unim:* commnads are packed into the UNIMCMDS Preprod feature,
+.# so you can disable them by a simple '.$ FEATURE UNIMCMDS off'
+
+.# you can specify the minimum version of ubernim required to process this file
+.unim:version 0.3.2
+.unim:flush no
+.unim:mode strict
+
 .interface Stringable* # an interface can only have methods
 .methods
   toString(): string
