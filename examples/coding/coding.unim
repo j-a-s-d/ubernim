@@ -217,11 +217,12 @@ if aaa.testing(1):
 .push inline
 
 .routine makeGreetingMessageTo(name: string): string # you can define top level routines too
-.pragmas deprecated: "do not use it", noSideEffect
+.uses strutils.join, md5
+.pragmas deprecated: "do not use it", used
 .docs
   This is a global routine.
 .code
-  "hello " & name & "!"
+  join(["hello", name, "!"], " ") & " | " & getMD5(name)
 .end
 
 .pop

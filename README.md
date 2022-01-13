@@ -33,6 +33,9 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 13-01-22 **[0.3.3]**
+	- added .uses command to LANGUAGE feature to add support for local imports to .routine, .constructor, .getter, .setter, .method and .template
+	- general improvements
 * 12-01-22 **[0.3.2]**
 	- added .unim:mode command to UNIMCMDS feature to disallow the processing of files that contain raw nim code
 	- general improvements

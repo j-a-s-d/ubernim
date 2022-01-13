@@ -18,6 +18,7 @@ const
   CODEGEN_STATIC* = "static"
   CODEGEN_ECHO* = "echo"
   CODEGEN_CAST* = "cast"
+  CODEGEN_FROM* = "from"
   CODEGEN_CALL* = "()"
   CODEGEN_DOCS* = "##"
   CODEGEN_OF* = "of"
@@ -31,6 +32,7 @@ const
   CODEGEN_PROC* = "proc"
   CODEGEN_FUNC* = "func"
   CODEGEN_TUPLE* = "tuple"
+  CODEGEN_IMPORT* = "import"
   CODEGEN_METHOD* = "method"
   CODEGEN_PARENT* = "parent"
   CODEGEN_OBJECT* = "object"
@@ -103,6 +105,20 @@ func renderParent*(parentClass: string): string =
     CODEGEN_TEMPLATE & STRINGS_SPACE & CODEGEN_PARENT & STRINGS_COLON & STRINGS_SPACE &
       parentClass & STRINGS_SPACE & STRINGS_EQUAL & STRINGS_SPACE & CODEGEN_PROCCALL & STRINGS_SPACE &
       CODEGEN_CAST & bracketize(parentClass) & parenthesize(CODEGEN_SELF)
+
+func renderUses*(uses: StringSeq): string =
+  if hasContent(uses):
+    result = STRINGS_EOL
+    uses.each u:
+      if u.find(STRINGS_PERIOD) > -1:
+        let p = u.split(STRINGS_PERIOD)
+        result &= spaced(CODEGEN_FROM, strip(p[0]), CODEGEN_IMPORT, strip(p[1]))
+      else:
+        result &= spaced(CODEGEN_IMPORT, strip(u))
+      result &= STRINGS_EOL
+    result &= STRINGS_EOL
+  else:
+    result = STRINGS_EMPTY
 
 func renderConstructorBegin*(m: LanguageMember, isClass: bool, className: string): string =
   let kw = if m.pragmas.find(NIMLANG_NOSIDEEFFECT) != -1: CODEGEN_FUNC else: CODEGEN_PROC

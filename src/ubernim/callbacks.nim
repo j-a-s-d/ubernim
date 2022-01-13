@@ -144,13 +144,15 @@ topCallback doRequire:
   result = OK
   if state.isPreviewing():
     let ls = loadLanguageState(state)
-    if ls.main == parameters[0]:
+    if ls.isMainFile(parameters[0]):
       return errors.CANT_BE_REQUIRED
-    if ls.unit == parameters[0]:
+    if ls.isCurrentFile(parameters[0]):
       return errors.NO_RECURSIVE_REQUIRE
+    if ls.isCircularReference(parameters[0]):
+      return errors.NO_CIRCULAR_REFERENCE
     let stls = makeLanguageState()
-    stls.unit = parameters[0]
-    stls.main = ls.main
+    stls.callstack.add(ls.callstack)
+    stls.callstack.push(parameters[0])
     stls.signature = ls.signature
     stls.semver = ls.semver
     var st = preprocessDoer(parameters[0], stls)
@@ -171,7 +173,7 @@ topCallback doRequirable:
     if flag notin [WORDS_YES, WORDS_NO]:
       return errors.BAD_FLAG
     let ls = loadLanguageState(state)
-    if ls.main != ls.unit and flag == WORDS_NO:
+    if not ls.inMainFile() and flag == WORDS_NO:
       return errors.CANT_BE_REQUIRED
   return OK
 
@@ -589,13 +591,27 @@ childCallback doCode:
     let lm = ls.currentImplementation
     lm.rendered = true
     if d == DIVISIONS_CONSTRUCTOR:
-      return GOOD(renderConstructorBegin(lm, lc, ln))
+      return GOOD(renderUses(lm.uses) & renderConstructorBegin(lm, lc, ln))
     elif d == DIVISIONS_METHOD or d == DIVISIONS_GETTER or d == DIVISIONS_SETTER:
-      return GOOD(renderMethodBegin(lm, lc, ln, lp))
+      return GOOD(renderUses(lm.uses) & renderMethodBegin(lm, lc, ln, lp))
     elif d == DIVISIONS_TEMPLATE:
-      return GOOD(renderTemplateBegin(lm, ln))
+      return GOOD(renderUses(lm.uses) & renderTemplateBegin(lm, ln))
     else: # if d == DIVISIONS_ROUTINE:
-      return GOOD(renderRoutineBegin(lm))
+      return GOOD(renderUses(lm.uses) & renderRoutineBegin(lm))
+  return OK
+
+childCallback doUses:
+  let d = state.getPropertyValue(KEY_DIVISION)
+  if d notin DIVISIONS_WITH_CODE:
+    return errors.CANT_OUTPUT_CODE
+  if state.isTranslating():
+    let ls = loadLanguageState(state)
+    var p = ls.getDivision(ls.currentName)
+    if not assigned(p):
+      return errors.BAD_STATE
+    if not assigned(ls.currentImplementation):
+      return errors.BAD_STATE
+    ls.currentImplementation.uses.add(parameters.join(STRINGS_SPACE).split(STRINGS_COMMA))
   return OK
 
 childCallback doEnd:
@@ -611,22 +627,16 @@ childCallback doEnd:
   closeDivision(state)
   if state.isTranslating():
     if d == DIVISIONS_CONSTRUCTOR:
-      let p = if lm.rendered: STRINGS_EMPTY else: renderConstructorBegin(lm, lc, ln) & STRINGS_EOL & CODEGEN_INDENT & CODEGEN_DISCARD
+      let p = if lm.rendered: STRINGS_EMPTY else: renderUses(lm.uses) & renderConstructorBegin(lm, lc, ln) & STRINGS_EOL & CODEGEN_INDENT & CODEGEN_DISCARD
       return GOOD(p & renderConstructorEnd())
-    elif d == DIVISIONS_GETTER:
-      let p = if lm.rendered: STRINGS_EMPTY else: renderMethodBegin(lm, lc, ln, lp) & STRINGS_EOL & CODEGEN_INDENT & CODEGEN_DISCARD
-      return GOOD(p & renderMethodEnd())
-    elif d == DIVISIONS_SETTER:
-      let p = if lm.rendered: STRINGS_EMPTY else: renderMethodBegin(lm, lc, ln, lp) & STRINGS_EOL & CODEGEN_INDENT & CODEGEN_DISCARD
-      return GOOD(p & renderMethodEnd())
-    elif d == DIVISIONS_METHOD:
-      let p = if lm.rendered: STRINGS_EMPTY else: renderMethodBegin(lm, lc, ln, lp) & STRINGS_EOL & CODEGEN_INDENT & CODEGEN_DISCARD
+    elif d == DIVISIONS_GETTER or d == DIVISIONS_SETTER or d == DIVISIONS_METHOD:
+      let p = if lm.rendered: STRINGS_EMPTY else: renderUses(lm.uses) & renderMethodBegin(lm, lc, ln, lp) & STRINGS_EOL & CODEGEN_INDENT & CODEGEN_DISCARD
       return GOOD(p & renderMethodEnd())
     elif d == DIVISIONS_TEMPLATE:
-      let p = if lm.rendered: STRINGS_EMPTY else: renderTemplateBegin(lm, ln) & STRINGS_EOL & CODEGEN_INDENT & CODEGEN_DISCARD
+      let p = if lm.rendered: STRINGS_EMPTY else: renderUses(lm.uses) & renderTemplateBegin(lm, ln) & STRINGS_EOL & CODEGEN_INDENT & CODEGEN_DISCARD
       return GOOD(p & renderTemplateEnd())
     elif d == DIVISIONS_ROUTINE:
-      let p = if lm.rendered: STRINGS_EMPTY else: renderRoutineBegin(lm) & STRINGS_EOL & CODEGEN_INDENT & CODEGEN_DISCARD
+      let p = if lm.rendered: STRINGS_EMPTY else: renderUses(lm.uses) & renderRoutineBegin(lm) & STRINGS_EOL & CODEGEN_INDENT & CODEGEN_DISCARD
       return GOOD(p & renderRoutineEnd())
     elif d == DIVISIONS_NOTE:
       return GOOD(STRINGS_EOL)

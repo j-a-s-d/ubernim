@@ -13,6 +13,9 @@ func newLanguageDivision*(kind: string, name: string): LanguageDivision =
   result.data_sealed = kind == DIVISIONS_CLASS and name.startsWith(STRINGS_EXCLAMATION)
   let n = if result.data_sealed: dropLeft(name, 1) else: name
   result.setupMember(n)
+  result.applies = @[]
+  result.implies = STRINGS_EMPTY
+  result.extends = STRINGS_EMPTY
   result.members = @[]
 
 func openDivision*(state: var PreprodState, kind: string, name: string) =

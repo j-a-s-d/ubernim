@@ -9,12 +9,13 @@ use strutils,startsWith
 use strutils,endsWith
 use strutils,strip
 
+# STATE
+
 template makeLanguageState*(): LanguageState =
   var ads = TLanguageState(
     semver: newSemanticVersion(),
     signature: STRINGS_EMPTY,
-    unit: STRINGS_EMPTY,
-    main: STRINGS_EMPTY,
+    callstack: @[],
     currentName: STRINGS_EMPTY,
     currentKind: STRINGS_EMPTY,
     currentImplementation: nil,
@@ -32,6 +33,22 @@ template freeLanguageState*(state: var PreprodState) =
   if assigned(state.tag):
     reset(state.tag)
 
+# CALLSTACK
+
+template inMainFile*(ls: LanguageState): bool =
+  ls.callstack.len == 1
+
+template isMainFile*(ls: LanguageState, name: string): bool =
+  ls.callstack[0] == name
+
+template isCurrentFile*(ls: LanguageState, name: string): bool =
+  ls.callstack[^1] == name
+
+template isCircularReference*(ls: LanguageState, name: string): bool =
+  name in ls.callstack
+
+# DIVISION
+
 func getDivision*(ls: LanguageState, name: string): LanguageDivision =
   let l = name.strip()
   let m = if l.endsWith(STRINGS_ASTERISK): dropRight(l, 1) else: l
@@ -40,6 +57,19 @@ func getDivision*(ls: LanguageState, name: string): LanguageDivision =
     if p.name == n:
       return p
   return nil
+
+func hasDivision*(ls: LanguageState, name: string): bool =
+  assigned(getDivision(ls, name))
+
+func isDivisionInherited*(ls: LanguageState, name: string): bool =
+  ls.divisions.each p:
+    if p.extends == name:
+      return true
+  return false
+
+# MEMBER
+
+const DUMMY_EXAMINER = func (member: LanguageMember): bool = true
 
 func getMember*(ls: LanguageState, d: LanguageDivision, kind, name: string): LanguageMember =
   var m = d
@@ -50,12 +80,7 @@ func getMember*(ls: LanguageState, d: LanguageDivision, kind, name: string): Lan
     m = ls.getDivision(m.extends)
   return nil
 
-const DUMMY_EXAMINER = func (member: LanguageMember): bool = true
-
-func hasDivision*(ls: LanguageState, name: string): bool =
-  assigned(getDivision(ls, name))
-
-func hasMember*(ls: LanguageState, d: LanguageDivision, kind, name: string, examiner: SingleArgProc[LanguageMember, bool] = DUMMY_EXAMINER): bool =
+func hasMember(ls: LanguageState, d: LanguageDivision, kind, name: string, examiner: SingleArgProc[LanguageMember, bool] = DUMMY_EXAMINER): bool =
   var m = d
   while assigned(m):
     m.members.each f:
@@ -73,9 +98,3 @@ func hasMethod*(ls: LanguageState, d: LanguageDivision, name: string, examiner: 
 
 func hasTemplate*(ls: LanguageState, d: LanguageDivision, name: string, examiner: SingleArgProc[LanguageMember, bool] = DUMMY_EXAMINER): bool =
   ls.hasMember(d, SUBDIVISIONS_TEMPLATES, name, examiner)
-
-func isDivisionInherited*(ls: LanguageState, name: string): bool =
-  ls.divisions.each p:
-    if p.extends == name:
-      return true
-  return false

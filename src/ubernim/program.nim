@@ -47,7 +47,7 @@ preprocessDoer = proc (filename: string, ls: LanguageState): var PreprodState =
     errorHandler(r.output)
   # emit output
   if pp.state.getPropertyValue(UNIM_FLUSH_KEY) == WORDS_YES:
-    if not writeToFile(pp.state.getPropertyValue(NIMC_PROJECT_KEY), renderVersion(spaced(ls.unit, ls.signature)) & r.output):
+    if not writeToFile(pp.state.getPropertyValue(NIMC_PROJECT_KEY), renderVersion(spaced(ls.callstack[^1], ls.signature)) & r.output):
       errorHandler(errors.CANT_WRITE_OUTPUT.output)
   pp.state
 
@@ -71,9 +71,8 @@ appEvents.main = proc (app: RodsterApplication) =
   var ls = makeLanguageState()
   ls.semver = nfo.getVersion()
   ls.signature = spaced(WORDS_GENERATED, WORDS_WITH, kvm[APP_VERSION_KEY])
-  ls.unit = kvm[APP_INPUT_KEY]
-  ls.main = ls.unit
-  var state = preprocessDoer(ls.unit, ls)
+  ls.callstack.push(kvm[APP_INPUT_KEY])
+  var state = preprocessDoer(kvm[APP_INPUT_KEY], ls)
   try:
     kvm[APP_ERRORLEVEL_KEY] = $compilationPerformer(state)
   finally:

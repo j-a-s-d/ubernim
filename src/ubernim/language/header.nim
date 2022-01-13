@@ -54,6 +54,7 @@ type
     data_var*: bool # method: var flag & fields: unused
     data_sealed*: bool # class and methods: sealed flag & fields: unused
     pragmas*: string
+    uses*: StringSeq
     docs*: StringSeq
     rendered*: bool
   LanguageMembers* = seq[LanguageMember]
@@ -74,8 +75,7 @@ type
   TLanguageState* = object of PreprodTag
     semver*: SemanticVersion
     signature*: string
-    unit*: string
-    main*: string
+    callstack*: stack[string]
     currentName*: string
     currentKind*: string
     currentImplementation*: LanguageMember

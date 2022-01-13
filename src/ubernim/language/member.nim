@@ -22,6 +22,7 @@ func `$`*(mbr: LanguageMember): string =
     "data_sealed: " & $mbr.data_sealed,
     "generics: " & $mbr.generics,
     "pragmas: " & $mbr.pragmas,
+    "uses: " & $mbr.uses,
     "docs: " & $mbr.docs,
     "rendered: " & $mbr.rendered
   ].join(STRINGS_COMMA & STRINGS_SPACE))

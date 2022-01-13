@@ -193,6 +193,10 @@ See them working in the *coding* example.
 	- specifies the code for the current block
 	- values: any valid nim lines after it
 	- example: `.code`
+* **.uses** *(since 0.3.3)*
+	- specifies one or more imports required by the current block
+	- values: any valid nim import in the regular comma separated fashion (except of the from/import syntax that is simplified with a period between the module and the entity)
+	- example: `.uses sequtils, strutils.join, json`
 * **.end** *(since 0.1.0)*
 	- specifies the end of the current block
 	- values: none
