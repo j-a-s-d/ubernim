@@ -89,9 +89,20 @@ echo ex.toString()
 ex.foo:
   echo "RECORD TEMPLATE ***********************************************"
 
+.imports
+  os
+  strutils.split
+  strtabs
+.end
+
 .note
   You can insert a note into the emitted source code.
   Just like this.
+.end
+
+.exports
+  strtabs
+  os
 .end
 
 .protocol BaseProtocol

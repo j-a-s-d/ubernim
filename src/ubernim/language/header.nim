@@ -11,6 +11,8 @@ const
   KEY_SUBDIVISION* = "SUBDIVISION"
   SCOPE_GLOBAL* = "<GLOBAL>"
   DIVISIONS_NOTE* = "NOTE"
+  DIVISIONS_IMPORTS* = "IMPORTS"
+  DIVISIONS_EXPORTS* = "EXPORTS"
   DIVISIONS_COMPOUND* = "COMPOUND"
   DIVISIONS_INTERFACE* = "INTERFACE"
   DIVISIONS_PROTOCOL* = "PROTOCOL"
@@ -75,7 +77,7 @@ type
   TLanguageState* = object of PreprodTag
     semver*: SemanticVersion
     signature*: string
-    callstack*: stack[string]
+    callstack*: StringSeq
     currentName*: string
     currentKind*: string
     currentImplementation*: LanguageMember

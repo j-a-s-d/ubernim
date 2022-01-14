@@ -5,7 +5,15 @@ import
   xam, preprod,
   language / header
 
+type
+  TUbernimPerformers = tuple
+    preprocessDoer: DoubleArgsProc[string, LanguageState, var PreprodState]
+    errorHandler: SingleArgVoidProc[string]
+    compilerInvoker: DoubleArgsProc[string, StringSeq, int]
+
 var
-  preprocessDoer*: DoubleArgsProc[string, LanguageState, var PreprodState]
-  errorHandler*: SingleArgVoidProc[string]
-  compilerInvoker*: DoubleArgsProc[string, StringSeq, int]
+  UbernimPerformers*: TUbernimPerformers = (
+    preprocessDoer: nil,
+    errorHandler: nil,
+    compilerInvoker: nil
+  )

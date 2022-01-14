@@ -205,6 +205,14 @@ See them working in the *coding* example.
 	- specifies a note block that will be emitted as comment lines
 	- values: any valid comment content after it
 	- example: `.note`
+* **.imports** *(since 0.4.0)*
+	- specifies an imports block that will be emitted as import/from-import lines
+	- values: any valid nim import (except of the from/import syntax that is simplified with a period between the module and the entity)
+	- example: `.imports`
+* **.exports** *(since 0.4.0)*
+	- specifies an exports block that will be emitted as export lines
+	- values: any valid nim export
+	- example: `.exports`
 * **.push** *(since 0.2.0)*
 	- specifies pragmas that will be pushed to the nim's pragma stack
 	- values: any valid pragma values you would push in nim

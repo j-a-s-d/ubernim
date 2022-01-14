@@ -33,6 +33,9 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 14-01-22 **[0.4.0]**
+	- added .imports and .exports commands to LANGUAGE feature to add support for imports and exports
+	- general improvements
 * 13-01-22 **[0.3.3]**
 	- added .uses command to LANGUAGE feature to add support for local imports to .routine, .constructor, .getter, .setter, .method and .template
 	- general improvements

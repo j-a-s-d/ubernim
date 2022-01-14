@@ -19,7 +19,7 @@ template makeLanguageState*(): LanguageState =
     currentName: STRINGS_EMPTY,
     currentKind: STRINGS_EMPTY,
     currentImplementation: nil,
-    divisions: @[newLanguageDivision(DIVISIONS_ROUTINES, SCOPE_GLOBAL)]
+    divisions: @[]
   )
   addr(ads)
 

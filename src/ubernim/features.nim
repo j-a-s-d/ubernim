@@ -75,6 +75,8 @@ proc initLANGUAGE(): UbernimFeature =
     name: FEATURE,
     commands: @[
       makeCommand(FEATURE, "note", PreprodArguments.uaNone, doNote),
+      makeCommand(FEATURE, "imports", PreprodArguments.uaNone, doImports),
+      makeCommand(FEATURE, "exports", PreprodArguments.uaNone, doExports),
       makeCommand(FEATURE, "push", PreprodArguments.uaNonZero, doPush),
       makeCommand(FEATURE, "pop", PreprodArguments.uaNone, doPop),
       makeCommand(FEATURE, "pragmas", PreprodArguments.uaNonZero, doPragmas),

@@ -2,9 +2,16 @@
 #---------------------------#
 
 import
-  strutils,
   xam,
   header
+
+use strutils,startsWith
+use strutils,endsWith
+use strutils,strip
+use strutils,replace
+use strutils,join
+use strutils,split
+use strutils,find
 
 func `$`*(mbr: LanguageMember): string =
   bracketize([

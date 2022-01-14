@@ -2,80 +2,48 @@
 #-------------------#
 
 import
-  rodster, xam, preprod,
-  performers, preprocessing, rendering, errors, constants, compilation,
+  rodster, xam,
+  errors, performers, preprocessing, compilation,
   language / [header, division, state]
 
 use os,paramCount
 use os,paramStr
-use os,changeFileExt
-use os,execShellCmd
 
 const
   APP_VERSION_KEY = "app:version"
   APP_INPUT_KEY = "app:input"
   APP_ERRORLEVEL_KEY = "app:errorlevel"
+  APP_USAGE_LINE = spaced(STRINGS_MINUS, "usage" & STRINGS_COLON, "ubernim", chevronize("input.file"))
+  APP_EXAMPLE_LINE = spaced(STRINGS_MINUS, "example" & STRINGS_COLON, "ubernim", "myfile.unim")
 
-proc showHelp(app: RodsterApplication) =
-  let kvm = app.getKvm()
-  echo kvm[APP_VERSION_KEY]
-  echo ""
-  echo "usage"
-  echo "-----"
-  echo ""
-  echo "  ubernim <input.file>"
-  echo "    -- example: ubernim myfile.unim"
-  echo ""
-  halt()
-
-template err(msg: string) = die(ansiRed("* [ERROR] ") & msg)
-
-template done(errorlevel: int) = quit(ansiGreen("* DONE " & parenthesize($errorlevel)), errorlevel)
-
-errorHandler = (msg: string) => err msg
-
-preprocessDoer = proc (filename: string, ls: LanguageState): var PreprodState =
-  # setup preprocessor
-  var pp = makePreprocessor(filename)
-  storeLanguageState(pp.state, ls)
-  pp.state.setPropertyValue(NIMC_PROJECT_KEY, filename.changeFileExt(NIM_EXTENSION))
-  pp.state.setPropertyValue(UNIM_FLUSH_KEY, WORDS_YES)
-  pp.state.setPropertyValue(UNIM_MODE_KEY, MODE_FREE)
-  # run preprocessor
-  var r = pp.run()
-  if not r.ok:
-    errorHandler(r.output)
-  # emit output
-  if pp.state.getPropertyValue(UNIM_FLUSH_KEY) == WORDS_YES:
-    if not writeToFile(pp.state.getPropertyValue(NIMC_PROJECT_KEY), renderVersion(spaced(ls.callstack[^1], ls.signature)) & r.output):
-      errorHandler(errors.CANT_WRITE_OUTPUT.output)
-  pp.state
-
-compilerInvoker = proc (project: string, defines: StringSeq): int =
-  let cmd = spaced(NIMC_INVOKATION, spaced(defines), project)
-  #let cres = execCmdEx(cmd, options = {poStdErrToStdOut})
-  #echo cres.output
-  #return cres.exitCode
-  return execShellCmd(cmd)
-
-# EVENTS
-
-var appEvents*: RodsterAppEvents = DEFAULT_APPEVENTS
-
-appEvents.initializer = (app: RodsterApplication) => (if paramCount() != 1: app.showHelp() else: app.getKvm[APP_INPUT_KEY] = paramStr(1))
-
-appEvents.main = proc (app: RodsterApplication) =
-  let kvm = app.getKvm()
-  let nfo = app.getInformation()
-  kvm[APP_VERSION_KEY] = spaced(nfo.getTitle(), STRINGS_LOWERCASE_V & $nfo.getVersion())
-  var ls = makeLanguageState()
-  ls.semver = nfo.getVersion()
-  ls.signature = spaced(WORDS_GENERATED, WORDS_WITH, kvm[APP_VERSION_KEY])
-  ls.callstack.push(kvm[APP_INPUT_KEY])
-  var state = preprocessDoer(kvm[APP_INPUT_KEY], ls)
-  try:
-    kvm[APP_ERRORLEVEL_KEY] = $compilationPerformer(state)
-  finally:
+let appEvents* = (
+  initializer: RodsterAppEvent (app: RodsterApplication) => (
+    # setup kvm
+    let kvm = app.getKvm();
+    let nfo = app.getInformation();
+    kvm[APP_VERSION_KEY] = spaced(nfo.getTitle(), STRINGS_LOWERCASE_V & $nfo.getVersion());
+    if paramCount() == 1: kvm[APP_INPUT_KEY] = paramStr(1) else: die lined(kvm[APP_VERSION_KEY], STRINGS_EMPTY, APP_USAGE_LINE, STRINGS_EMPTY, APP_EXAMPLE_LINE, STRINGS_EMPTY);
+    # setup performers
+    UbernimPerformers.preprocessDoer = DefaultPreprocessDoer;
+    UbernimPerformers.compilerInvoker = DefaultCompilerInvoker;
+    UbernimPerformers.errorHandler = (msg: string) => die(spaced(ansiRed(spaced(STRINGS_ASTERISK, bracketize("ERROR"))), msg))
+  ),
+  main: RodsterAppEvent (app: RodsterApplication) => (
+    let kvm = app.getKvm();
+    let nfo = app.getInformation();
+    let ls = makeLanguageState();
+    ls.semver = nfo.getVersion();
+    ls.signature = spaced(WORDS_GENERATED, WORDS_WITH, kvm[APP_VERSION_KEY]);
+    ls.callstack.add(kvm[APP_INPUT_KEY]);
+    ls.divisions.add(makeDefaultDivisions());
+    var state = UbernimPerformers.preprocessDoer(kvm[APP_INPUT_KEY], ls);
+    silent () => (kvm[APP_ERRORLEVEL_KEY] = $compilationPerformer(state));
     freeLanguageState(state)
-
-appEvents.finalizer = (app: RodsterApplication) => done tryParseInt(app.getKvm[APP_ERRORLEVEL_KEY], -1)
+  ),
+  finalizer: RodsterAppEvent (app: RodsterApplication) => (
+    # inform result
+    let errorlevel = tryParseInt(app.getKvm[APP_ERRORLEVEL_KEY], -1);
+    let msg = spaced(STRINGS_ASTERISK, bracketize("DONE"), parenthesize($errorlevel));
+    quit(spaced(if errorlevel == 0: ansiGreen(msg) else: ansiBlue(msg)), errorlevel)
+  )
+)

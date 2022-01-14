@@ -33,6 +33,7 @@ const
   CODEGEN_FUNC* = "func"
   CODEGEN_TUPLE* = "tuple"
   CODEGEN_IMPORT* = "import"
+  CODEGEN_EXPORT* = "export"
   CODEGEN_METHOD* = "method"
   CODEGEN_PARENT* = "parent"
   CODEGEN_OBJECT* = "object"

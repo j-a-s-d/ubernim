@@ -2,10 +2,22 @@
 #---------------------#
 
 import
-  os, strutils,
   xam, preprod,
   performers, errors, rendering, constants,
   language / [header, member, division, state]
+
+use strutils,join
+use strutils,split
+use strutils,toLower
+use os,execShellCmd
+use os,setCurrentDir
+use os,dirExists
+use os,createDir
+use os,copyDir
+use os,removeDir
+use os,copyFile
+use os,moveFile
+use os,tryRemoveFile
 
 # TEMPLATES
 
@@ -112,12 +124,12 @@ topCallback doRmDir:
 
 topCallback doCopy:
   if state.isTranslating():
-    copyfile(parameters[0], parameters[1])
+    copyFile(parameters[0], parameters[1])
   return OK
 
 topCallback doMove:
   if state.isTranslating():
-    movefile(parameters[0], parameters[1])
+    moveFile(parameters[0], parameters[1])
   return OK
 
 topCallback doAppend:
@@ -150,13 +162,13 @@ topCallback doRequire:
       return errors.NO_RECURSIVE_REQUIRE
     if ls.isCircularReference(parameters[0]):
       return errors.NO_CIRCULAR_REFERENCE
-    let stls = makeLanguageState()
-    stls.callstack.add(ls.callstack)
-    stls.callstack.push(parameters[0])
-    stls.signature = ls.signature
-    stls.semver = ls.semver
-    var st = preprocessDoer(parameters[0], stls)
-    stls.divisions.each d:
+    var rls = makeLanguageState()
+    rls.semver = ls.semver
+    rls.signature = ls.signature
+    rls.callstack.add(ls.callstack & parameters[0])
+    rls.divisions.add(makeDefaultDivisions())
+    var rstate = UbernimPerformers.preprocessDoer(parameters[0], rls)
+    rls.divisions.each d:
       if d.public and not d.imported:
         let p = ls.getDivision(d.name)
         if assigned(p):
@@ -164,8 +176,8 @@ topCallback doRequire:
           break
         d.imported = true
         ls.divisions.add(d)
-    freeLanguageState(st)
-    reset(st)
+    freeLanguageState(rstate)
+    reset(rstate)
 
 topCallback doRequirable:
   if state.isPreviewing():
@@ -417,6 +429,16 @@ topCallback doNote:
   state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_BODY)
   return OK
 
+topCallback doImports:
+  state.setPropertyValue(KEY_DIVISION, DIVISIONS_IMPORTS)
+  state.setPropertyValue(KEY_SUBDIVISION, STRINGS_EMPTY)
+  return OK
+
+topCallback doExports:
+  state.setPropertyValue(KEY_DIVISION, DIVISIONS_EXPORTS)
+  state.setPropertyValue(KEY_SUBDIVISION, STRINGS_EMPTY)
+  return OK
+
 topCallback doConstructor:
   state.setPropertyValue(KEY_DIVISION, DIVISIONS_CONSTRUCTOR)
   state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_CLAUSES)
@@ -638,7 +660,7 @@ childCallback doEnd:
     elif d == DIVISIONS_ROUTINE:
       let p = if lm.rendered: STRINGS_EMPTY else: renderUses(lm.uses) & renderRoutineBegin(lm) & STRINGS_EOL & CODEGEN_INDENT & CODEGEN_DISCARD
       return GOOD(p & renderRoutineEnd())
-    elif d == DIVISIONS_NOTE:
+    elif d == DIVISIONS_NOTE or d == DIVISIONS_IMPORTS or d == DIVISIONS_EXPORTS:
       return GOOD(STRINGS_EOL)
   return OK
 

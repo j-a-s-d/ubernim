@@ -34,3 +34,6 @@ func closeDivision*(state: var PreprodState) =
   ls.currentName = STRINGS_EMPTY
   ls.currentKind = STRINGS_EMPTY
   ls.currentImplementation = nil
+
+template makeDefaultDivisions*(): LanguageDivisions =
+  @[newLanguageDivision(DIVISIONS_ROUTINES, SCOPE_GLOBAL)]

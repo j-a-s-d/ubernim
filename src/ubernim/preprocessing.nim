@@ -3,8 +3,13 @@
 
 import
   xam, preprod,
-  features, errors, constants,
+  features, errors, constants, performers, rendering,
   language / [header, member, state]
+
+use os,changeFileExt
+use strutils,find
+use strutils,split
+use strutils,strip
 
 var ppOptions: PreprodOptions = PREPROD_DEFAULT_OPTIONS
 ppOptions.keepBlankLines = false
@@ -29,7 +34,7 @@ let ppPreviewer: PreprodPreviewer = proc (state: var PreprodState, r: PreprodRes
   result = r
   if hasContent(r.output) and state.hasPropertyValue(KEY_DIVISION):
     let d = state.getPropertyValue(KEY_DIVISION)
-    if d != DIVISIONS_NOTE:
+    if d != DIVISIONS_NOTE and d != DIVISIONS_IMPORTS and d != DIVISIONS_EXPORTS:
       let s = state.getPropertyValue(KEY_SUBDIVISION)
       let l = if s == SUBDIVISIONS_DOCS: r.output else: removeComments(state, r.output)
       if hasContent(l) and d notin DIVISIONS_WITH_CODE and s != SUBDIVISIONS_CLAUSES:
@@ -62,13 +67,24 @@ let ppTranslater: PreprodTranslater = proc (state: var PreprodState, r: PreprodR
   result = r
   if hasText(r.output):
     if state.hasPropertyValue(KEY_DIVISION):
+      let d = state.getPropertyValue(KEY_DIVISION)
       let s = state.getPropertyValue(KEY_SUBDIVISION)
-      if state.getPropertyValue(KEY_DIVISION) == DIVISIONS_NOTE:
+      if d == DIVISIONS_NOTE or d == DIVISIONS_IMPORTS or d == DIVISIONS_EXPORTS:
         if s == SUBDIVISIONS_BODY:
           state.setPropertyValue(KEY_SUBDIVISION, STRINGS_EMPTY)
           return OK
         else:
-          return GOOD(STRINGS_NUMERAL & STRINGS_SPACE & r.output)
+          if d == DIVISIONS_NOTE:
+            return GOOD(STRINGS_NUMERAL & STRINGS_SPACE & r.output)
+          else:
+            if d == DIVISIONS_EXPORTS:
+              return GOOD(CODEGEN_EXPORT & STRINGS_SPACE & strip(r.output))
+            else: # d == DIVISIONS_IMPORTS
+              if r.output.find(STRINGS_PERIOD) > -1:
+                let p = r.output.split(STRINGS_PERIOD)
+                return GOOD(spaced(CODEGEN_FROM, strip(p[0]), CODEGEN_IMPORT, strip(p[1])))
+              else:
+                return GOOD(spaced(CODEGEN_IMPORT, strip(r.output)))
       if s == SUBDIVISIONS_DOCS:
         let ls = loadLanguageState(state)
         let lm = ls.currentImplementation
@@ -84,3 +100,20 @@ let ppTranslater: PreprodTranslater = proc (state: var PreprodState, r: PreprodR
 
 proc makePreprocessor*(filename: string): PreprodPreprocessor =
   newPreprodPreprocessor(filename, ppOptions, ppCommands, ppTranslater, ppPreviewer)
+
+let DefaultPreprocessDoer* = proc (filename: string, ls: LanguageState): var PreprodState =
+  # setup preprocessor
+  var pp = makePreprocessor(filename)
+  pp.state.storeLanguageState(ls)
+  pp.state.setPropertyValue(NIMC_PROJECT_KEY, filename.changeFileExt(NIM_EXTENSION))
+  pp.state.setPropertyValue(UNIM_FLUSH_KEY, WORDS_YES)
+  pp.state.setPropertyValue(UNIM_MODE_KEY, MODE_FREE)
+  # run preprocessor
+  var r = pp.run()
+  if not r.ok:
+    UbernimPerformers.errorHandler(r.output)
+  # emit output
+  if pp.state.getPropertyValue(UNIM_FLUSH_KEY) == WORDS_YES:
+    if not writeToFile(pp.state.getPropertyValue(NIMC_PROJECT_KEY), renderVersion(spaced(ls.callstack[^1], ls.signature)) & r.output):
+      UbernimPerformers.errorHandler(errors.CANT_WRITE_OUTPUT.output)
+  pp.state
