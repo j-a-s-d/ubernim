@@ -6,8 +6,6 @@ import
 
 const
   WORDS_AT* = "at"
-  WORDS_NO* = "no"
-  WORDS_YES* = "yes"
   WORDS_FOR* = "for"
   WORDS_WITH* = "with"
   WORDS_FIELD* = "field"
@@ -31,6 +29,7 @@ error BAD_STATE, "bad state"
 error BAD_STATE_IN_PREVIEW, "bad state in preview"
 error BAD_FLAG, "only yes/no values allowed"
 error BAD_MODE, "only free/strict values allowed"
+error BAD_FREQUENCY, "only always/once values allowed"
 error STRICT_MODE, "only ubernim code is allowed in strict mode"
 error ONLY_TOP_LEVEL, "this can only be defined in the top level"
 error DONT_TOP_LEVEL, "this can not be defined in the top level"

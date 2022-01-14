@@ -15,7 +15,9 @@ template makeLanguageState*(): LanguageState =
   var ads = TLanguageState(
     semver: newSemanticVersion(),
     signature: STRINGS_EMPTY,
-    callstack: @[],
+    callstack: newStringSeq(),
+    imported: newStringSeq(),
+    exported: newStringSeq(),
     currentName: STRINGS_EMPTY,
     currentKind: STRINGS_EMPTY,
     currentImplementation: nil,

@@ -61,7 +61,7 @@ type
     rendered*: bool
   LanguageMembers* = seq[LanguageMember]
 
-# STATE
+# DIVISION
 
 type
   LanguageDivision* = ref object of LanguageMember
@@ -78,6 +78,8 @@ type
     semver*: SemanticVersion
     signature*: string
     callstack*: StringSeq
+    imported*: StringSeq
+    exported*: StringSeq
     currentName*: string
     currentKind*: string
     currentImplementation*: LanguageMember

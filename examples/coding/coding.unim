@@ -89,10 +89,17 @@ echo ex.toString()
 ex.foo:
   echo "RECORD TEMPLATE ***********************************************"
 
+.unim:importing once
+
 .imports
   os
   strutils.split
   strtabs
+  os
+.end
+
+.imports
+  os
 .end
 
 .note
@@ -100,8 +107,15 @@ ex.foo:
   Just like this.
 .end
 
+.unim:exporting once
+
 .exports
+  os
   strtabs
+  os
+.end
+
+.exports
   os
 .end
 

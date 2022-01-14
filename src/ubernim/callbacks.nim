@@ -6,6 +6,7 @@ import
   performers, errors, rendering, constants,
   language / [header, member, division, state]
 
+use strutils,strip
 use strutils,join
 use strutils,split
 use strutils,toLower
@@ -54,7 +55,7 @@ topCallback doVersion:
 topCallback doFlush:
   if state.isTranslating():
     let flag = parameters[0].toLower()
-    if flag notin [WORDS_YES, WORDS_NO]:
+    if flag notin [FLAG_YES, FLAG_NO]:
       return errors.BAD_FLAG
     state.setPropertyValue(UNIM_FLUSH_KEY, flag)
   return OK
@@ -65,6 +66,22 @@ topCallback doMode:
     if mode notin [MODE_FREE, MODE_STRICT]:
       return errors.BAD_MODE
     state.setPropertyValue(UNIM_MODE_KEY, mode)
+  return OK
+
+topCallback doImporting:
+  if state.isTranslating():
+    let frequency = parameters[0].toLower()
+    if frequency notin [FREQUENCY_ALWAYS, FREQUENCY_ONCE]:
+      return errors.BAD_FREQUENCY
+    state.setPropertyValue(UNIM_IMPORTING_KEY, frequency)
+  return OK
+
+topCallback doExporting:
+  if state.isTranslating():
+    let frequency = parameters[0].toLower()
+    if frequency notin [FREQUENCY_ALWAYS, FREQUENCY_ONCE]:
+      return errors.BAD_FREQUENCY
+    state.setPropertyValue(UNIM_EXPORTING_KEY, frequency)
   return OK
 
 # SWITCHES
@@ -182,10 +199,10 @@ topCallback doRequire:
 topCallback doRequirable:
   if state.isPreviewing():
     let flag = parameters[0].toLower()
-    if flag notin [WORDS_YES, WORDS_NO]:
+    if flag notin [FLAG_YES, FLAG_NO]:
       return errors.BAD_FLAG
     let ls = loadLanguageState(state)
-    if not ls.inMainFile() and flag == WORDS_NO:
+    if not ls.inMainFile() and flag == FLAG_NO:
       return errors.CANT_BE_REQUIRED
   return OK
 
@@ -633,7 +650,14 @@ childCallback doUses:
       return errors.BAD_STATE
     if not assigned(ls.currentImplementation):
       return errors.BAD_STATE
-    ls.currentImplementation.uses.add(parameters.join(STRINGS_SPACE).split(STRINGS_COMMA))
+    let once = state.getPropertyValue(UNIM_IMPORTING_KEY) == FREQUENCY_ONCE
+    parameters.join(STRINGS_SPACE).split(STRINGS_COMMA).each u:
+      let lu = strip(u)
+      if lu notin ls.imported:
+        ls.imported.add(lu)
+      elif once:
+        continue
+      ls.currentImplementation.uses.add(lu)
   return OK
 
 childCallback doEnd:

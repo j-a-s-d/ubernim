@@ -33,6 +33,9 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 15-01-22 **[0.4.1]**
+	- added .unim:importing and .unim:exporting commands to UNIMCMDS feature to allow imports and exports to be generated only once per file
+	- general improvements
 * 14-01-22 **[0.4.0]**
 	- added .imports and .exports commands to LANGUAGE feature to add support for imports and exports
 	- general improvements

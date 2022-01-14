@@ -69,6 +69,7 @@ let ppTranslater: PreprodTranslater = proc (state: var PreprodState, r: PreprodR
     if state.hasPropertyValue(KEY_DIVISION):
       let d = state.getPropertyValue(KEY_DIVISION)
       let s = state.getPropertyValue(KEY_SUBDIVISION)
+      let ls = loadLanguageState(state)
       if d == DIVISIONS_NOTE or d == DIVISIONS_IMPORTS or d == DIVISIONS_EXPORTS:
         if s == SUBDIVISIONS_BODY:
           state.setPropertyValue(KEY_SUBDIVISION, STRINGS_EMPTY)
@@ -77,16 +78,24 @@ let ppTranslater: PreprodTranslater = proc (state: var PreprodState, r: PreprodR
           if d == DIVISIONS_NOTE:
             return GOOD(STRINGS_NUMERAL & STRINGS_SPACE & r.output)
           else:
+            let item = strip(r.output)
             if d == DIVISIONS_EXPORTS:
-              return GOOD(CODEGEN_EXPORT & STRINGS_SPACE & strip(r.output))
+              if not ls.exported.contains(item):
+                ls.exported.add(item)
+              elif state.getPropertyValue(UNIM_EXPORTING_KEY) == FREQUENCY_ONCE:
+                return OK
+              return GOOD(CODEGEN_EXPORT & STRINGS_SPACE & item)
             else: # d == DIVISIONS_IMPORTS
+              if not ls.imported.contains(item):
+                ls.imported.add(item)
+              elif state.getPropertyValue(UNIM_IMPORTING_KEY) == FREQUENCY_ONCE:
+                return OK
               if r.output.find(STRINGS_PERIOD) > -1:
-                let p = r.output.split(STRINGS_PERIOD)
+                let p = item.split(STRINGS_PERIOD)
                 return GOOD(spaced(CODEGEN_FROM, strip(p[0]), CODEGEN_IMPORT, strip(p[1])))
               else:
-                return GOOD(spaced(CODEGEN_IMPORT, strip(r.output)))
-      if s == SUBDIVISIONS_DOCS:
-        let ls = loadLanguageState(state)
+                return GOOD(spaced(CODEGEN_IMPORT, item))
+      elif s == SUBDIVISIONS_DOCS:
         let lm = ls.currentImplementation
         if assigned(lm) and (hasContent(lm.docs) or hasContent(r.output)):
           lm.docs.add(r.output)
@@ -106,14 +115,16 @@ let DefaultPreprocessDoer* = proc (filename: string, ls: LanguageState): var Pre
   var pp = makePreprocessor(filename)
   pp.state.storeLanguageState(ls)
   pp.state.setPropertyValue(NIMC_PROJECT_KEY, filename.changeFileExt(NIM_EXTENSION))
-  pp.state.setPropertyValue(UNIM_FLUSH_KEY, WORDS_YES)
+  pp.state.setPropertyValue(UNIM_FLUSH_KEY, FLAG_YES)
   pp.state.setPropertyValue(UNIM_MODE_KEY, MODE_FREE)
+  pp.state.setPropertyValue(UNIM_IMPORTING_KEY, FREQUENCY_ALWAYS)
+  pp.state.setPropertyValue(UNIM_EXPORTING_KEY, FREQUENCY_ALWAYS)
   # run preprocessor
   var r = pp.run()
   if not r.ok:
     UbernimPerformers.errorHandler(r.output)
   # emit output
-  if pp.state.getPropertyValue(UNIM_FLUSH_KEY) == WORDS_YES:
+  if pp.state.getPropertyValue(UNIM_FLUSH_KEY) == FLAG_YES:
     if not writeToFile(pp.state.getPropertyValue(NIMC_PROJECT_KEY), renderVersion(spaced(ls.callstack[^1], ls.signature)) & r.output):
       UbernimPerformers.errorHandler(errors.CANT_WRITE_OUTPUT.output)
   pp.state

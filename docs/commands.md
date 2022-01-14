@@ -20,6 +20,15 @@ This is the documentation of the ubernim commands (separated by preprod features
 	- values: free/strict (default: free)
 	- note: this is useful to restrict portions or entire files from containing nim code
 	- example: `.unim:mode strict`
+* **.unim:importing** *(since 0.4.1)*
+	- specifies if the imports will be emitted always or once per file
+	- values: always/once (default: always, it's more compatible with conditional defines, otherwise you could end up with a required import not being there)
+	- note: this also affects the .uses clause of methods, routines, etc
+	- example: `.unim:importing once`
+* **.unim:exporting** *(since 0.4.1)*
+	- specifies if the exports will be emitted always or once per file
+	- values: always/once (default: always)
+	- example: `.unim:exporting once`
 
 See them working in the *coding* example.
 

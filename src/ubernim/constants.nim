@@ -3,8 +3,14 @@
 
 const
   UNIM_FLUSH_KEY* = "UNIM_FLUSH"
+  FLAG_YES* = "yes"
+  FLAG_NO* = "no"
+  UNIM_IMPORTING_KEY* = "UNIM_IMPORTING"
+  UNIM_EXPORTING_KEY* = "UNIM_EXPORTING"
+  FREQUENCY_ALWAYS* = "always" # default
+  FREQUENCY_ONCE* = "once"
   UNIM_MODE_KEY* = "UNIM_MODE"
-  MODE_FREE* = "free"
+  MODE_FREE* = "free" # default
   MODE_STRICT* = "strict"
   NIMC_DEFINES_KEY* = "NIMC_DEFINES"
   NIMC_SWITCHES_KEY* = "NIMC_SWITCHES"
