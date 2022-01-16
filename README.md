@@ -33,6 +33,10 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 16-01-22 **[0.4.2]**
+	- added .nimc:minimum to SWITCHES feature to require a minimum nim version installed to perform the preprocessing
+	- updated xam dependency to 1.7.0
+	- general improvements
 * 15-01-22 **[0.4.1]**
 	- added .unim:importing and .unim:exporting commands to UNIMCMDS feature to allow imports and exports to be generated only once per file
 	- general improvements
@@ -67,8 +71,8 @@ You may also want to check my other nimlang projects:
 	- improved error handling
 	- improved project name handling
 	- general improvements
-	- updated xam dependency
-	- updated rodster dependency
+	- updated xam dependency to 1.6.2
+	- updated rodster dependency to 1.1.0
 * 31-12-21 **[0.1.0]**
 	- first public release
 * 08-12-21 **[0.0.1]**

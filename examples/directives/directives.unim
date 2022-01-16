@@ -20,6 +20,9 @@
 .nimc:switch --threads:on
 .nimc:switch -r
 
+.# you can specify a minimum version of nim to allow the preprocessing to be performed
+.nimc:minimum 1.0.6
+
 .# and now some regular nim code
 when defined(hello):
   echo "Hello world!"

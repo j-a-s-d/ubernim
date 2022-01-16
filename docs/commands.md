@@ -50,6 +50,10 @@ See them working in the *coding* example.
 	- specifies a switch name to be passed to the nim compiler
 	- values: any valid switch name
 	- example: `.nimc:switch --threads:on`
+* **.nimc:minimum** *(since 0.4.2)*
+	- specifies a the minimum version accepted of the nim compiler
+	- values: semantic version format (x.x.x)
+	- example: `.nimc:minimum 1.0.6`
 
 See them working in the *directives* example.
 
@@ -108,6 +112,7 @@ See them working in the *actions* example.
 * **.require** *(since 0.1.0)*
 	- specifies another ubernim file to be preprocessed, importing all the exported symbols from it to be used in the current one
 	- values: any valid file name (typically a .unim extension file)
+	- note: require does not generates a line in the output including the generated .nim file, you have to add it yourself if it is required
 	- example: `.require file.unim`
 * **.requirable** *(since 0.2.2)*
 	- specifies if the current ubernim file can be required from other ubernim file

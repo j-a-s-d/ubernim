@@ -12,9 +12,8 @@ use strutils,join
 use strutils,find
 
 const
-  STRINGS_BACKTICK = "`"
   NIMLANG_NOSIDEEFFECT = "noSideEffect"
-  CODEGEN_INDENT* = STRINGS_SPACE & STRINGS_SPACE
+  CODEGEN_INDENT* = "  "
   CODEGEN_STATIC* = "static"
   CODEGEN_ECHO* = "echo"
   CODEGEN_CAST* = "cast"

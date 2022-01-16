@@ -3,7 +3,8 @@
 
 import
   xam, preprod,
-  features, errors, constants, performers, rendering,
+  errors, constants, performers, rendering,
+  commands / [UNIMCMDS, SWITCHES, SHELLCMD, FSACCESS, REQUIRES, LANGUAGE],
   language / [header, member, state]
 
 use os,changeFileExt
@@ -11,24 +12,33 @@ use strutils,find
 use strutils,split
 use strutils,strip
 
+let ppFeatures = (
+  UNIMCMDS: initUNIMCMDS(), # ubernim general commands
+  SWITCHES: initSWITCHES(), # nim compiler command line switches
+  SHELLCMD: initSHELLCMD(), # os shell commands execution
+  FSACCESS: initFSACCESS(), # os filesystem access
+  REQUIRES: initREQUIRES(), # ubernim external files requirement (differs from INCLUDE in that the required modules are preprocessed separatelly)
+  LANGUAGE: initLANGUAGE()  # ubernim language extensions
+)
+
 var ppOptions: PreprodOptions = PREPROD_DEFAULT_OPTIONS
 ppOptions.keepBlankLines = false
 ppOptions.initialEnabledFeatures &= @[
-  UbernimFeatures.UNIMCMDS.name,
-  UbernimFeatures.SWITCHES.name,
-  UbernimFeatures.SHELLCMD.name,
-  UbernimFeatures.FSACCESS.name,
-  UbernimFeatures.REQUIRES.name,
-  UbernimFeatures.LANGUAGE.name
+  ppFeatures.UNIMCMDS.name,
+  ppFeatures.SWITCHES.name,
+  ppFeatures.SHELLCMD.name,
+  ppFeatures.FSACCESS.name,
+  ppFeatures.REQUIRES.name,
+  ppFeatures.LANGUAGE.name
 ]
 
 let ppCommands: PreprodCommands =
-  UbernimFeatures.UNIMCMDS.commands &
-  UbernimFeatures.SWITCHES.commands &
-  UbernimFeatures.SHELLCMD.commands &
-  UbernimFeatures.FSACCESS.commands &
-  UbernimFeatures.REQUIRES.commands &
-  UbernimFeatures.LANGUAGE.commands
+  ppFeatures.UNIMCMDS.commands &
+  ppFeatures.SWITCHES.commands &
+  ppFeatures.SHELLCMD.commands &
+  ppFeatures.FSACCESS.commands &
+  ppFeatures.REQUIRES.commands &
+  ppFeatures.LANGUAGE.commands
 
 let ppPreviewer: PreprodPreviewer = proc (state: var PreprodState, r: PreprodResult): PreprodResult =
   result = r

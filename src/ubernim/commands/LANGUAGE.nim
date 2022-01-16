@@ -1,212 +1,16 @@
-# ubernim / CALLBACKS #
-#---------------------#
+# ubernim / LANGUAGE FEATURE #
+#----------------------------#
 
 import
   xam, preprod,
-  performers, errors, rendering, constants,
-  language / [header, member, division, state]
+  commands,
+  ../errors, ../rendering, ../constants,
+  ../language / [header, member, division, state]
 
 use strutils,strip
 use strutils,join
 use strutils,split
 use strutils,toLower
-use os,execShellCmd
-use os,setCurrentDir
-use os,dirExists
-use os,createDir
-use os,copyDir
-use os,removeDir
-use os,copyFile
-use os,moveFile
-use os,tryRemoveFile
-
-# TEMPLATES
-
-template callback(name, code: untyped): untyped =
-  let name* {.inject.}: PreprodCallback = proc (ustate: var PreprodState, params: StringSeq): PreprodResult =
-    var state {.inject, used.} = ustate
-    let parameters {.inject, used.} = params
-    try:
-      code
-    except:
-      return errors.UNEXPECTED(getCurrentExceptionMsg())
-
-template topCallback(name, code: untyped): untyped =
-  callback name:
-    if state.hasPropertyValue(KEY_DIVISION):
-      return errors.ONLY_TOP_LEVEL
-    code
-
-template childCallback(name, code: untyped): untyped =
-  callback name:
-    if not state.hasPropertyValue(KEY_DIVISION):
-      return errors.DONT_TOP_LEVEL
-    code
-
-# UNIMCMDS
-
-topCallback doVersion:
-  if state.isPreviewing():
-    let ls = loadLanguageState(state)
-    if newSemanticVersion(parameters[0]).isNewerThan(ls.semver):
-      return errors.BAD_VERSION(parenthesize(parameters[0]))
-  return OK
-
-topCallback doFlush:
-  if state.isTranslating():
-    let flag = parameters[0].toLower()
-    if flag notin [FLAG_YES, FLAG_NO]:
-      return errors.BAD_FLAG
-    state.setPropertyValue(UNIM_FLUSH_KEY, flag)
-  return OK
-
-topCallback doMode:
-  if state.isTranslating():
-    let mode = parameters[0].toLower()
-    if mode notin [MODE_FREE, MODE_STRICT]:
-      return errors.BAD_MODE
-    state.setPropertyValue(UNIM_MODE_KEY, mode)
-  return OK
-
-topCallback doImporting:
-  if state.isTranslating():
-    let frequency = parameters[0].toLower()
-    if frequency notin [FREQUENCY_ALWAYS, FREQUENCY_ONCE]:
-      return errors.BAD_FREQUENCY
-    state.setPropertyValue(UNIM_IMPORTING_KEY, frequency)
-  return OK
-
-topCallback doExporting:
-  if state.isTranslating():
-    let frequency = parameters[0].toLower()
-    if frequency notin [FREQUENCY_ALWAYS, FREQUENCY_ONCE]:
-      return errors.BAD_FREQUENCY
-    state.setPropertyValue(UNIM_EXPORTING_KEY, frequency)
-  return OK
-
-# SWITCHES
-
-topCallback doProject:
-  if state.isTranslating():
-    state.setPropertyValue(NIMC_PROJECT_KEY, parameters[0])
-  return OK
-
-topCallback doConfig:
-  if state.isTranslating():
-    state.setPropertyValue(NIMC_CFGFILE_KEY, parameters[0])
-  return OK
-
-topCallback doSwitch:
-  if state.isTranslating():
-    state.appendPropertyValueAsSequence(NIMC_SWITCHES_KEY, parameters[0])
-  return OK
-
-topCallback doDefine:
-  if state.isTranslating():
-    state.appendPropertyValueAsSequence(NIMC_DEFINES_KEY, parameters[0])
-  return OK
-
-# SHELLCMD
-
-topCallback doExec:
-  if state.isTranslating():
-    discard execShellCmd(spaced(parameters))
-  return OK
-
-# FSACCESS
-
-topCallback doChDir:
-  if state.isTranslating():
-    setCurrentDir(parameters[0])
-  return OK
-
-topCallback doMkDir:
-  if state.isTranslating():
-    # NOTE: avoid using existsOrCreateDir
-    if not dirExists(parameters[0]):
-      createDir(parameters[0])
-    if not dirExists(parameters[0]):
-      return errors.CANT_CREATE_DIRECTORY(apostrophe(parameters[0]))
-  return OK
-
-topCallback doCpDir:
-  if state.isTranslating():
-    copyDir(parameters[0], parameters[1])
-  return OK
-
-topCallback doRmDir:
-  if state.isTranslating():
-    removeDir(parameters[0])
-  return OK
-
-topCallback doCopy:
-  if state.isTranslating():
-    copyFile(parameters[0], parameters[1])
-  return OK
-
-topCallback doMove:
-  if state.isTranslating():
-    moveFile(parameters[0], parameters[1])
-  return OK
-
-topCallback doAppend:
-  if state.isTranslating():
-    if not appendToFile(parameters[0], if parameters.len == 1: STRINGS_EMPTY else: spaced(parameters[1..^1])):
-      return errors.CANT_APPEND_FILE(apostrophe(parameters[0]))
-  return OK
-
-topCallback doWrite:
-  if state.isTranslating():
-    if not writeToFile(parameters[0], if parameters.len == 1: STRINGS_EMPTY else: spaced(parameters[1..^1])):
-      return errors.CANT_WRITE_FILE(apostrophe(parameters[0]))
-  return OK
-
-topCallback doRemove:
-  if state.isTranslating():
-    if not tryRemoveFile(parameters[0]):
-      return errors.CANT_REMOVE_FILE(apostrophe(parameters[0]))
-  return OK
-
-# REQUIRES
-
-topCallback doRequire:
-  result = OK
-  if state.isPreviewing():
-    let ls = loadLanguageState(state)
-    if ls.isMainFile(parameters[0]):
-      return errors.CANT_BE_REQUIRED
-    if ls.isCurrentFile(parameters[0]):
-      return errors.NO_RECURSIVE_REQUIRE
-    if ls.isCircularReference(parameters[0]):
-      return errors.NO_CIRCULAR_REFERENCE
-    var rls = makeLanguageState()
-    rls.semver = ls.semver
-    rls.signature = ls.signature
-    rls.callstack.add(ls.callstack & parameters[0])
-    rls.divisions.add(makeDefaultDivisions())
-    var rstate = UbernimPerformers.preprocessDoer(parameters[0], rls)
-    rls.divisions.each d:
-      if d.public and not d.imported:
-        let p = ls.getDivision(d.name)
-        if assigned(p):
-          result = errors.ALREADY_DEFINED(apostrophe(d.name))
-          break
-        d.imported = true
-        ls.divisions.add(d)
-    freeLanguageState(rstate)
-    reset(rstate)
-
-topCallback doRequirable:
-  if state.isPreviewing():
-    let flag = parameters[0].toLower()
-    if flag notin [FLAG_YES, FLAG_NO]:
-      return errors.BAD_FLAG
-    let ls = loadLanguageState(state)
-    if not ls.inMainFile() and flag == FLAG_NO:
-      return errors.CANT_BE_REQUIRED
-  return OK
-
-# LANGUAGE
 
 # DIVISION
 
@@ -697,3 +501,35 @@ topCallback doPop:
   if state.isTranslating():
     return GOOD(renderPop() & STRINGS_EOL)
   return OK
+
+# INITIALIZATION
+
+proc initLANGUAGE*(): UbernimFeature =
+  initFeature "LANGUAGE":
+    cmd("note", PreprodArguments.uaNone, doNote)
+    cmd("imports", PreprodArguments.uaNone, doImports)
+    cmd("exports", PreprodArguments.uaNone, doExports)
+    cmd("push", PreprodArguments.uaNonZero, doPush)
+    cmd("pop", PreprodArguments.uaNone, doPop)
+    cmd("pragmas", PreprodArguments.uaNonZero, doPragmas)
+    cmd("class", PreprodArguments.uaNonZero, doClass)
+    cmd("record", PreprodArguments.uaOne, doRecord)
+    cmd("compound", PreprodArguments.uaOne, doCompound)
+    cmd("interface", PreprodArguments.uaOne, doInterface)
+    cmd("protocol", PreprodArguments.uaOne, doProtocol)
+    cmd("applies", PreprodArguments.uaOne, doApplies)
+    cmd("implies", PreprodArguments.uaOne, doImplies)
+    cmd("extends", PreprodArguments.uaOne, doExtends)
+    cmd("fields", PreprodArguments.uaNone, doFields)
+    cmd("methods", PreprodArguments.uaNone, doMethods)
+    cmd("templates", PreprodArguments.uaNone, doTemplates)
+    cmd("docs", PreprodArguments.uaNone, doDocs)
+    cmd("constructor", PreprodArguments.uaNonZero, doConstructor)
+    cmd("getter", PreprodArguments.uaNonZero, doGetter)
+    cmd("setter", PreprodArguments.uaNonZero, doSetter)
+    cmd("method", PreprodArguments.uaNonZero, doMethod)
+    cmd("template", PreprodArguments.uaNonZero, doTemplate)
+    cmd("routine", PreprodArguments.uaNonZero, doRoutine)
+    cmd("code", PreprodArguments.uaNone, doCode)
+    cmd("uses", PreprodArguments.uaNonZero, doUses)
+    cmd("end", PreprodArguments.uaNone, doEnd)
