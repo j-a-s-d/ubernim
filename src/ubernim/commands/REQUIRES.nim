@@ -27,6 +27,7 @@ topCallback doRequire:
     rls.callstack.add(ls.callstack & parameters[0])
     rls.divisions.add(makeDefaultDivisions())
     var rstate = UbernimPerformers.preprocessDoer(parameters[0], rls)
+    ls.generated.add(rls.generated)
     rls.divisions.each d:
       if d.public and not d.imported:
         let p = ls.getDivision(d.name)
@@ -50,7 +51,7 @@ topCallback doRequirable:
 
 # INITIALIZATION
 
-proc initREQUIRES*(): UbernimFeature =
+proc initialize*(): UbernimFeature =
   initFeature "REQUIRES":
     cmd("require", PreprodArguments.uaOne, doRequire)
     cmd("requirable", PreprodArguments.uaOne, doRequirable)

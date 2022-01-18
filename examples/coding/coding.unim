@@ -231,7 +231,7 @@ ex.foo:
   code
 .end
 
-# and this is just regular nim code again
+.# and this is just regular nim code again
 let aaa = TestClass.create(1, "+++++++++++++++++++++++++++++++++++++++++++++++")
 aaa.bar:
   echo "CLASS TEMPLATE ***********************************************"
@@ -255,3 +255,6 @@ if aaa.testing(1):
 .# and more regular nim code
 when defined(hello):
   echo makeGreetingMessageTo("world")
+
+.# you can specify to remove the generated files just to end up with the final binary only
+.unim:cleanup performed

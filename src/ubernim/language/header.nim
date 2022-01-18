@@ -80,6 +80,7 @@ type
     callstack*: StringSeq
     imported*: StringSeq
     exported*: StringSeq
+    generated*: StringSeq
     currentName*: string
     currentKind*: string
     currentImplementation*: LanguageMember

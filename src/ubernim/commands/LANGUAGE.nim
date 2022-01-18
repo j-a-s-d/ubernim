@@ -504,7 +504,7 @@ topCallback doPop:
 
 # INITIALIZATION
 
-proc initLANGUAGE*(): UbernimFeature =
+proc initialize*(): UbernimFeature =
   initFeature "LANGUAGE":
     cmd("note", PreprodArguments.uaNone, doNote)
     cmd("imports", PreprodArguments.uaNone, doImports)

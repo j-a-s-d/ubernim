@@ -16,6 +16,6 @@ topCallback doExec:
 
 # INITIALIZATION
 
-proc initSHELLCMD*(): UbernimFeature =
+proc initialize*(): UbernimFeature =
   initFeature "SHELLCMD":
     cmd("exec", PreprodArguments.uaNonZero, doExec)

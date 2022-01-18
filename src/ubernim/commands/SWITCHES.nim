@@ -36,7 +36,7 @@ topCallback doMinimum:
 
 # INITIALIZATION
 
-proc initSWITCHES*(): UbernimFeature =
+proc initialize*(): UbernimFeature =
   initFeature "SWITCHES":
     cmd("nimc:project", PreprodArguments.uaOne, doProject)
     cmd("nimc:config", PreprodArguments.uaOne, doConfig)

@@ -13,12 +13,12 @@ use strutils,split
 use strutils,strip
 
 let ppFeatures = (
-  UNIMCMDS: initUNIMCMDS(), # ubernim general commands
-  SWITCHES: initSWITCHES(), # nim compiler command line switches
-  SHELLCMD: initSHELLCMD(), # os shell commands execution
-  FSACCESS: initFSACCESS(), # os filesystem access
-  REQUIRES: initREQUIRES(), # ubernim external files requirement (differs from INCLUDE in that the required modules are preprocessed separatelly)
-  LANGUAGE: initLANGUAGE()  # ubernim language extensions
+  UNIMCMDS: UNIMCMDS.initialize(), # ubernim general commands
+  SWITCHES: SWITCHES.initialize(), # nim compiler command line switches
+  SHELLCMD: SHELLCMD.initialize(), # os shell commands execution
+  FSACCESS: FSACCESS.initialize(), # os filesystem access
+  REQUIRES: REQUIRES.initialize(), # ubernim external files requirement (differs from INCLUDE in that the required modules are preprocessed separatelly)
+  LANGUAGE: LANGUAGE.initialize()  # ubernim language extensions
 )
 
 var ppOptions: PreprodOptions = PREPROD_DEFAULT_OPTIONS
@@ -124,17 +124,21 @@ let DefaultPreprocessDoer* = proc (filename: string, ls: LanguageState): var Pre
   # setup preprocessor
   var pp = makePreprocessor(filename)
   pp.state.storeLanguageState(ls)
-  pp.state.setPropertyValue(NIMC_PROJECT_KEY, filename.changeFileExt(NIM_EXTENSION))
+  pp.state.setPropertyValue(UNIM_FILE_KEY, filename.changeFileExt(NIM_EXTENSION))
   pp.state.setPropertyValue(UNIM_FLUSH_KEY, FLAG_YES)
   pp.state.setPropertyValue(UNIM_MODE_KEY, MODE_FREE)
   pp.state.setPropertyValue(UNIM_IMPORTING_KEY, FREQUENCY_ALWAYS)
   pp.state.setPropertyValue(UNIM_EXPORTING_KEY, FREQUENCY_ALWAYS)
+  pp.state.setPropertyValue(UNIM_CLEANUP_KEY, VALUE_IGNORED)
   # run preprocessor
   var r = pp.run()
   if not r.ok:
     UbernimPerformers.errorHandler(r.output)
   # emit output
   if pp.state.getPropertyValue(UNIM_FLUSH_KEY) == FLAG_YES:
-    if not writeToFile(pp.state.getPropertyValue(NIMC_PROJECT_KEY), renderVersion(spaced(ls.callstack[^1], ls.signature)) & r.output):
+    let uf = pp.state.getPropertyValue(UNIM_FILE_KEY)
+    if writeToFile(uf, renderVersion(spaced(ls.callstack[^1], ls.signature)) & r.output):
+      ls.generated.add(uf)
+    else:
       UbernimPerformers.errorHandler(errors.CANT_WRITE_OUTPUT.output)
   pp.state

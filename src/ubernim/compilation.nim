@@ -27,7 +27,9 @@ let compilationPerformer* = proc (state: var PreprodState): int =
   if state.hasPropertyValue(NIMC_CFGFILE_KEY):
     let ls = loadLanguageState(state)
     let cfg = state.getPropertyValue(NIMC_CFGFILE_KEY)
-    if not writeToFile(cfg, lined(spaced(STRINGS_NUMERAL, cfg, ls.signature) & nimcSwitches)):
+    if writeToFile(cfg, lined(spaced(STRINGS_NUMERAL, cfg, ls.signature) & nimcSwitches)):
+      ls.generated.add(cfg)
+    else:
       UbernimPerformers.errorHandler(errors.CANT_WRITE_CONFIG.output)
   else:
     clDefs &= nimcSwitches

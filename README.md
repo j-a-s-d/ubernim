@@ -33,6 +33,10 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 18-01-22 **[0.4.3]**
+	- added .unim:cleanup to UNIMCMDS feature to allow the removal of generated files after all steps are done
+	- updated rodster dependency to 1.2.0
+	- general improvements
 * 16-01-22 **[0.4.2]**
 	- added .nimc:minimum to SWITCHES feature to require a minimum nim version installed to perform the preprocessing
 	- updated xam dependency to 1.7.0

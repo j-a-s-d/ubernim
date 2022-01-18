@@ -18,6 +18,7 @@ template makeLanguageState*(): LanguageState =
     callstack: newStringSeq(),
     imported: newStringSeq(),
     exported: newStringSeq(),
+    generated: newStringSeq(),
     currentName: STRINGS_EMPTY,
     currentKind: STRINGS_EMPTY,
     currentImplementation: nil,

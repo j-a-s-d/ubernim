@@ -23,7 +23,7 @@ template initFeature*(feature: string, code: untyped): untyped =
 # CALLBACKS
 
 template callback(name, code: untyped): untyped =
-  let name* {.inject.}: PreprodCallback = proc (ustate: var PreprodState, params: StringSeq): PreprodResult =
+  let name {.inject.}: PreprodCallback = proc (ustate: var PreprodState, params: StringSeq): PreprodResult =
     var state {.inject, used.} = ustate
     let parameters {.inject, used.} = params
     try:

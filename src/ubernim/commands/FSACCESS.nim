@@ -71,7 +71,7 @@ topCallback doRemove:
 
 # INITIALIZATION
 
-proc initFSACCESS*(): UbernimFeature =
+proc initialize*(): UbernimFeature =
   initFeature "FSACCESS":
     cmd("copy", PreprodArguments.uaTwo, doCopy)
     cmd("move", PreprodArguments.uaTwo, doMove)

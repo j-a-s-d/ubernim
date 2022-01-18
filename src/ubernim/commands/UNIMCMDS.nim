@@ -18,6 +18,14 @@ topCallback doVersion:
       return errors.BAD_VERSION(parenthesize(parameters[0]))
   return OK
 
+topCallback doCleanup:
+  if state.isTranslating():
+    let value = parameters[0].toLower()
+    if value notin [VALUE_IGNORED, VALUE_INFORMED, VALUE_PERFORMED]:
+      return errors.BAD_CLEANUP
+    state.setPropertyValue(UNIM_CLEANUP_KEY, value)
+  return OK
+
 topCallback doFlush:
   if state.isTranslating():
     let flag = parameters[0].toLower()
@@ -52,9 +60,10 @@ topCallback doExporting:
 
 # INITIALIZATION
 
-proc initUNIMCMDS*(): UbernimFeature =
+proc initialize*(): UbernimFeature =
   initFeature "UNIMCMDS":
     cmd("unim:version", PreprodArguments.uaOne, doVersion)
+    cmd("unim:cleanup", PreprodArguments.uaOne, doCleanup)
     cmd("unim:flush", PreprodArguments.uaOne, doFlush)
     cmd("unim:importing", PreprodArguments.uaOne, doImporting)
     cmd("unim:exporting", PreprodArguments.uaOne, doExporting)
