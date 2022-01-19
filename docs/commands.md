@@ -56,9 +56,13 @@ See them working in the *coding* example.
 	- values: any valid switch name
 	- example: `.nimc:switch --threads:on`
 * **.nimc:minimum** *(since 0.4.2)*
-	- specifies a the minimum version accepted of the nim compiler
+	- specifies the minimum version accepted of the nim compiler
 	- values: semantic version format (x.x.x)
 	- example: `.nimc:minimum 1.0.6`
+* **.nimc:target** *(since 0.4.4)*
+	- specifies the target compiler of the nim compiler
+	- values: cc, cpp, objc or js (default: cc)
+	- example: `.nimc:target cpp`
 
 See them working in the *directives* example.
 

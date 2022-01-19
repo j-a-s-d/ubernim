@@ -4,8 +4,8 @@
 import
   xam, preprod,
   commands,
-  ../errors, ../rendering, ../constants,
-  ../language / [header, member, division, state]
+  ../errors, ../rendering, ../constants, ../status,
+  ../language / [header, member, division]
 
 use strutils,strip
 use strutils,join
@@ -14,7 +14,7 @@ use strutils,toLower
 
 # DIVISION
 
-func validateDivision(ls: LanguageState, d: LanguageDivision): PreprodResult =
+func validateDivision(ls: UbernimStatus, d: LanguageDivision): PreprodResult =
   result = OK
   # check extensions to exist and be of the same type -- redundant?
   var m: LanguageDivision = nil
@@ -62,7 +62,7 @@ func validateDivision(ls: LanguageState, d: LanguageDivision): PreprodResult =
             return BAD("the member " & apostrophe(b.name) & " from " & apostrophe(a) & " is not present in " & apostrophe(m.name))
     m = ls.getDivision(m.extends)
 
-func renderDivision(ls: LanguageState, d: LanguageDivision): string =
+func renderDivision(ls: UbernimStatus, d: LanguageDivision): string =
   func buildFields(indent: string, allowVisibility: bool): string =
     func writeFields(members: LanguageMembers): string =
       result = STRINGS_EMPTY
@@ -90,7 +90,7 @@ func renderDivision(ls: LanguageState, d: LanguageDivision): string =
 
 proc startDivision(state: var PreprodState, division, subdivision, id: string): PreprodResult =
   if state.isPreviewing():
-    let ls = loadLanguageState(state)
+    let ls = loadUbernimStatus(state)
     if ls.hasDivision(id):
       return errors.ALREADY_DEFINED(apostrophe(id))
   state.setPropertyValue(KEY_DIVISION, division)
@@ -112,8 +112,8 @@ topCallback doCompound:
 topCallback doClass:
   result = startDivision(state, DIVISIONS_CLASS, SUBDIVISIONS_CLAUSES, parameters.join(STRINGS_SPACE))
   if result.ok and state.isTranslating():
-    let ls = loadLanguageState(state)
-    let p = ls.getDivision(ls.currentName)
+    let ls = loadUbernimStatus(state)
+    let p = ls.getDivision(ls.language.currentName)
     if not assigned(p):
       return errors.BAD_STATE
     let v = ls.validateDivision(p)
@@ -127,8 +127,8 @@ topCallback doClass:
 topCallback doRecord:
   result = startDivision(state, DIVISIONS_RECORD, SUBDIVISIONS_CLAUSES, parameters[0])
   if result.ok and state.isTranslating():
-    let ls = loadLanguageState(state)
-    let p = ls.getDivision(ls.currentName)
+    let ls = loadUbernimStatus(state)
+    let p = ls.getDivision(ls.language.currentName)
     if not assigned(p):
       return errors.BAD_STATE
     let v = ls.validateDivision(p)
@@ -141,8 +141,8 @@ topCallback doRecord:
 
 childCallback doApplies:
   if state.isPreviewing():
-    let ls = loadLanguageState(state)
-    var p = ls.getDivision(ls.currentName)
+    let ls = loadUbernimStatus(state)
+    var p = ls.getDivision(ls.language.currentName)
     if not assigned(p):
       return errors.BAD_STATE
     let ld = ls.getDivision(parameters[0])
@@ -158,8 +158,8 @@ childCallback doApplies:
 childCallback doImplies:
   if state.isPreviewing():
     let d = state.getPropertyValue(KEY_DIVISION)
-    let ls = loadLanguageState(state)
-    var p = ls.getDivision(ls.currentName)
+    let ls = loadUbernimStatus(state)
+    var p = ls.getDivision(ls.language.currentName)
     if not assigned(p):
       return errors.BAD_STATE
     let ld = ls.getDivision(parameters[0])
@@ -177,8 +177,8 @@ childCallback doExtends:
     let d = state.getPropertyValue(KEY_DIVISION)
     if d == DIVISIONS_RECORD:
       return errors.RECORDS_CANT_EXTEND
-    let ls = loadLanguageState(state)
-    var p = ls.getDivision(ls.currentName)
+    let ls = loadUbernimStatus(state)
+    var p = ls.getDivision(ls.language.currentName)
     if not assigned(p):
       return errors.BAD_STATE
     if hasContent(p.extends):
@@ -197,8 +197,8 @@ childCallback doPragmas:
     if d != DIVISIONS_CONSTRUCTOR and d != DIVISIONS_METHOD and d != DIVISIONS_ROUTINE:
       if d != DIVISIONS_CLASS and d != DIVISIONS_RECORD:
         return errors.CANT_HAVE_PRAGMAS
-      let ls = loadLanguageState(state)
-      var p = ls.getDivision(ls.currentName)
+      let ls = loadUbernimStatus(state)
+      var p = ls.getDivision(ls.language.currentName)
       if not assigned(p):
         return errors.BAD_STATE
       if hasContent(p.pragmas):
@@ -208,13 +208,13 @@ childCallback doPragmas:
     if d != DIVISIONS_CLASS and d != DIVISIONS_RECORD:
       if d != DIVISIONS_CONSTRUCTOR and d != DIVISIONS_METHOD and d != DIVISIONS_ROUTINE:
         return errors.CANT_HAVE_PRAGMAS
-      let ls = loadLanguageState(state)
-      var p = ls.getDivision(ls.currentName)
+      let ls = loadUbernimStatus(state)
+      var p = ls.getDivision(ls.language.currentName)
       if not assigned(p):
         return errors.BAD_STATE
-      if hasContent(ls.currentImplementation.pragmas):
+      if hasContent(ls.language.currentImplementation.pragmas):
         return errors.ALREADY_DEFINED(WORDS_PRAGMAS)
-      ls.currentImplementation.pragmas = spaced(parameters)
+      ls.language.currentImplementation.pragmas = spaced(parameters)
   return OK
 
 childCallback doFields:
@@ -267,7 +267,7 @@ topCallback doConstructor:
     let parts = parameters.join(STRINGS_SPACE).split(STRINGS_PERIOD)
     if parts.len != 2:
       return errors.WRONGLY_DEFINED(WORDS_CONSTRUCTOR)
-    let ls = loadLanguageState(state)
+    let ls = loadUbernimStatus(state)
     var p = ls.getDivision(parts[0])
     if not assigned(p):
       return errors.NEVER_DEFINED(apostrophe(parts[0]))
@@ -281,8 +281,8 @@ topCallback doConstructor:
       return errors.BAD_STATE
     if pm.public != lm.public:
       return errors.VISIBILITY_DOESNT_MATCH(spaced(WORDS_FOR, WORDS_CONSTRUCTOR, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
-    ls.currentName = p.name
-    ls.currentImplementation = lm
+    ls.language.currentName = p.name
+    ls.language.currentImplementation = lm
   return OK
 
 topCallback doGetter:
@@ -292,7 +292,7 @@ topCallback doGetter:
     let parts = parameters.join(STRINGS_SPACE).split(STRINGS_PERIOD)
     if parts.len != 2:
       return errors.WRONGLY_DEFINED(WORDS_GETTER)
-    let ls = loadLanguageState(state)
+    let ls = loadUbernimStatus(state)
     var p = ls.getDivision(parts[0])
     if not assigned(p):
       return errors.NEVER_DEFINED(apostrophe(parts[0]))
@@ -310,8 +310,8 @@ topCallback doGetter:
       return errors.BAD_STATE
     if pm.public != lm.public:
       return errors.VISIBILITY_DOESNT_MATCH(spaced(WORDS_FOR, WORDS_GETTER, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
-    ls.currentName = p.name
-    ls.currentImplementation = lm
+    ls.language.currentName = p.name
+    ls.language.currentImplementation = lm
   return OK
 
 topCallback doSetter:
@@ -322,7 +322,7 @@ topCallback doSetter:
     let parts = (if isVar: parameters[1..^1] else: parameters).join(STRINGS_SPACE).split(STRINGS_PERIOD)
     if parts.len != 2:
       return errors.WRONGLY_DEFINED(WORDS_SETTER)
-    let ls = loadLanguageState(state)
+    let ls = loadUbernimStatus(state)
     var p = ls.getDivision(parts[0])
     if not assigned(p):
       return errors.NEVER_DEFINED(apostrophe(parts[0]))
@@ -340,9 +340,9 @@ topCallback doSetter:
       return errors.BAD_STATE
     if pm.public != lm.public:
       return errors.VISIBILITY_DOESNT_MATCH(spaced(WORDS_FOR, WORDS_SETTER, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
-    ls.currentName = p.name
+    ls.language.currentName = p.name
     lm.data_var = isVar
-    ls.currentImplementation = lm
+    ls.language.currentImplementation = lm
   return OK
 
 topCallback doMethod:
@@ -353,7 +353,7 @@ topCallback doMethod:
     let parts = (if isVar: parameters[1..^1] else: parameters).join(STRINGS_SPACE).split(STRINGS_PERIOD)
     if parts.len != 2:
       return errors.WRONGLY_DEFINED(WORDS_METHOD)
-    let ls = loadLanguageState(state)
+    let ls = loadUbernimStatus(state)
     var p = ls.getDivision(parts[0])
     if not assigned(p):
       return errors.NEVER_DEFINED(apostrophe(parts[0]))
@@ -367,9 +367,9 @@ topCallback doMethod:
       return errors.BAD_STATE
     if pm.public != lm.public:
       return errors.VISIBILITY_DOESNT_MATCH(spaced(WORDS_FOR, WORDS_METHOD, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
-    ls.currentName = p.name
+    ls.language.currentName = p.name
     lm.data_var = isVar
-    ls.currentImplementation = lm
+    ls.language.currentImplementation = lm
   return OK
 
 topCallback doTemplate:
@@ -379,7 +379,7 @@ topCallback doTemplate:
     let parts = parameters.join(STRINGS_SPACE).split(STRINGS_PERIOD)
     if parts.len != 2:
       return errors.WRONGLY_DEFINED(WORDS_TEMPLATE)
-    let ls = loadLanguageState(state)
+    let ls = loadUbernimStatus(state)
     var p = ls.getDivision(parts[0])
     if not assigned(p):
       return errors.NEVER_DEFINED(apostrophe(parts[0]))
@@ -393,8 +393,8 @@ topCallback doTemplate:
       return errors.BAD_STATE
     if pm.public != lm.public:
       return errors.VISIBILITY_DOESNT_MATCH(spaced(WORDS_FOR, WORDS_TEMPLATE, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
-    ls.currentName = p.name
-    ls.currentImplementation = lm
+    ls.language.currentName = p.name
+    ls.language.currentImplementation = lm
   return OK
 
 topCallback doRoutine:
@@ -405,7 +405,7 @@ topCallback doRoutine:
     let parts = full.split(STRINGS_PERIOD)
     if parts.len == 2:
       return errors.WRONGLY_DEFINED(WORDS_ROUTINE)
-    let ls = loadLanguageState(state)
+    let ls = loadUbernimStatus(state)
     var p = ls.getDivision(SCOPE_GLOBAL)
     if not assigned(p):
       return errors.BAD_STATE
@@ -414,8 +414,8 @@ topCallback doRoutine:
       return errors.WRONGLY_DEFINED(WORDS_ROUTINE)
     if ls.hasMethod(p, lm.name):
       return errors.ALREADY_DEFINED(spaced(WORDS_ROUTINE, apostrophe(full)))
-    ls.currentName = p.name
-    ls.currentImplementation = lm
+    ls.language.currentName = p.name
+    ls.language.currentImplementation = lm
   return OK
 
 childCallback doCode:
@@ -424,14 +424,14 @@ childCallback doCode:
     return errors.CANT_OUTPUT_CODE
   state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_BODY)
   if state.isTranslating():
-    let ls = loadLanguageState(state)
-    var p = ls.getDivision(ls.currentName)
+    let ls = loadUbernimStatus(state)
+    var p = ls.getDivision(ls.language.currentName)
     if not assigned(p):
       return errors.BAD_STATE
     let lc = p.kind == DIVISIONS_CLASS
     let lp = p.extends
-    let ln = ls.currentName
-    let lm = ls.currentImplementation
+    let ln = ls.language.currentName
+    let lm = ls.language.currentImplementation
     lm.rendered = true
     if d == DIVISIONS_CONSTRUCTOR:
       return GOOD(renderUses(lm.uses) & renderConstructorBegin(lm, lc, ln))
@@ -448,32 +448,32 @@ childCallback doUses:
   if d notin DIVISIONS_WITH_CODE:
     return errors.CANT_OUTPUT_CODE
   if state.isTranslating():
-    let ls = loadLanguageState(state)
-    var p = ls.getDivision(ls.currentName)
+    let ls = loadUbernimStatus(state)
+    var p = ls.getDivision(ls.language.currentName)
     if not assigned(p):
       return errors.BAD_STATE
-    if not assigned(ls.currentImplementation):
+    if not assigned(ls.language.currentImplementation):
       return errors.BAD_STATE
     let once = state.getPropertyValue(UNIM_IMPORTING_KEY) == FREQUENCY_ONCE
     parameters.join(STRINGS_SPACE).split(STRINGS_COMMA).each u:
       let lu = strip(u)
-      if lu notin ls.imported:
-        ls.imported.add(lu)
+      if lu notin ls.files.imported:
+        ls.files.imported.add(lu)
       elif once:
         continue
-      ls.currentImplementation.uses.add(lu)
+      ls.language.currentImplementation.uses.add(lu)
   return OK
 
 childCallback doEnd:
   let d = state.getPropertyValue(KEY_DIVISION)
   state.removePropertyValue(KEY_SUBDIVISION)
   state.removePropertyValue(KEY_DIVISION)
-  let ls = loadLanguageState(state)
-  var p = ls.getDivision(ls.currentName)
+  let ls = loadUbernimStatus(state)
+  var p = ls.getDivision(ls.language.currentName)
   let lc = assigned(p) and p.kind == DIVISIONS_CLASS
   let lp = if lc: p.extends else: STRINGS_EMPTY
-  let ln = ls.currentName
-  let lm = ls.currentImplementation
+  let ln = ls.language.currentName
+  let lm = ls.language.currentImplementation
   closeDivision(state)
   if state.isTranslating():
     if d == DIVISIONS_CONSTRUCTOR:

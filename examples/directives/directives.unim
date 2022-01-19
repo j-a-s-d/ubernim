@@ -6,6 +6,9 @@
 .# the nimc:* commnads are packed into the SWITCHES Preprod feature,
 .# so you can disable them by a simple '.$ FEATURE SWITCHES off'
 
+.# you can specify the nim compiler target: cc, cpp, objc or js
+.nimc:target cpp
+
 .# if you comment the following line the transpile will be done but the nim compiler won't be invoked
 .nimc:project directives.nim
 

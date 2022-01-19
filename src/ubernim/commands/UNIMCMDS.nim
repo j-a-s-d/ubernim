@@ -4,8 +4,7 @@
 import
   xam, preprod,
   commands,
-  ../errors, ../constants,
-  ../language / [header, state]
+  ../errors, ../constants, ../status
 
 use strutils,toLower
 
@@ -13,8 +12,8 @@ use strutils,toLower
 
 topCallback doVersion:
   if state.isPreviewing():
-    let ls = loadLanguageState(state)
-    if newSemanticVersion(parameters[0]).isNewerThan(ls.semver):
+    let ls = loadUbernimStatus(state)
+    if newSemanticVersion(parameters[0]).isNewerThan(ls.info.semver):
       return errors.BAD_VERSION(parenthesize(parameters[0]))
   return OK
 

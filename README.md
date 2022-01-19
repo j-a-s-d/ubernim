@@ -33,6 +33,9 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 19-01-22 **[0.4.4]**
+	- added .nimc:target to SWITCHES feature to allow to specify the target compiler
+	- general improvements
 * 18-01-22 **[0.4.3]**
 	- added .unim:cleanup to UNIMCMDS feature to allow the removal of generated files after all steps are done
 	- updated rodster dependency to 1.2.0

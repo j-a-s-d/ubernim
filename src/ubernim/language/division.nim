@@ -3,7 +3,8 @@
 
 import
   xam, preprod,
-  header, member, state
+  header, member,
+  ../status
 
 use strutils,startsWith
 
@@ -19,21 +20,21 @@ func newLanguageDivision*(kind: string, name: string): LanguageDivision =
   result.members = @[]
 
 func openDivision*(state: var PreprodState, kind: string, name: string) =
-  let ls = loadLanguageState(state)
+  let ls = loadUbernimStatus(state)
   var item = LanguageMember()
   item.setupMember(name)
   let p = ls.getDivision(item.name)
   if not assigned(p):
-    ls.divisions.add(newLanguageDivision(kind, name))
-  ls.currentName = item.name
-  ls.currentKind = kind
-  ls.currentImplementation = nil
+    ls.language.divisions.add(newLanguageDivision(kind, name))
+  ls.language.currentName = item.name
+  ls.language.currentKind = kind
+  ls.language.currentImplementation = nil
 
 func closeDivision*(state: var PreprodState) =
-  let ls = loadLanguageState(state)
-  ls.currentName = STRINGS_EMPTY
-  ls.currentKind = STRINGS_EMPTY
-  ls.currentImplementation = nil
+  let ls = loadUbernimStatus(state)
+  ls.language.currentName = STRINGS_EMPTY
+  ls.language.currentKind = STRINGS_EMPTY
+  ls.language.currentImplementation = nil
 
 template makeDefaultDivisions*(): LanguageDivisions =
   @[newLanguageDivision(DIVISIONS_ROUTINES, SCOPE_GLOBAL)]

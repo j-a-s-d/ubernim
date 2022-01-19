@@ -3,9 +3,9 @@
 
 import
   xam, preprod,
-  errors, constants, performers, rendering,
+  errors, constants, performers, rendering, status,
   commands / [UNIMCMDS, SWITCHES, SHELLCMD, FSACCESS, REQUIRES, LANGUAGE],
-  language / [header, member, state]
+  language / [header, member]
 
 use os,changeFileExt
 use strutils,find
@@ -48,8 +48,8 @@ let ppPreviewer: PreprodPreviewer = proc (state: var PreprodState, r: PreprodRes
       let s = state.getPropertyValue(KEY_SUBDIVISION)
       let l = if s == SUBDIVISIONS_DOCS: r.output else: removeComments(state, r.output)
       if hasContent(l) and d notin DIVISIONS_WITH_CODE and s != SUBDIVISIONS_CLAUSES:
-        let ls = loadLanguageState(state)
-        var ld = ls.getDivision(ls.currentName)
+        let ls = loadUbernimStatus(state)
+        var ld = ls.getDivision(ls.language.currentName)
         if not assigned(ld):
           return errors.BAD_STATE_IN_PREVIEW
         if s == SUBDIVISIONS_DOCS:
@@ -79,7 +79,7 @@ let ppTranslater: PreprodTranslater = proc (state: var PreprodState, r: PreprodR
     if state.hasPropertyValue(KEY_DIVISION):
       let d = state.getPropertyValue(KEY_DIVISION)
       let s = state.getPropertyValue(KEY_SUBDIVISION)
-      let ls = loadLanguageState(state)
+      let ls = loadUbernimStatus(state)
       if d == DIVISIONS_NOTE or d == DIVISIONS_IMPORTS or d == DIVISIONS_EXPORTS:
         if s == SUBDIVISIONS_BODY:
           state.setPropertyValue(KEY_SUBDIVISION, STRINGS_EMPTY)
@@ -90,14 +90,14 @@ let ppTranslater: PreprodTranslater = proc (state: var PreprodState, r: PreprodR
           else:
             let item = strip(r.output)
             if d == DIVISIONS_EXPORTS:
-              if not ls.exported.contains(item):
-                ls.exported.add(item)
+              if not ls.files.exported.contains(item):
+                ls.files.exported.add(item)
               elif state.getPropertyValue(UNIM_EXPORTING_KEY) == FREQUENCY_ONCE:
                 return OK
               return GOOD(CODEGEN_EXPORT & STRINGS_SPACE & item)
             else: # d == DIVISIONS_IMPORTS
-              if not ls.imported.contains(item):
-                ls.imported.add(item)
+              if not ls.files.imported.contains(item):
+                ls.files.imported.add(item)
               elif state.getPropertyValue(UNIM_IMPORTING_KEY) == FREQUENCY_ONCE:
                 return OK
               if r.output.find(STRINGS_PERIOD) > -1:
@@ -106,7 +106,7 @@ let ppTranslater: PreprodTranslater = proc (state: var PreprodState, r: PreprodR
               else:
                 return GOOD(spaced(CODEGEN_IMPORT, item))
       elif s == SUBDIVISIONS_DOCS:
-        let lm = ls.currentImplementation
+        let lm = ls.language.currentImplementation
         if assigned(lm) and (hasContent(lm.docs) or hasContent(r.output)):
           lm.docs.add(r.output)
         return OK
@@ -118,18 +118,18 @@ let ppTranslater: PreprodTranslater = proc (state: var PreprodState, r: PreprodR
       return errors.STRICT_MODE
 
 proc makePreprocessor*(filename: string): PreprodPreprocessor =
-  newPreprodPreprocessor(filename, ppOptions, ppCommands, ppTranslater, ppPreviewer)
+  result = newPreprodPreprocessor(filename, ppOptions, ppCommands, ppTranslater, ppPreviewer)
+  result.state.setPropertyValue(UNIM_FILE_KEY, filename.changeFileExt(NIM_EXTENSION))
+  result.state.setPropertyValue(UNIM_FLUSH_KEY, FLAG_YES)
+  result.state.setPropertyValue(UNIM_MODE_KEY, MODE_FREE)
+  result.state.setPropertyValue(UNIM_IMPORTING_KEY, FREQUENCY_ALWAYS)
+  result.state.setPropertyValue(UNIM_EXPORTING_KEY, FREQUENCY_ALWAYS)
+  result.state.setPropertyValue(UNIM_CLEANUP_KEY, VALUE_IGNORED)
 
-let DefaultPreprocessDoer* = proc (filename: string, ls: LanguageState): var PreprodState =
+let DefaultPreprocessDoer* = proc (filename: string, ls: UbernimStatus): var PreprodState =
   # setup preprocessor
   var pp = makePreprocessor(filename)
-  pp.state.storeLanguageState(ls)
-  pp.state.setPropertyValue(UNIM_FILE_KEY, filename.changeFileExt(NIM_EXTENSION))
-  pp.state.setPropertyValue(UNIM_FLUSH_KEY, FLAG_YES)
-  pp.state.setPropertyValue(UNIM_MODE_KEY, MODE_FREE)
-  pp.state.setPropertyValue(UNIM_IMPORTING_KEY, FREQUENCY_ALWAYS)
-  pp.state.setPropertyValue(UNIM_EXPORTING_KEY, FREQUENCY_ALWAYS)
-  pp.state.setPropertyValue(UNIM_CLEANUP_KEY, VALUE_IGNORED)
+  pp.state.storeUbernimStatus(ls)
   # run preprocessor
   var r = pp.run()
   if not r.ok:
@@ -137,8 +137,8 @@ let DefaultPreprocessDoer* = proc (filename: string, ls: LanguageState): var Pre
   # emit output
   if pp.state.getPropertyValue(UNIM_FLUSH_KEY) == FLAG_YES:
     let uf = pp.state.getPropertyValue(UNIM_FILE_KEY)
-    if writeToFile(uf, renderVersion(spaced(ls.callstack[^1], ls.signature)) & r.output):
-      ls.generated.add(uf)
+    if writeToFile(uf, renderVersion(ls.info.signature) & r.output):
+      ls.files.generated.add(uf)
     else:
       UbernimPerformers.errorHandler(errors.CANT_WRITE_OUTPUT.output)
   pp.state

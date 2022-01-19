@@ -3,11 +3,11 @@
 
 import
   xam, preprod,
-  language / header
+  status
 
 type
   TUbernimPerformers = tuple
-    preprocessDoer: DoubleArgsProc[string, LanguageState, var PreprodState]
+    preprocessDoer: DoubleArgsProc[string, UbernimStatus, var PreprodState]
     errorHandler: SingleArgVoidProc[string]
     compilerInvoker: DoubleArgsProc[string, StringSeq, int]
 

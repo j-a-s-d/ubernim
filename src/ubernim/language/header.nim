@@ -2,7 +2,7 @@
 #---------------------------#
 
 import
-  xam, preprod
+  xam
 
 # CONSTANTS
 
@@ -70,19 +70,3 @@ type
     extends*: string
     members*: LanguageMembers
   LanguageDivisions* = seq[LanguageDivision]
-
-# STATE
-
-type
-  TLanguageState* = object of PreprodTag
-    semver*: SemanticVersion
-    signature*: string
-    callstack*: StringSeq
-    imported*: StringSeq
-    exported*: StringSeq
-    generated*: StringSeq
-    currentName*: string
-    currentKind*: string
-    currentImplementation*: LanguageMember
-    divisions*: LanguageDivisions
-  LanguageState* = ptr TLanguageState
