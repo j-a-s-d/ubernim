@@ -19,7 +19,7 @@ use os,paramStr
 
 const
   APP_NAME = "ubernim"
-  APP_VERSION = "0.4.4"
+  APP_VERSION = "0.5.0"
   APP_COPYRIGHT = "copyright (c) 2021-2022 by Javier Santo Domingo"
   APP_VERSION_KEY = "app:version"
   APP_INPUT_KEY = "app:input"

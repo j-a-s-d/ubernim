@@ -44,19 +44,18 @@ const
   CODEGEN_TEMPLATE* = "template"
   CODEGEN_PROCCALL* = "procCall"
 
-func renderVersion*(version: string): string =
-  CODEGEN_STATIC & STRINGS_COLON & STRINGS_SPACE & CODEGEN_ECHO & STRINGS_SPACE & quote(version) & STRINGS_EOL & STRINGS_EOL
+func renderSignature*(file, signature: string): string =
+  spaced(CODEGEN_STATIC & STRINGS_COLON, CODEGEN_ECHO, quote(spaced(file, signature))) & STRINGS_EOL & STRINGS_EOL
 
 func renderType*(id, pragmas, typedef: string): string =
   STRINGS_EOL &
-    CODEGEN_TYPE & STRINGS_SPACE & id & pragmas &
-    STRINGS_SPACE & STRINGS_EQUAL & STRINGS_SPACE & typedef
+    spaced(CODEGEN_TYPE, id & pragmas, STRINGS_EQUAL, typedef)
 
 func renderRoutine*(keyword, id, arguments, outputtype, pragmas: string): string =
   STRINGS_EOL &
-    keyword & STRINGS_SPACE & id & parenthesize(arguments) &
-    (if hasContent(outputtype): STRINGS_COLON & STRINGS_SPACE & outputtype else: STRINGS_EMPTY) & pragmas &
-    STRINGS_SPACE & STRINGS_EQUAL
+    spaced(keyword, id & parenthesize(arguments) & (
+      if hasContent(outputtype): spaced(STRINGS_COLON, outputtype) else: STRINGS_EMPTY
+    ) & pragmas, STRINGS_EQUAL)
 
 func renderDocs*(docs: StringSeq): string =
   docs.each s:
@@ -122,9 +121,9 @@ func renderUses*(uses: StringSeq): string =
 
 func renderConstructorBegin*(m: LanguageMember, isClass: bool, className: string): string =
   let kw = if m.pragmas.find(NIMLANG_NOSIDEEFFECT) != -1: CODEGEN_FUNC else: CODEGEN_PROC
-  let args = CODEGEN_DATATYPE & STRINGS_COLON & STRINGS_SPACE & CODEGEN_TYPEDESC & bracketize(className) & (
-    if hasContent(m.data_extra): STRINGS_COMMA & STRINGS_SPACE & m.data_extra else: STRINGS_EMPTY
-  )
+  let args = spaced(CODEGEN_DATATYPE & STRINGS_COLON, CODEGEN_TYPEDESC & bracketize(className) & (
+    if hasContent(m.data_extra): spaced(STRINGS_COMMA, m.data_extra) else: STRINGS_EMPTY
+  ))
   let pragmas = renderPragmas(m.pragmas.split(STRINGS_COMMA).filterIt(it.strip() != NIMLANG_NOSIDEEFFECT).join(STRINGS_COMMA))
   let stub = if isClass: renderClassSelf(className) else: renderRecordSelf(className)
   renderRoutine(kw, renderId(m.name, m.public, m.generics), args, className, pragmas) & renderDocs(m.docs) & stub
@@ -135,11 +134,11 @@ func renderConstructorEnd*(): string =
 
 proc renderMethodBegin*(m: LanguageMember, isClass: bool, className: string, parentName: string): string =
   let kw = if m.pragmas.find(NIMLANG_NOSIDEEFFECT) != -1: CODEGEN_FUNC else: CODEGEN_PROC
-  let args = CODEGEN_SELF & STRINGS_COLON & STRINGS_SPACE & (
+  let args = spaced(CODEGEN_SELF & STRINGS_COLON, (
     if m.data_var: CODEGEN_VAR & STRINGS_SPACE else: STRINGS_EMPTY
   ) & className & (
-    if hasContent(m.data_extra): STRINGS_COMMA & STRINGS_SPACE & m.data_extra else: STRINGS_EMPTY
-  )
+    if hasContent(m.data_extra): spaced(STRINGS_COMMA, m.data_extra) else: STRINGS_EMPTY
+  ))
   let pragmas = renderPragmas(m.pragmas.split(STRINGS_COMMA).filterIt(it.strip() != NIMLANG_NOSIDEEFFECT).join(STRINGS_COMMA).strip())
   let stub = if isClass and hasContent(parentName): renderParent(parentName) else: STRINGS_EMPTY
   let name = if m.data_setter: enclose(m.name & STRINGS_EQUAL, STRINGS_BACKTICK) else: m.name
@@ -149,9 +148,9 @@ func renderMethodEnd*(): string =
   STRINGS_EOL
 
 func renderTemplateBegin*(m: LanguageMember, className: string): string =
-  let args = CODEGEN_SELF & STRINGS_COLON & STRINGS_SPACE & className & (
-    if hasContent(m.data_extra): STRINGS_COMMA & STRINGS_SPACE & m.data_extra else: STRINGS_EMPTY
-  )
+  let args = spaced(CODEGEN_SELF & STRINGS_COLON, className & (
+    if hasContent(m.data_extra): spaced(STRINGS_COMMA, m.data_extra) else: STRINGS_EMPTY
+  ))
   renderRoutine(
     CODEGEN_TEMPLATE, renderId(m.name, m.public, m.generics), args, m.data_type, renderPragmas(m.pragmas)
   ) & renderDocs(m.docs)

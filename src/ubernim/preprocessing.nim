@@ -137,8 +137,5 @@ let DefaultPreprocessDoer* = proc (filename: string, ls: UbernimStatus): var Pre
   # emit output
   if pp.state.getPropertyValue(UNIM_FLUSH_KEY) == FLAG_YES:
     let uf = pp.state.getPropertyValue(UNIM_FILE_KEY)
-    if writeToFile(uf, renderVersion(ls.info.signature) & r.output):
-      ls.files.generated.add(uf)
-    else:
-      UbernimPerformers.errorHandler(errors.CANT_WRITE_OUTPUT.output)
+    generationPerformer(uf, renderSignature(uf, ls.info.signature) & r.output, errors.CANT_WRITE_OUTPUT.output, ls)
   pp.state
