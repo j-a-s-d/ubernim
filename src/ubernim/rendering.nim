@@ -22,6 +22,7 @@ const
   CODEGEN_DOCS* = "##"
   CODEGEN_OF* = "of"
   CODEGEN_REF* = "ref"
+  CODEGEN_LET* = "let"
   CODEGEN_VAR* = "var"
   CODEGEN_POP* = "pop"
   CODEGEN_PUSH* = "push"
@@ -30,6 +31,7 @@ const
   CODEGEN_TYPE* = "type"
   CODEGEN_PROC* = "proc"
   CODEGEN_FUNC* = "func"
+  CODEGEN_BLOCK* = "block"
   CODEGEN_TUPLE* = "tuple"
   CODEGEN_IMPORT* = "import"
   CODEGEN_EXPORT* = "export"
@@ -56,6 +58,12 @@ func renderRoutine*(keyword, id, arguments, outputtype, pragmas: string): string
     spaced(keyword, id & parenthesize(arguments) & (
       if hasContent(outputtype): spaced(STRINGS_COLON, outputtype) else: STRINGS_EMPTY
     ) & pragmas, STRINGS_EQUAL)
+
+func renderBlock*(keyword, id, pragmas, outputtype: string): string =
+  STRINGS_EOL &
+    spaced(keyword, id & pragmas & (
+      if hasContent(outputtype): spaced(STRINGS_COLON, outputtype) else: STRINGS_EMPTY
+    ), STRINGS_EQUAL, CODEGEN_BLOCK & STRINGS_COLON)
 
 func renderDocs*(docs: StringSeq): string =
   docs.each s:
@@ -119,7 +127,7 @@ func renderUses*(uses: StringSeq): string =
   else:
     result = STRINGS_EMPTY
 
-func renderConstructorBegin*(m: LanguageMember, isClass: bool, className: string): string =
+func renderConstructorBegin*(m: LanguageItem, isClass: bool, className: string): string =
   let kw = if m.pragmas.find(NIMLANG_NOSIDEEFFECT) != -1: CODEGEN_FUNC else: CODEGEN_PROC
   let args = spaced(CODEGEN_DATATYPE & STRINGS_COLON, CODEGEN_TYPEDESC & bracketize(className) & (
     if hasContent(m.data_extra): spaced(STRINGS_COMMA, m.data_extra) else: STRINGS_EMPTY
@@ -132,7 +140,7 @@ func renderConstructorEnd*(): string =
   #CODEGEN_INDENT & CODEGEN_SELF &
   STRINGS_EOL
 
-proc renderMethodBegin*(m: LanguageMember, isClass: bool, className: string, parentName: string): string =
+proc renderMethodBegin*(m: LanguageItem, isClass: bool, className: string, parentName: string): string =
   let kw = if m.pragmas.find(NIMLANG_NOSIDEEFFECT) != -1: CODEGEN_FUNC else: CODEGEN_PROC
   let args = spaced(CODEGEN_SELF & STRINGS_COLON, (
     if m.data_var: CODEGEN_VAR & STRINGS_SPACE else: STRINGS_EMPTY
@@ -147,7 +155,7 @@ proc renderMethodBegin*(m: LanguageMember, isClass: bool, className: string, par
 func renderMethodEnd*(): string =
   STRINGS_EOL
 
-func renderTemplateBegin*(m: LanguageMember, className: string): string =
+func renderTemplateBegin*(m: LanguageItem, className: string): string =
   let args = spaced(CODEGEN_SELF & STRINGS_COLON, className & (
     if hasContent(m.data_extra): spaced(STRINGS_COMMA, m.data_extra) else: STRINGS_EMPTY
   ))
@@ -158,7 +166,17 @@ func renderTemplateBegin*(m: LanguageMember, className: string): string =
 func renderTemplateEnd*(): string =
   STRINGS_EOL
 
-func renderRoutineBegin*(m: LanguageMember): string =
+func renderBlockBegin*(m: LanguageItem): string =
+  let kw = if m.data_var: CODEGEN_VAR else: CODEGEN_LET
+  let pragmas = renderPragmas(m.pragmas)
+  renderBlock(
+    kw, renderId(m.name, m.public, m.generics), pragmas, m.data_type
+  ) & renderDocs(m.docs)
+
+func renderBlockEnd*(): string =
+  STRINGS_EOL
+
+func renderRoutineBegin*(m: LanguageItem): string =
   let kw = if m.pragmas.find(NIMLANG_NOSIDEEFFECT) != -1: CODEGEN_FUNC else: CODEGEN_PROC
   let pragmas = renderPragmas(m.pragmas.split(STRINGS_COMMA).filterIt(it.strip() != NIMLANG_NOSIDEEFFECT).join(STRINGS_COMMA))
   renderRoutine(

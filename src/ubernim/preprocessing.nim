@@ -5,7 +5,7 @@ import
   xam, preprod,
   errors, constants, performers, rendering, status,
   commands / [UNIMCMDS, SWITCHES, SHELLCMD, FSACCESS, REQUIRES, LANGUAGE],
-  language / [header, member]
+  language / [header, item]
 
 use os,changeFileExt
 use strutils,find
@@ -56,9 +56,9 @@ let ppPreviewer: PreprodPreviewer = proc (state: var PreprodState, r: PreprodRes
           if hasContent(ld.docs) or hasContent(l):
             ld.docs.add(l)
         else:
-          var lm = newLanguageMember(s)
+          var lm = newLanguageItem(s)
           if not lm.read(l):
-            return errors.WRONGLY_DEFINED(WORDS_MEMBER)
+            return errors.WRONGLY_DEFINED(WORDS_ITEM)
           if not isValidNimIdentifier(lm.name):
             return errors.INVALID_IDENTIFIER
           if lm.kind == SUBDIVISIONS_FIELDS:
@@ -66,12 +66,12 @@ let ppPreviewer: PreprodPreviewer = proc (state: var PreprodState, r: PreprodRes
               return errors.RECORDS_DONT_ASTERISK
             if ls.hasField(ld, lm.name):
               return errors.ALREADY_DEFINED(spaced(WORDS_FIELD, apostrophe(lm.name)))
-            if ls.hasMethod(ld, lm.name, (member: LanguageMember) => not member.data_constructor and not member.data_getter and not member.data_setter and member.data_sealed):
+            if ls.hasMethod(ld, lm.name, (item: LanguageItem) => not item.data_constructor and not item.data_getter and not item.data_setter and item.data_sealed):
               return errors.ALREADY_DEFINED(spaced(WORDS_SEALED, WORDS_METHOD, apostrophe(lm.name)))
           else:
             if (lm.data_getter or lm.data_setter) and ls.hasField(ld, lm.name):
               return errors.ALREADY_DEFINED(spaced(WORDS_FIELD, apostrophe(lm.name)))
-          ld.members.add(lm)
+          ld.items.add(lm)
 
 let ppTranslater: PreprodTranslater = proc (state: var PreprodState, r: PreprodResult): PreprodResult =
   result = r

@@ -21,7 +21,7 @@ type
   TUbernimLanguage = tuple
     currentName: string
     currentKind: string
-    currentImplementation: LanguageMember
+    currentImplementation: LanguageItem
     divisions: LanguageDivisions
   TUbernimStatus = object of PreprodTag
     info*: TUbernimInfo
@@ -94,34 +94,34 @@ func isDivisionInherited*(ls: UbernimStatus, name: string): bool =
       return true
   return false
 
-# MEMBER
+# ITEM
 
-const DUMMY_EXAMINER = func (member: LanguageMember): bool = true
+const DUMMY_EXAMINER = func (member: LanguageItem): bool = true
 
-func getMember*(ls: UbernimStatus, d: LanguageDivision, kind, name: string): LanguageMember =
+func getItem*(ls: UbernimStatus, d: LanguageDivision, kind, name: string): LanguageItem =
   var m = d
   while assigned(m):
-    m.members.each f:
+    m.items.each f:
       if f.kind == kind and f.name == name:
         return f
     m = ls.getDivision(m.extends)
   return nil
 
-func hasMember(ls: UbernimStatus, d: LanguageDivision, kind, name: string, examiner: SingleArgProc[LanguageMember, bool] = DUMMY_EXAMINER): bool =
+func hasItem(ls: UbernimStatus, d: LanguageDivision, kind, name: string, examiner: SingleArgProc[LanguageItem, bool] = DUMMY_EXAMINER): bool =
   var m = d
   while assigned(m):
-    m.members.each f:
+    m.items.each f:
       if f.kind == kind and f.name == name:
         if examiner(f):
           return true
     m = ls.getDivision(m.extends)
   return false
 
-func hasField*(ls: UbernimStatus, d: LanguageDivision, name: string, examiner: SingleArgProc[LanguageMember, bool] = DUMMY_EXAMINER): bool =
-  ls.hasMember(d, SUBDIVISIONS_FIELDS, name, examiner)
+func hasField*(ls: UbernimStatus, d: LanguageDivision, name: string, examiner: SingleArgProc[LanguageItem, bool] = DUMMY_EXAMINER): bool =
+  ls.hasItem(d, SUBDIVISIONS_FIELDS, name, examiner)
 
-func hasMethod*(ls: UbernimStatus, d: LanguageDivision, name: string, examiner: SingleArgProc[LanguageMember, bool] = DUMMY_EXAMINER): bool =
-  ls.hasMember(d, SUBDIVISIONS_METHODS, name, examiner)
+func hasMethod*(ls: UbernimStatus, d: LanguageDivision, name: string, examiner: SingleArgProc[LanguageItem, bool] = DUMMY_EXAMINER): bool =
+  ls.hasItem(d, SUBDIVISIONS_METHODS, name, examiner)
 
-func hasTemplate*(ls: UbernimStatus, d: LanguageDivision, name: string, examiner: SingleArgProc[LanguageMember, bool] = DUMMY_EXAMINER): bool =
-  ls.hasMember(d, SUBDIVISIONS_TEMPLATES, name, examiner)
+func hasTemplate*(ls: UbernimStatus, d: LanguageDivision, name: string, examiner: SingleArgProc[LanguageItem, bool] = DUMMY_EXAMINER): bool =
+  ls.hasItem(d, SUBDIVISIONS_TEMPLATES, name, examiner)

@@ -8,6 +8,7 @@ const
   WORDS_AT* = "at"
   WORDS_FOR* = "for"
   WORDS_WITH* = "with"
+  WORDS_ITEM* = "item"
   WORDS_FIELD* = "field"
   WORDS_GETTER* = "getter"
   WORDS_SETTER* = "setter"

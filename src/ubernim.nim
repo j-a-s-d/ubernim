@@ -9,7 +9,7 @@ when defined(js):
 
 import
   rodster, xam,
-  ubernim / [errors, performers, status, preprocessing, compilation, cleanup],
+  ubernim / [errors, performers, status, preprocessing, compilation],
   ubernim / language / division
 
 use os,paramCount

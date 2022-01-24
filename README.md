@@ -34,6 +34,7 @@ You may also want to check my other nimlang projects:
 ## HISTORY
 
 * 20-01-22 **[0.5.0]**
+	- added .member to LANGUAGE feature to allow the declaration of initializable let and var locals
 	- general improvements
 * 19-01-22 **[0.4.4]**
 	- added .nimc:target to SWITCHES feature to allow to specify the target compiler
