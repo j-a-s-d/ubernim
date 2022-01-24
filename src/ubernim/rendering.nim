@@ -59,11 +59,13 @@ func renderRoutine*(keyword, id, arguments, outputtype, pragmas: string): string
       if hasContent(outputtype): spaced(STRINGS_COLON, outputtype) else: STRINGS_EMPTY
     ) & pragmas, STRINGS_EQUAL)
 
-func renderBlock*(keyword, id, pragmas, outputtype: string): string =
+func renderMember*(keyword, id, pragmas, outputtype, extra: string): string =
   STRINGS_EOL &
     spaced(keyword, id & pragmas & (
       if hasContent(outputtype): spaced(STRINGS_COLON, outputtype) else: STRINGS_EMPTY
-    ), STRINGS_EQUAL, CODEGEN_BLOCK & STRINGS_COLON)
+    )) & (
+      if hasContent(extra): STRINGS_SPACE & spaced(STRINGS_EQUAL, extra) else: STRINGS_EMPTY
+    )
 
 func renderDocs*(docs: StringSeq): string =
   docs.each s:
@@ -166,14 +168,20 @@ func renderTemplateBegin*(m: LanguageItem, className: string): string =
 func renderTemplateEnd*(): string =
   STRINGS_EOL
 
-func renderBlockBegin*(m: LanguageItem): string =
+proc renderMemberBegin*(m: LanguageItem, allowInit: bool): string =
   let kw = if m.data_var: CODEGEN_VAR else: CODEGEN_LET
   let pragmas = renderPragmas(m.pragmas)
-  renderBlock(
-    kw, renderId(m.name, m.public, m.generics), pragmas, m.data_type
-  ) & renderDocs(m.docs)
+  let d = renderDocs(m.docs)
+  let x = if hasContent(m.data_extra): (
+    if hasContent(d): spaced(m.data_extra, CODEGEN_DOCS, STRINGS_BACKSLASH) else: m.data_extra
+  ) else: (
+    if allowInit: CODEGEN_BLOCK & STRINGS_COLON else: STRINGS_EMPTY
+  )
+  renderMember(
+    kw, renderId(m.name, m.public, m.generics), pragmas, m.data_type, x
+  ) & d
 
-func renderBlockEnd*(): string =
+func renderMemberEnd*(): string =
   STRINGS_EOL
 
 func renderRoutineBegin*(m: LanguageItem): string =

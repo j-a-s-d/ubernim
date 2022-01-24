@@ -220,6 +220,16 @@ See them working in the *coding* example.
 	- specifies one or more imports required by the current block
 	- values: any valid nim import in the regular comma separated fashion (except of the from/import syntax that is simplified with a period between the module and the entity)
 	- example: `.uses sequtils, strutils.join, json`
+* **.member** *(since 0.5.0)*
+	- specifies a new member
+	- values: any valid member definition (in the regular form of identifier:type)
+	- note: it allows to use the var modifier to make the member mutable (by default is immutable)
+	- example: `.member var MyField*:int`
+* **.value** *(since 0.5.0)*
+	- specifies the value for the current member definition
+	- values: any valid nim value after it
+	- note: if you don't define an immediate value, you'll be force to use a code block to initialize the member
+	- example: `.value 123`
 * **.end** *(since 0.1.0)*
 	- specifies the end of the current block
 	- values: none

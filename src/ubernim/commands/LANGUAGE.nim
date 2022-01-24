@@ -196,7 +196,7 @@ childCallback doPragmas:
   if state.isPreviewing():
     if d != DIVISIONS_CONSTRUCTOR and d != DIVISIONS_METHOD and d != DIVISIONS_ROUTINE and d != DIVISIONS_MEMBER:
       if d != DIVISIONS_CLASS and d != DIVISIONS_RECORD:
-        return errors.CANT_HAVE_PRAGMAS
+        return errors.CANT_HOLD_PRAGMAS
       let ls = loadUbernimStatus(state)
       var p = ls.getDivision(ls.language.currentName)
       if not assigned(p):
@@ -207,42 +207,38 @@ childCallback doPragmas:
   elif state.isTranslating():
     if d != DIVISIONS_CLASS and d != DIVISIONS_RECORD:
       if d != DIVISIONS_CONSTRUCTOR and d != DIVISIONS_METHOD and d != DIVISIONS_ROUTINE and d != DIVISIONS_MEMBER:
-        return errors.CANT_HAVE_PRAGMAS
+        return errors.CANT_HOLD_PRAGMAS
       let ls = loadUbernimStatus(state)
       var p = ls.getDivision(ls.language.currentName)
       if not assigned(p):
         return errors.BAD_STATE
-      if hasContent(ls.language.currentImplementation.pragmas):
+      let lm = ls.language.currentImplementation
+      if lm.rendered:
+        return errors.DEFINE_BEFORE_VALUE
+      if hasContent(lm.pragmas):
         return errors.ALREADY_DEFINED(WORDS_PRAGMAS)
-      ls.language.currentImplementation.pragmas = spaced(parameters)
+      lm.pragmas = spaced(parameters)
   return OK
 
 childCallback doFields:
   let d = state.getPropertyValue(KEY_DIVISION)
   if d notin DIVISIONS_WITH_FIELDS:
-    return errors.CANT_HAVE_FIELDS
+    return errors.CANT_HOLD_FIELDS
   state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_FIELDS)
   return OK
 
 childCallback doMethods:
   let d = state.getPropertyValue(KEY_DIVISION)
   if d notin DIVISIONS_WITH_METHODS:
-    return errors.CANT_HAVE_METHODS
+    return errors.CANT_HOLD_METHODS
   state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_METHODS)
   return OK
 
 childCallback doTemplates:
   let d = state.getPropertyValue(KEY_DIVISION)
   if d notin DIVISIONS_WITH_TEMPLATES:
-    return errors.CANT_HAVE_TEMPLATES
+    return errors.CANT_HOLD_TEMPLATES
   state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_TEMPLATES)
-  return OK
-
-childCallback doDocs:
-  let d = state.getPropertyValue(KEY_DIVISION)
-  if d notin DIVISIONS_WITH_DOCS:
-    return errors.CANT_OUTPUT_DOCS
-  state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_DOCS)
   return OK
 
 topCallback doNote:
@@ -418,6 +414,18 @@ topCallback doRoutine:
     ls.language.currentImplementation = lm
   return OK
 
+childCallback doDocs:
+  let d = state.getPropertyValue(KEY_DIVISION)
+  if d notin DIVISIONS_WITH_DOCS:
+    return errors.CANT_OUTPUT_DOCS
+  if state.isTranslating():
+    let ls = loadUbernimStatus(state)
+    let lm = ls.language.currentImplementation
+    if assigned(lm) and lm.rendered:
+      return errors.DEFINE_BEFORE_VALUE
+  state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_DOCS)
+  return OK
+
 childCallback doCode:
   let d = state.getPropertyValue(KEY_DIVISION)
   if d notin DIVISIONS_WITH_CODE:
@@ -432,6 +440,8 @@ childCallback doCode:
     let lp = p.extends
     let ln = ls.language.currentName
     let lm = ls.language.currentImplementation
+    if lm.rendered:
+      return errors.ALREADY_RENDERED
     lm.rendered = true
     if d == DIVISIONS_CONSTRUCTOR:
       return GOOD(renderUses(lm.uses) & renderConstructorBegin(lm, lc, ln))
@@ -440,7 +450,7 @@ childCallback doCode:
     elif d == DIVISIONS_TEMPLATE:
       return GOOD(renderUses(lm.uses) & renderTemplateBegin(lm, ln))
     elif d == DIVISIONS_MEMBER:
-      return GOOD(renderUses(lm.uses) & renderBlockBegin(lm))
+      return GOOD(renderUses(lm.uses) & renderMemberBegin(lm, true))
     else: # if d == DIVISIONS_ROUTINE:
       return GOOD(renderUses(lm.uses) & renderRoutineBegin(lm))
   return OK
@@ -454,8 +464,11 @@ childCallback doUses:
     var p = ls.getDivision(ls.language.currentName)
     if not assigned(p):
       return errors.BAD_STATE
-    if not assigned(ls.language.currentImplementation):
+    let lm = ls.language.currentImplementation
+    if not assigned(lm):
       return errors.BAD_STATE
+    if lm.rendered:
+      return errors.DEFINE_BEFORE_VALUE
     let once = state.getPropertyValue(UNIM_IMPORTING_KEY) == FREQUENCY_ONCE
     parameters.join(STRINGS_SPACE).split(STRINGS_COMMA).each u:
       let lu = strip(u)
@@ -463,7 +476,7 @@ childCallback doUses:
         ls.files.imported.add(lu)
       elif once:
         continue
-      ls.language.currentImplementation.uses.add(lu)
+      lm.uses.add(lu)
   return OK
 
 topCallback doMember:
@@ -487,6 +500,30 @@ topCallback doMember:
     ls.language.currentName = p.name
     lm.data_var = isVar
     ls.language.currentImplementation = lm
+  return OK
+
+childCallback doValue:
+  let d = state.getPropertyValue(KEY_DIVISION)
+  if d notin DIVISIONS_WITH_VALUE:
+    return errors.CANT_HOLD_VALUE
+  state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_BODY)
+  if state.isTranslating():
+    let ls = loadUbernimStatus(state)
+    var p = ls.getDivision(ls.language.currentName)
+    if not assigned(p):
+      return errors.BAD_STATE
+    let lm = ls.language.currentImplementation
+    if not assigned(lm):
+      return errors.BAD_STATE
+    if lm.rendered:
+      return errors.ALREADY_RENDERED
+    lm.rendered = true
+    #let lc = p.kind == DIVISIONS_CLASS
+    #let lp = p.extends
+    #let ln = ls.language.currentName
+    lm.data_extra = parameters.join(STRINGS_SPACE)
+    if d == DIVISIONS_MEMBER:
+      return GOOD(renderUses(lm.uses) & renderMemberBegin(lm, false))
   return OK
 
 childCallback doEnd:
@@ -514,7 +551,10 @@ childCallback doEnd:
       let p = if lm.rendered: STRINGS_EMPTY else: renderUses(lm.uses) & renderRoutineBegin(lm) & STRINGS_EOL & CODEGEN_INDENT & CODEGEN_DISCARD
       return GOOD(p & renderRoutineEnd())
     elif d == DIVISIONS_MEMBER:
-      return GOOD(renderBlockEnd())
+      if not lm.rendered and not lm.data_var:
+        return errors.UNDEFINED_MEMBER_VALUE
+      let p = if lm.rendered: STRINGS_EMPTY else: renderUses(lm.uses) & renderMemberBegin(lm, false)
+      return GOOD(p & renderMemberEnd())
     elif d == DIVISIONS_NOTE or d == DIVISIONS_IMPORTS or d == DIVISIONS_EXPORTS:
       return GOOD(STRINGS_EOL)
   return OK
@@ -560,4 +600,5 @@ proc initialize*(): UbernimFeature =
     cmd("code", PreprodArguments.uaNone, doCode)
     cmd("uses", PreprodArguments.uaNonZero, doUses)
     cmd("member", PreprodArguments.uaNonZero, doMember)
+    cmd("value", PreprodArguments.uaNonZero, doValue)
     cmd("end", PreprodArguments.uaNone, doEnd)

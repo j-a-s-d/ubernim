@@ -12,33 +12,25 @@ use strutils,find
 use strutils,split
 use strutils,strip
 
-let ppFeatures = (
-  UNIMCMDS: UNIMCMDS.initialize(), # ubernim general commands
-  SWITCHES: SWITCHES.initialize(), # nim compiler command line switches
-  SHELLCMD: SHELLCMD.initialize(), # os shell commands execution
-  FSACCESS: FSACCESS.initialize(), # os filesystem access
-  REQUIRES: REQUIRES.initialize(), # ubernim external files requirement (differs from INCLUDE in that the required modules are preprocessed separatelly)
-  LANGUAGE: LANGUAGE.initialize()  # ubernim language extensions
-)
+let ppFeatures = [
+  UNIMCMDS.initialize(), # ubernim general commands
+  SWITCHES.initialize(), # nim compiler command line switches
+  SHELLCMD.initialize(), # os shell commands execution
+  FSACCESS.initialize(), # os filesystem access
+  REQUIRES.initialize(), # ubernim external files requirement (differs from INCLUDE in that the required modules are preprocessed separatelly)
+  LANGUAGE.initialize()  # ubernim language extensions
+]
 
 var ppOptions: PreprodOptions = PREPROD_DEFAULT_OPTIONS
 ppOptions.keepBlankLines = false
-ppOptions.initialEnabledFeatures &= @[
-  ppFeatures.UNIMCMDS.name,
-  ppFeatures.SWITCHES.name,
-  ppFeatures.SHELLCMD.name,
-  ppFeatures.FSACCESS.name,
-  ppFeatures.REQUIRES.name,
-  ppFeatures.LANGUAGE.name
-]
+ppFeatures.each x:
+  ppOptions.initialEnabledFeatures &= x.name
 
-let ppCommands: PreprodCommands =
-  ppFeatures.UNIMCMDS.commands &
-  ppFeatures.SWITCHES.commands &
-  ppFeatures.SHELLCMD.commands &
-  ppFeatures.FSACCESS.commands &
-  ppFeatures.REQUIRES.commands &
-  ppFeatures.LANGUAGE.commands
+let ppCommands: PreprodCommands = block:
+  var cmds: PreprodCommands = @[]
+  ppFeatures.each x:
+    cmds &= x.commands
+  cmds
 
 let ppPreviewer: PreprodPreviewer = proc (state: var PreprodState, r: PreprodResult): PreprodResult =
   result = r

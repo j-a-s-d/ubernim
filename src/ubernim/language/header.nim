@@ -28,6 +28,7 @@ const
   DIVISIONS_MEMBER* = "MEMBER" # implementation
   DIVISIONS_ON_APPLY* = [DIVISIONS_COMPOUND, DIVISIONS_INTERFACE, DIVISIONS_PROTOCOL]
   DIVISIONS_WITH_CODE* = [DIVISIONS_CONSTRUCTOR, DIVISIONS_GETTER, DIVISIONS_SETTER, DIVISIONS_METHOD, DIVISIONS_TEMPLATE, DIVISIONS_ROUTINE, DIVISIONS_MEMBER]
+  DIVISIONS_WITH_VALUE* = [DIVISIONS_MEMBER]
   DIVISIONS_WITH_FIELDS* = [DIVISIONS_CLASS, DIVISIONS_RECORD, DIVISIONS_PROTOCOL, DIVISIONS_COMPOUND]
   DIVISIONS_WITH_METHODS* = [DIVISIONS_CLASS, DIVISIONS_RECORD, DIVISIONS_PROTOCOL, DIVISIONS_INTERFACE]
   DIVISIONS_WITH_TEMPLATES* = [DIVISIONS_CLASS, DIVISIONS_RECORD]
@@ -52,7 +53,7 @@ type
     imported*: bool
     generics*: string
     data_type*: string # methods: return type & fields: value type
-    data_extra*: string # methods: parameters & class fields: initialization value
+    data_extra*: string # methods: parameters & members and class fields: initialization value
     data_constructor*: bool # methods: constructor flag & fields: unused
     data_getter*: bool # methods: getter flag & fields: unused
     data_setter*: bool # methods: setter flag & fields: unused
