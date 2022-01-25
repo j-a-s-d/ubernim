@@ -68,8 +68,8 @@ func renderMember*(keyword, id, pragmas, outputtype, extra: string): string =
     )
 
 func renderDocs*(docs: StringSeq): string =
-  docs.each s:
-    result &= STRINGS_EOL & CODEGEN_INDENT & CODEGEN_DOCS & s
+  docs.each line:
+    result &= STRINGS_EOL & CODEGEN_INDENT & CODEGEN_DOCS & line
 
 func renderId*(name: string, public: bool, generics: string): string =
   result = name
@@ -168,18 +168,18 @@ func renderTemplateBegin*(m: LanguageItem, className: string): string =
 func renderTemplateEnd*(): string =
   STRINGS_EOL
 
-proc renderMemberBegin*(m: LanguageItem, allowInit: bool): string =
+proc renderMemberBegin*(m: LanguageItem, init: bool): string =
   let kw = if m.data_var: CODEGEN_VAR else: CODEGEN_LET
   let pragmas = renderPragmas(m.pragmas)
-  let d = renderDocs(m.docs)
-  let x = if hasContent(m.data_extra): (
-    if hasContent(d): spaced(m.data_extra, CODEGEN_DOCS, STRINGS_BACKSLASH) else: m.data_extra
+  let doc = renderDocs(m.docs)
+  let extra = if hasContent(m.data_extra): (
+    if hasContent(doc): spaced(m.data_extra, CODEGEN_DOCS, STRINGS_BACKSLASH) else: m.data_extra
   ) else: (
-    if allowInit: CODEGEN_BLOCK & STRINGS_COLON else: STRINGS_EMPTY
+    if init: CODEGEN_BLOCK & STRINGS_COLON else: STRINGS_EMPTY
   )
   renderMember(
-    kw, renderId(m.name, m.public, m.generics), pragmas, m.data_type, x
-  ) & d
+    kw, renderId(m.name, m.public, m.generics), pragmas, m.data_type, extra
+  ) & doc
 
 func renderMemberEnd*(): string =
   STRINGS_EOL

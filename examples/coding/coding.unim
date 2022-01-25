@@ -89,7 +89,7 @@ echo ex.toString()
 ex.foo:
   echo "RECORD TEMPLATE ***********************************************"
 
-.unim:importing once
+.importing once
 
 .imports
   os
@@ -107,7 +107,7 @@ ex.foo:
   Just like this.
 .end
 
-.unim:exporting once
+.exporting once
 
 .exports
   os
@@ -251,6 +251,51 @@ if aaa.testing(1):
 .end
 
 .pop
+
+.# you can define var and let members
+.# with immediate value assignment or an initializing block of code
+.# and also using pragmas, documentation and uses
+
+.member aLet*: string
+.docs
+  This is an immutable local.
+.code
+  let res = "   initializing a member...   "
+  res
+.end
+
+.member var aVar*: string
+.uses strutils.strip
+.docs
+  This is an mutable local.
+.code
+  let res = aLet
+  strip res
+.end
+
+.member immLet*:int
+.value 12345
+.end
+
+.member var immVar*:int
+.value 12345
+.end
+
+.member immLetWithDocs*:int
+.docs
+  This is an immutable local with an immediate value.
+.value 123456
+.end
+
+.member var immVarWithDocs*:int
+.docs
+  This is an mutable local with an immediate value.
+.value immLetWithDocs
+.end
+
+.member var uninitializedVar*:int
+.pragmas threadvar
+.end
 
 .# and more regular nim code
 when defined(hello):

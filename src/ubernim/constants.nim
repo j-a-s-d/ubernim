@@ -6,10 +6,6 @@ const
   UNIM_FLUSH_KEY* = "UNIM_FLUSH"
   FLAG_YES* = "yes" # default
   FLAG_NO* = "no"
-  UNIM_IMPORTING_KEY* = "UNIM_IMPORTING"
-  UNIM_EXPORTING_KEY* = "UNIM_EXPORTING"
-  FREQUENCY_ALWAYS* = "always" # default
-  FREQUENCY_ONCE* = "once"
   UNIM_MODE_KEY* = "UNIM_MODE"
   MODE_FREE* = "free" # default
   MODE_STRICT* = "strict"
@@ -17,6 +13,10 @@ const
   VALUE_IGNORED* = "ignored" # default
   VALUE_INFORMED* = "informed"
   VALUE_PERFORMED* = "performed"
+  FREQ_IMPORTING_KEY* = "FREQ_IMPORTING"
+  FREQ_EXPORTING_KEY* = "FREQ_EXPORTING"
+  FREQUENCY_ALWAYS* = "always" # default
+  FREQUENCY_ONCE* = "once"
   NIMC_DEFINES_KEY* = "NIMC_DEFINES"
   NIMC_SWITCHES_KEY* = "NIMC_SWITCHES"
   NIMC_CFGFILE_KEY* = "NIMC_CFGFILE"

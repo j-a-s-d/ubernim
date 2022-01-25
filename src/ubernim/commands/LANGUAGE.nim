@@ -469,7 +469,7 @@ childCallback doUses:
       return errors.BAD_STATE
     if lm.rendered:
       return errors.DEFINE_BEFORE_VALUE
-    let once = state.getPropertyValue(UNIM_IMPORTING_KEY) == FREQUENCY_ONCE
+    let once = state.getPropertyValue(FREQ_IMPORTING_KEY) == FREQUENCY_ONCE
     parameters.join(STRINGS_SPACE).split(STRINGS_COMMA).each u:
       let lu = strip(u)
       if lu notin ls.files.imported:
@@ -569,6 +569,22 @@ topCallback doPop:
     return GOOD(renderPop() & STRINGS_EOL)
   return OK
 
+topCallback doImporting:
+  if state.isTranslating():
+    let frequency = parameters[0].toLower()
+    if frequency notin [FREQUENCY_ALWAYS, FREQUENCY_ONCE]:
+      return errors.BAD_FREQUENCY
+    state.setPropertyValue(FREQ_IMPORTING_KEY, frequency)
+  return OK
+
+topCallback doExporting:
+  if state.isTranslating():
+    let frequency = parameters[0].toLower()
+    if frequency notin [FREQUENCY_ALWAYS, FREQUENCY_ONCE]:
+      return errors.BAD_FREQUENCY
+    state.setPropertyValue(FREQ_EXPORTING_KEY, frequency)
+  return OK
+
 # INITIALIZATION
 
 proc initialize*(): UbernimFeature =
@@ -576,6 +592,8 @@ proc initialize*(): UbernimFeature =
     cmd("note", PreprodArguments.uaNone, doNote)
     cmd("imports", PreprodArguments.uaNone, doImports)
     cmd("exports", PreprodArguments.uaNone, doExports)
+    cmd("importing", PreprodArguments.uaOne, doImporting)
+    cmd("exporting", PreprodArguments.uaOne, doExporting)
     cmd("push", PreprodArguments.uaNonZero, doPush)
     cmd("pop", PreprodArguments.uaNone, doPop)
     cmd("pragmas", PreprodArguments.uaNonZero, doPragmas)

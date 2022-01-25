@@ -84,13 +84,13 @@ let ppTranslater: PreprodTranslater = proc (state: var PreprodState, r: PreprodR
             if d == DIVISIONS_EXPORTS:
               if not ls.files.exported.contains(item):
                 ls.files.exported.add(item)
-              elif state.getPropertyValue(UNIM_EXPORTING_KEY) == FREQUENCY_ONCE:
+              elif state.getPropertyValue(FREQ_EXPORTING_KEY) == FREQUENCY_ONCE:
                 return OK
               return GOOD(CODEGEN_EXPORT & STRINGS_SPACE & item)
             else: # d == DIVISIONS_IMPORTS
               if not ls.files.imported.contains(item):
                 ls.files.imported.add(item)
-              elif state.getPropertyValue(UNIM_IMPORTING_KEY) == FREQUENCY_ONCE:
+              elif state.getPropertyValue(FREQ_IMPORTING_KEY) == FREQUENCY_ONCE:
                 return OK
               if r.output.find(STRINGS_PERIOD) > -1:
                 let p = item.split(STRINGS_PERIOD)
@@ -114,9 +114,9 @@ proc makePreprocessor*(filename: string): PreprodPreprocessor =
   result.state.setPropertyValue(UNIM_FILE_KEY, filename.changeFileExt(NIM_EXTENSION))
   result.state.setPropertyValue(UNIM_FLUSH_KEY, FLAG_YES)
   result.state.setPropertyValue(UNIM_MODE_KEY, MODE_FREE)
-  result.state.setPropertyValue(UNIM_IMPORTING_KEY, FREQUENCY_ALWAYS)
-  result.state.setPropertyValue(UNIM_EXPORTING_KEY, FREQUENCY_ALWAYS)
   result.state.setPropertyValue(UNIM_CLEANUP_KEY, VALUE_IGNORED)
+  result.state.setPropertyValue(FREQ_IMPORTING_KEY, FREQUENCY_ALWAYS)
+  result.state.setPropertyValue(FREQ_EXPORTING_KEY, FREQUENCY_ALWAYS)
 
 let DefaultPreprocessDoer* = proc (filename: string, ls: UbernimStatus): var PreprodState =
   # setup preprocessor

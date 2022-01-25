@@ -25,9 +25,9 @@ template error(id: untyped, msg: string): untyped =
   template id*(extra: string = STRINGS_EMPTY): PreprodResult {.inject.} = BAD(spaced(msg, extra))
 
 error UNEXPECTED, "an unexpected error occurred"
-error BAD_VERSION, "a newer version is required"
 error BAD_STATE, "bad state"
 error BAD_STATE_IN_PREVIEW, "bad state in preview"
+error BAD_VERSION, "a newer version is required"
 error BAD_FLAG, "only yes/no values allowed"
 error BAD_MODE, "only free/strict values allowed"
 error BAD_FREQUENCY, "only always/once values allowed"

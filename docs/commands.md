@@ -20,15 +20,6 @@ This is the documentation of the ubernim commands (separated by preprod features
 	- values: free/strict (default: free)
 	- note: this is useful to restrict portions or entire files from containing nim code
 	- example: `.unim:mode strict`
-* **.unim:importing** *(since 0.4.1)*
-	- specifies if the imports will be emitted always or once per file
-	- values: always/once (default: always, it's more compatible with conditional defines, otherwise you could end up with a required import not being there)
-	- note: this also affects the .uses clause of methods, routines, etc
-	- example: `.unim:importing once`
-* **.unim:exporting** *(since 0.4.1)*
-	- specifies if the exports will be emitted always or once per file
-	- values: always/once (default: always)
-	- example: `.unim:exporting once`
 * **.unim:cleanup** *(since 0.4.3)*
 	- specifies if the generated files will be kept in disk (with 'ignored' value), listed to the console (with 'informed' value) or deleted after all steps are done (with 'performed' value)
 	- values: ignored/informed/performed (default: ignored)
@@ -246,6 +237,15 @@ See them working in the *coding* example.
 	- specifies an exports block that will be emitted as export lines
 	- values: any valid nim export
 	- example: `.exports`
+* **.importing** *(since 0.4.1)*
+	- specifies if the imports will be emitted always or once per file
+	- values: always/once (default: always, it's more compatible with conditional defines, otherwise you could end up with a required import not being there)
+	- note: this also affects the .uses clause of methods, routines, etc
+	- example: `.importing once`
+* **.exporting** *(since 0.4.1)*
+	- specifies if the exports will be emitted always or once per file
+	- values: always/once (default: always)
+	- example: `.exporting once`
 * **.push** *(since 0.2.0)*
 	- specifies pragmas that will be pushed to the nim's pragma stack
 	- values: any valid pragma values you would push in nim

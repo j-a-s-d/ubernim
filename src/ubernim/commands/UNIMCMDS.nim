@@ -41,22 +41,6 @@ topCallback doMode:
     state.setPropertyValue(UNIM_MODE_KEY, mode)
   return OK
 
-topCallback doImporting:
-  if state.isTranslating():
-    let frequency = parameters[0].toLower()
-    if frequency notin [FREQUENCY_ALWAYS, FREQUENCY_ONCE]:
-      return errors.BAD_FREQUENCY
-    state.setPropertyValue(UNIM_IMPORTING_KEY, frequency)
-  return OK
-
-topCallback doExporting:
-  if state.isTranslating():
-    let frequency = parameters[0].toLower()
-    if frequency notin [FREQUENCY_ALWAYS, FREQUENCY_ONCE]:
-      return errors.BAD_FREQUENCY
-    state.setPropertyValue(UNIM_EXPORTING_KEY, frequency)
-  return OK
-
 # INITIALIZATION
 
 proc initialize*(): UbernimFeature =
@@ -64,6 +48,4 @@ proc initialize*(): UbernimFeature =
     cmd("unim:version", PreprodArguments.uaOne, doVersion)
     cmd("unim:cleanup", PreprodArguments.uaOne, doCleanup)
     cmd("unim:flush", PreprodArguments.uaOne, doFlush)
-    cmd("unim:importing", PreprodArguments.uaOne, doImporting)
-    cmd("unim:exporting", PreprodArguments.uaOne, doExporting)
     cmd("unim:mode", PreprodArguments.uaOne, doMode)
