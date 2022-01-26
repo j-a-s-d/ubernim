@@ -181,6 +181,7 @@ ex.foo:
   +create*()
   +create*(test: int, testing: string)
   testing*(a: int): bool
+  something(): int
 .fields
   f4: int
 .methods
@@ -221,6 +222,11 @@ ex.foo:
   echo parent.getA() # in methods you can access self and parent fields and methods
   echo self.getA()
   true
+.end
+
+.method TestClass.something(): int
+.code
+  123
 .end
 
 .template TestClass.bar(code: untyped): untyped

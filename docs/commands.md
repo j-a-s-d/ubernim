@@ -246,6 +246,11 @@ See them working in the *coding* example.
 	- specifies if the exports will be emitted always or once per file
 	- values: always/once (default: always)
 	- example: `.exporting once`
+* **.applying** *(since 0.5.0)*
+	- specifies a compound, interface or protocol that will be applied to this file
+	- values: any valid existing compound, interface or protocol
+	- note: fields are fulfilled with members, and methods with routines
+	- example: `.applying MyInterface`
 * **.push** *(since 0.2.0)*
 	- specifies pragmas that will be pushed to the nim's pragma stack
 	- values: any valid pragma values you would push in nim

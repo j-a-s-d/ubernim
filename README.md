@@ -37,6 +37,7 @@ You may also want to check my other nimlang projects:
 	- added .member to LANGUAGE feature to allow the declaration of initializable let and var locals
 	- added .value child command to .member command to allow immediate value assignments
 	- moved .importing and .exporting commands to the LANGUAGE feature
+	- added .applying to the LANGUAGE feature to allow enforcement of routines and members in files
 	- general improvements
 * 19-01-22 **[0.4.4]**
 	- added .nimc:target to SWITCHES feature to allow to specify the target compiler

@@ -14,36 +14,27 @@ use strutils,toLower
 
 # DIVISION
 
-func validateDivision(ls: UbernimStatus, d: LanguageDivision): PreprodResult =
+func getFullDivisionItems(ls: UbernimStatus, p: LanguageDivision): LanguageItems =
+  result = p.items
+  if hasContent(p.extends):
+    result.add(getFullDivisionItems(ls, ls.getDivision(p.extends)))
+  if hasContent(p.implies):
+    result.add(getFullDivisionItems(ls, ls.getDivision(p.implies)))
+  p.applies.each u:
+    result.add(getFullDivisionItems(ls, ls.getDivision(u)))
+
+proc validateDivisionApplies*(ls: UbernimStatus, d: LanguageDivision, name: string): PreprodResult =
   result = OK
-  # check extensions to exist and be of the same type -- redundant?
-  var m: LanguageDivision = nil
-  if hasContent(d.extends):
-    m = ls.getDivision(d.extends)
-    if not assigned(m):
-      return errors.UNDEFINED_REFERENCE(apostrophe(d.extends))
-    else:
-      while assigned(m):
-        if m.kind != d.kind:
-          return BAD("the referred " & apostrophe(d.extends) & " is not of the same type as " & apostrophe(d.name))
-        m = ls.getDivision(m.extends)
-  # check inherited classes not to imply the same classes -- redundant?
-  m = d
-  var s = newStringSeq()
-  while assigned(m):
-    if hasContent(m.implies):
-      if m.implies notin s:
-        s.add(m.implies)
-      else:
-        return BAD("an ancestor class of " & apostrophe(d.name) & " implies " & apostrophe(m.implies) & " which is already implied")
-    m = ls.getDivision(m.extends)
   # check for the presence of the applies against the fields of own division, from implies and from extensions
-  m = d
+  var m: LanguageDivision = d
   var r: LanguageItems = @[]
-  func isPresent(b: LanguageItem): bool =
+  proc isPresent(applyingItem: LanguageItem): bool =
     result = false
     r.each x:
-      result = x.name == b.name and x.kind == b.kind and x.data_type == b.data_type# and x.public == b.public
+      let kok = applyingItem.kind == x.kind or
+        (applyingItem.kind == SUBDIVISIONS_FIELDS and x.kind == SUBDIVISIONS_MEMBERS) or
+        (applyingItem.kind == SUBDIVISIONS_METHODS and x.kind == SUBDIVISIONS_ROUTINES)
+      result = x.name == applyingItem.name and kok and x.data_type == applyingItem.data_type# and x.public == applyingItem.public
       if result:
         break
   while assigned(m):
@@ -57,10 +48,35 @@ func validateDivision(ls: UbernimStatus, d: LanguageDivision): PreprodResult =
       if not assigned(p):
         return errors.UNDEFINED_REFERENCE(apostrophe(a))
       else:
-        p.items.each b:
+        ls.getFullDivisionItems(p).each b:
           if not isPresent(b):
-            return BAD("the item " & apostrophe(b.name) & " from " & apostrophe(a) & " is not present in " & apostrophe(m.name))
+            return BAD("the item " & apostrophe(b.name) & " from " & apostrophe(a) & " is not present in " & apostrophe(name))
     m = ls.getDivision(m.extends)
+
+proc validateDivision(ls: UbernimStatus, d: LanguageDivision): PreprodResult =
+  result = OK
+  var m: LanguageDivision = nil
+  # check extensions to exist and be of the same type -- redundant?
+  #if hasContent(d.extends):
+  #  m = ls.getDivision(d.extends)
+  #  if not assigned(m):
+  #    return errors.UNDEFINED_REFERENCE(apostrophe(d.extends))
+  #  else:
+  #    while assigned(m):
+  #      if m.kind != d.kind:
+  #        return BAD("the referred " & apostrophe(d.extends) & " is not of the same type as " & apostrophe(d.name))
+  #      m = ls.getDivision(m.extends)
+  # check inherited classes not to imply the same classes -- redundant?
+  m = d
+  var s = newStringSeq()
+  while assigned(m):
+    if hasContent(m.implies):
+      if m.implies notin s:
+        s.add(m.implies)
+      else:
+        return BAD("an ancestor of " & apostrophe(d.name) & " implies " & apostrophe(m.implies) & " which is already implied")
+    m = ls.getDivision(m.extends)
+  return validateDivisionApplies(ls, d, d.name)
 
 func renderDivision(ls: UbernimStatus, d: LanguageDivision): string =
   func buildFields(indent: string, allowVisibility: bool): string =
@@ -186,6 +202,8 @@ childCallback doExtends:
     let x = ls.getDivision(parameters[0])
     if not assigned(x):
       return errors.CANT_EXTEND_INEXISTENT(apostrophe(parameters[0]))
+    if p.kind != x.kind:
+      return errors.CANT_EXTEND_DIFFERENT
     if x.data_sealed:
       return errors.CANT_EXTEND_SEALED(apostrophe(parameters[0]))
     p.extends = parameters[0]
@@ -412,6 +430,7 @@ topCallback doRoutine:
       return errors.ALREADY_DEFINED(spaced(WORDS_ROUTINE, apostrophe(full)))
     ls.language.currentName = p.name
     ls.language.currentImplementation = lm
+    p.items.add(lm)
   return OK
 
 childCallback doDocs:
@@ -500,6 +519,7 @@ topCallback doMember:
     ls.language.currentName = p.name
     lm.data_var = isVar
     ls.language.currentImplementation = lm
+    p.items.add(lm)
   return OK
 
 childCallback doValue:
@@ -585,6 +605,23 @@ topCallback doExporting:
     state.setPropertyValue(FREQ_EXPORTING_KEY, frequency)
   return OK
 
+topCallback doApplying:
+  if state.isTranslating():
+    let ls = loadUbernimStatus(state)
+    var p = ls.getDivision(SCOPE_GLOBAL)
+    if not assigned(p):
+      return errors.BAD_STATE
+    let ld = ls.getDivision(parameters[0])
+    if not assigned(ld):
+      return errors.UNDEFINED_REFERENCE(apostrophe(parameters[0]))
+    if ld.kind notin DIVISIONS_ON_APPLY:
+      return errors.NOT_APPLICABLE
+    if parameters[0] in p.applies:
+      return errors.ALREADY_APPLYING(apostrophe(parameters[0]))
+    p.applies.add(parameters[0])
+    return validateDivisionApplies(ls, p, ls.files.callstack[^1])
+  return OK
+
 # INITIALIZATION
 
 proc initialize*(): UbernimFeature =
@@ -594,6 +631,7 @@ proc initialize*(): UbernimFeature =
     cmd("exports", PreprodArguments.uaNone, doExports)
     cmd("importing", PreprodArguments.uaOne, doImporting)
     cmd("exporting", PreprodArguments.uaOne, doExporting)
+    cmd("applying", PreprodArguments.uaOne, doApplying)
     cmd("push", PreprodArguments.uaNonZero, doPush)
     cmd("pop", PreprodArguments.uaNone, doPop)
     cmd("pragmas", PreprodArguments.uaNonZero, doPragmas)
