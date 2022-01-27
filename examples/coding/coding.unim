@@ -18,17 +18,6 @@
 .require compounds.unim
 .require interfaces.unim
 
-.record Duper # a record is translated to a tuple
-.fields
-  bbb: bool
-.end
-
-.record Super
-.implies Duper # implies injects the specified into the current
-.fields
-  aaa: bool
-.end
-
 .protocol M0ABCT # a protocol can have fields and methods
 .fields
   m0: string
@@ -38,13 +27,14 @@
 
 .record Example
 .pragmas final
-.implies Super
 .applies Base # applies forces a compound, interface or protocol to be satisfied
 .applies Stringable
 .applies M0ABCT
 .fields
   f1: int # satisfy Base compound
      m0: string
+  aaa: bool
+  bbb: bool
 .methods
   toString (   ) : string # satisfy Stringable interface
   toString2(): string

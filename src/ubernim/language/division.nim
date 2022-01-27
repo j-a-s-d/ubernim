@@ -15,7 +15,6 @@ func newLanguageDivision*(kind: string, name: string): LanguageDivision =
   let n = if result.data_sealed: dropLeft(name, 1) else: name
   result.setupItem(n)
   result.applies = @[]
-  result.implies = STRINGS_EMPTY
   result.extends = STRINGS_EMPTY
   result.items = @[]
 

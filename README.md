@@ -38,6 +38,7 @@ You may also want to check my other nimlang projects:
 	- added .value child command to .member command to allow immediate value assignments
 	- moved .importing and .exporting commands to the LANGUAGE feature
 	- added .applying to the LANGUAGE feature to allow enforcement of routines and members in files
+	- removed .implies from LANGUAGE feature due to redundancy
 	- general improvements
 * 19-01-22 **[0.4.4]**
 	- added .nimc:target to SWITCHES feature to allow to specify the target compiler

@@ -152,10 +152,6 @@ See them working in the *coding* example.
 	- specifies a compound, interface or protocol that will be applied to this protocol, class or record
 	- values: any valid existing compound, interface or protocol
 	- example: `.applies SomeInterface`
-* **.implies** *(since 0.1.0)*
-	- specifies a class or record which fields will be copied inside the current class or record
-	- values: any valid existing class or record (type must match)
-	- example: `.implies AnotherClass`
 * **.extends** *(since 0.1.0)*
 	- specifies a class or record to extend the current class or record
 	- values: any valid existing class or record (type must match)

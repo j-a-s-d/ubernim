@@ -70,7 +70,6 @@ type
 type
   LanguageDivision* = ref object of LanguageItem
     applies*: StringSeq
-    implies*: string
     extends*: string
     items*: LanguageItems
   LanguageDivisions* = seq[LanguageDivision]

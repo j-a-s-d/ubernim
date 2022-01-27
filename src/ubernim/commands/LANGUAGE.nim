@@ -18,12 +18,10 @@ func getFullDivisionItems(ls: UbernimStatus, p: LanguageDivision): LanguageItems
   result = p.items
   if hasContent(p.extends):
     result.add(getFullDivisionItems(ls, ls.getDivision(p.extends)))
-  if hasContent(p.implies):
-    result.add(getFullDivisionItems(ls, ls.getDivision(p.implies)))
   p.applies.each u:
     result.add(getFullDivisionItems(ls, ls.getDivision(u)))
 
-proc validateDivisionApplies*(ls: UbernimStatus, d: LanguageDivision, name: string): PreprodResult =
+proc validateDivision*(ls: UbernimStatus, d: LanguageDivision): PreprodResult =
   result = OK
   # check for the presence of the applies against the fields of own division, from implies and from extensions
   var m: LanguageDivision = d
@@ -50,33 +48,8 @@ proc validateDivisionApplies*(ls: UbernimStatus, d: LanguageDivision, name: stri
       else:
         ls.getFullDivisionItems(p).each b:
           if not isPresent(b):
-            return BAD("the item " & apostrophe(b.name) & " from " & apostrophe(a) & " is not present in " & apostrophe(name))
+            return BAD("the item " & apostrophe(b.name) & " from " & apostrophe(a) & " is not present in " & apostrophe(ls.files.callstack[^1]))
     m = ls.getDivision(m.extends)
-
-proc validateDivision(ls: UbernimStatus, d: LanguageDivision): PreprodResult =
-  result = OK
-  var m: LanguageDivision = nil
-  # check extensions to exist and be of the same type -- redundant?
-  #if hasContent(d.extends):
-  #  m = ls.getDivision(d.extends)
-  #  if not assigned(m):
-  #    return errors.UNDEFINED_REFERENCE(apostrophe(d.extends))
-  #  else:
-  #    while assigned(m):
-  #      if m.kind != d.kind:
-  #        return BAD("the referred " & apostrophe(d.extends) & " is not of the same type as " & apostrophe(d.name))
-  #      m = ls.getDivision(m.extends)
-  # check inherited classes not to imply the same classes -- redundant?
-  m = d
-  var s = newStringSeq()
-  while assigned(m):
-    if hasContent(m.implies):
-      if m.implies notin s:
-        s.add(m.implies)
-      else:
-        return BAD("an ancestor of " & apostrophe(d.name) & " implies " & apostrophe(m.implies) & " which is already implied")
-    m = ls.getDivision(m.extends)
-  return validateDivisionApplies(ls, d, d.name)
 
 func renderDivision(ls: UbernimStatus, d: LanguageDivision): string =
   func buildFields(indent: string, allowVisibility: bool): string =
@@ -86,11 +59,7 @@ func renderDivision(ls: UbernimStatus, d: LanguageDivision): string =
         if f.kind == SUBDIVISIONS_FIELDS:
           let v = if allowVisibility and f.public: STRINGS_ASTERISK else: STRINGS_EMPTY
           result &= STRINGS_EOL & indent & f.name & v & STRINGS_COLON & STRINGS_SPACE & f.data_type
-    result = STRINGS_EMPTY
-    var m = d
-    while assigned(m):
-      result &= writeFields(m.items)
-      m = ls.getDivision(m.implies)
+    result = writeFields(d.items)
   case d.kind:
   of DIVISIONS_CLASS:
     var typedef = CODEGEN_REF & STRINGS_SPACE & CODEGEN_OBJECT
@@ -171,23 +140,6 @@ childCallback doApplies:
     p.applies.add(parameters[0])
   return OK
 
-childCallback doImplies:
-  if state.isPreviewing():
-    let d = state.getPropertyValue(KEY_DIVISION)
-    let ls = loadUbernimStatus(state)
-    var p = ls.getDivision(ls.language.currentName)
-    if not assigned(p):
-      return errors.BAD_STATE
-    let ld = ls.getDivision(parameters[0])
-    if not assigned(ld):
-      return errors.UNDEFINED_REFERENCE(apostrophe(parameters[0]))
-    if ld.kind != d:
-      return errors.NOT_IMPLIABLE
-    if hasContent(p.implies):
-      return errors.ALREADY_IMPLYING(apostrophe(p.implies))
-    p.implies = parameters[0]
-  return OK
-
 childCallback doExtends:
   if state.isPreviewing():
     let d = state.getPropertyValue(KEY_DIVISION)
@@ -199,13 +151,14 @@ childCallback doExtends:
       return errors.BAD_STATE
     if hasContent(p.extends):
       return errors.ALREADY_EXTENDING(apostrophe(p.extends))
-    let x = ls.getDivision(parameters[0])
-    if not assigned(x):
-      return errors.CANT_EXTEND_INEXISTENT(apostrophe(parameters[0]))
-    if p.kind != x.kind:
-      return errors.CANT_EXTEND_DIFFERENT
-    if x.data_sealed:
-      return errors.CANT_EXTEND_SEALED(apostrophe(parameters[0]))
+    if parameters[0] != CODEGEN_ROOTOBJ:
+      let x = ls.getDivision(parameters[0])
+      if not assigned(x):
+        return errors.CANT_EXTEND_INEXISTENT(apostrophe(parameters[0]))
+      if p.kind != x.kind:
+        return errors.CANT_EXTEND_DIFFERENT
+      if x.data_sealed:
+        return errors.CANT_EXTEND_SEALED(apostrophe(parameters[0]))
     p.extends = parameters[0]
   return OK
 
@@ -619,7 +572,7 @@ topCallback doApplying:
     if parameters[0] in p.applies:
       return errors.ALREADY_APPLYING(apostrophe(parameters[0]))
     p.applies.add(parameters[0])
-    return validateDivisionApplies(ls, p, ls.files.callstack[^1])
+    return validateDivision(ls, p)
   return OK
 
 # INITIALIZATION
@@ -641,7 +594,6 @@ proc initialize*(): UbernimFeature =
     cmd("interface", PreprodArguments.uaOne, doInterface)
     cmd("protocol", PreprodArguments.uaOne, doProtocol)
     cmd("applies", PreprodArguments.uaOne, doApplies)
-    cmd("implies", PreprodArguments.uaOne, doImplies)
     cmd("extends", PreprodArguments.uaOne, doExtends)
     cmd("fields", PreprodArguments.uaNone, doFields)
     cmd("methods", PreprodArguments.uaNone, doMethods)
