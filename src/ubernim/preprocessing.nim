@@ -121,6 +121,7 @@ proc makePreprocessor*(filename: string): PreprodPreprocessor =
 let DefaultPreprocessDoer* = proc (filename: string, ls: UbernimStatus): var PreprodState =
   # setup preprocessor
   var pp = makePreprocessor(filename)
+  pp.state.defines = ls.defines
   pp.state.storeUbernimStatus(ls)
   # run preprocessor
   var r = pp.run()

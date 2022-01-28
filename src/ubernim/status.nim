@@ -26,6 +26,7 @@ type
   TUbernimStatus = object of PreprodTag
     info*: TUbernimInfo
     files*: TUbernimFiles
+    defines*: StringSeq
     language*: TUbernimLanguage
   UbernimStatus* = ptr TUbernimStatus
 
@@ -41,6 +42,7 @@ template makeUbernimStatus*(): UbernimStatus =
       exported: newStringSeq(),
       generated: newStringSeq()
     ),
+    defines: @[],
     language: TUbernimLanguage (
       currentName: STRINGS_EMPTY,
       currentKind: STRINGS_EMPTY,

@@ -12,6 +12,7 @@ Ubernim allows:
 * compiler directives in the source file and compiler invokation all at once (without the need of calling nim by hand)
 * custom build actions in the source file (without the need of nims or nimble solutions)
 * some class-based oop superset features emiting pure nim language source code (without the need of macros usage)
+* old-school preprocessing capabilities (by exposing Preprod features)
 
 and all this via a simple preprocessing approach (built on top of Preprod, Rodster and Xam libraries).
 
@@ -33,12 +34,14 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
-* 25-01-22 **[0.5.0]**
+* 01-02-22 **[0.5.0]**
 	- added .member to LANGUAGE feature to allow the declaration of initializable let and var locals
 	- added .value child command to .member command to allow immediate value assignments
 	- moved .importing and .exporting commands to the LANGUAGE feature
 	- added .applying to the LANGUAGE feature to allow enforcement of routines and members in files
 	- removed .implies from LANGUAGE feature due to redundancy
+	- added command line preprocessor defines handling
+	- updated rodster dependency to 1.3.0
 	- general improvements
 * 19-01-22 **[0.4.4]**
 	- added .nimc:target to SWITCHES feature to allow to specify the target compiler

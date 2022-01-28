@@ -25,6 +25,7 @@ topCallback doRequire:
     rls.info.semver = ls.info.semver
     rls.info.signature = ls.info.signature
     rls.files.callstack.add(ls.files.callstack & parameters[0])
+    rls.defines = ls.defines
     rls.language.divisions.add(makeDefaultDivisions())
     var rstate = UbernimPerformers.preprocessDoer(parameters[0], rls)
     ls.files.generated.add(rls.files.generated)
