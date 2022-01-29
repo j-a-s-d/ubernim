@@ -5,7 +5,7 @@ import
   xam, preprod,
   commands,
   ../errors, ../rendering, ../constants, ../status,
-  ../language / [header, item, division]
+  ../language / [header, implementation]
 
 use strutils,strip
 use strutils,join

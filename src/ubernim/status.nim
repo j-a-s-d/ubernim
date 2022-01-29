@@ -3,7 +3,7 @@
 
 import
   xam, preprod,
-  language / header
+  language / [header, implementation]
 
 use strutils,startsWith
 use strutils,endsWith
@@ -20,7 +20,6 @@ type
     generated: StringSeq
   TUbernimLanguage = tuple
     currentName: string
-    currentKind: string
     currentImplementation: LanguageItem
     divisions: LanguageDivisions
   TUbernimStatus = object of PreprodTag
@@ -45,7 +44,6 @@ template makeUbernimStatus*(): UbernimStatus =
     defines: @[],
     language: TUbernimLanguage (
       currentName: STRINGS_EMPTY,
-      currentKind: STRINGS_EMPTY,
       currentImplementation: nil,
       divisions: @[]
     )
@@ -95,6 +93,21 @@ func isDivisionInherited*(ls: UbernimStatus, name: string): bool =
     if p.extends == name:
       return true
   return false
+
+func closeDivision*(state: var PreprodState) =
+  let ls = loadUbernimStatus(state)
+  ls.language.currentName = STRINGS_EMPTY
+  ls.language.currentImplementation = nil
+
+func openDivision*(state: var PreprodState, kind: string, name: string) =
+  let ls = loadUbernimStatus(state)
+  var item = LanguageItem()
+  item.setupItem(name)
+  let p = ls.getDivision(item.name)
+  if not assigned(p):
+    ls.language.divisions.add(newLanguageDivision(kind, name))
+  ls.language.currentName = item.name
+  ls.language.currentImplementation = nil
 
 # ITEM
 

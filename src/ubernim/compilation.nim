@@ -17,7 +17,7 @@ func buildCommandLineSwitches*(state: PreprodState): StringSeq =
   if state.hasPropertyValue(NIMC_SWITCHES_KEY):
     result.add(state.retrievePropertyValueAsSequence(NIMC_SWITCHES_KEY))
 
-let DefaultCompilerInvoker* = proc (project: string, defines: StringSeq): int =
+let SimpleCompilerInvoker* = proc (project: string, defines: StringSeq): int =
   let cmd = spaced(NIMC_INVOKATION, spaced(defines), project)
   #let cres = execCmdEx(cmd, options = {poStdErrToStdOut})
   #echo cres.output

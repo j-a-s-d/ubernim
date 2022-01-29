@@ -1,5 +1,5 @@
-# ubernim / LANGUAGE ITEM #
-#-------------------------#
+# ubernim / LANGUAGE IMPLEMENTATION #
+#-----------------------------------#
 
 import
   xam,
@@ -13,26 +13,7 @@ use strutils,join
 use strutils,split
 use strutils,find
 
-func `$`*(mbr: LanguageItem): string =
-  bracketize([
-    #"line: " & quote(mbr.line),
-    "kind: " & quote(mbr.kind),
-    "name: " & quote(mbr.name),
-    "public: " & $mbr.public,
-    "imported: " & $mbr.imported,
-    "data_type: " & quote(mbr.data_type),
-    "data_extra: " & quote(mbr.data_extra),
-    "data_constructor: " & $mbr.data_constructor,
-    "data_getter: " & $mbr.data_getter,
-    "data_setter: " & $mbr.data_setter,
-    "data_var: " & $mbr.data_var,
-    "data_sealed: " & $mbr.data_sealed,
-    "generics: " & $mbr.generics,
-    "pragmas: " & $mbr.pragmas,
-    "uses: " & $mbr.uses,
-    "docs: " & $mbr.docs,
-    "rendered: " & $mbr.rendered
-  ].join(STRINGS_COMMA & STRINGS_SPACE))
+# ITEM
 
 func setupItem*(item: LanguageItem, name: string) =
   item.public = name.endsWith(STRINGS_ASTERISK)
@@ -109,3 +90,18 @@ func newLanguageItem*(kind: string): LanguageItem =
   result = new LanguageItem
   result.kind = kind
   result.docs = @[]
+
+# DIVISION
+
+func newLanguageDivision*(kind: string, name: string): LanguageDivision =
+  result = new LanguageDivision
+  result.kind = kind
+  result.data_sealed = kind == DIVISIONS_CLASS and name.startsWith(STRINGS_EXCLAMATION)
+  let n = if result.data_sealed: dropLeft(name, 1) else: name
+  result.setupItem(n)
+  result.applies = @[]
+  result.extends = STRINGS_EMPTY
+  result.items = @[]
+
+template makeDefaultDivisions*(): LanguageDivisions =
+  @[newLanguageDivision(DIVISIONS_DEFAULT, SCOPE_GLOBAL)]

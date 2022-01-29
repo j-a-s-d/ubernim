@@ -5,7 +5,7 @@ import
   xam, preprod,
   commands,
   ../errors, ../performers, ../constants, ../status,
-  ../language / [header, division]
+  ../language / [header, implementation]
 
 use strutils,toLower
 

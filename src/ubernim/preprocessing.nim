@@ -5,7 +5,7 @@ import
   xam, preprod,
   errors, constants, performers, rendering, status,
   commands / [UNIMCMDS, SWITCHES, SHELLCMD, FSACCESS, REQUIRES, LANGUAGE],
-  language / [header, item]
+  language / [header, implementation]
 
 use os,changeFileExt
 use strutils,find
@@ -118,7 +118,7 @@ proc makePreprocessor*(filename: string): PreprodPreprocessor =
   result.state.setPropertyValue(FREQ_IMPORTING_KEY, FREQUENCY_ALWAYS)
   result.state.setPropertyValue(FREQ_EXPORTING_KEY, FREQUENCY_ALWAYS)
 
-let DefaultPreprocessDoer* = proc (filename: string, ls: UbernimStatus): var PreprodState =
+let SimplePreprocessDoer* = proc (filename: string, ls: UbernimStatus): var PreprodState =
   # setup preprocessor
   var pp = makePreprocessor(filename)
   pp.state.defines = ls.defines
