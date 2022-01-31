@@ -10,6 +10,7 @@ type
     preprocessDoer: DoubleArgsProc[string, UbernimStatus, var PreprodState]
     errorHandler: SingleArgVoidProc[string]
     compilerInvoker: DoubleArgsProc[string, StringSeq, int]
+    cleanupFormatter: DoubleArgsProc[string, string, string]
 
 # CONFIGURABLE
 
@@ -17,7 +18,8 @@ var
   UbernimPerformers*: TUbernimPerformers = (
     preprocessDoer: nil,
     errorHandler: nil,
-    compilerInvoker: nil
+    compilerInvoker: nil,
+    cleanupFormatter: nil
   )
 
 # FIXED
@@ -44,11 +46,11 @@ let compilationPerformer* = proc (state: var PreprodState): int =
   # compile
   return UbernimPerformers.compilerInvoker(state.getPropertyValue(NIMC_PROJECT_KEY), clDefs)
 
-let cleanupPerformer* = proc (state: var PreprodState, formatter: DoubleArgsProc[string, string, string]): string =
+let cleanupPerformer* = proc (state: var PreprodState): string =
   let ls = loadUbernimStatus(state)
   let value = state.getPropertyValue(UNIM_CLEANUP_KEY)
   if value != VALUE_IGNORED:
     if value == VALUE_PERFORMED:
-      return removeGeneratedFiles(ls, formatter)
+      return removeGeneratedFiles(ls, UbernimPerformers.cleanupFormatter)
     else: # value == VALUE_INFORMED
-      return informGeneratedFiles(ls, formatter)
+      return informGeneratedFiles(ls)

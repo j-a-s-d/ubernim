@@ -14,6 +14,6 @@ proc removeGeneratedFiles*(ls: UbernimStatus, formatter: DoubleArgsProc[string, 
     else:
       result &= spaced(STRINGS_ASTERISK, parenthesize("UNREMOVABLE"), gf) & STRINGS_EOL
 
-proc informGeneratedFiles*(ls: UbernimStatus, formatter: DoubleArgsProc[string, string, string]): string =
+proc informGeneratedFiles*(ls: UbernimStatus): string =
   ls.files.generated.each gf:
     result &= spaced(STRINGS_ASTERISK, parenthesize("GENERATED"), gf) & STRINGS_EOL

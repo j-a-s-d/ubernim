@@ -89,9 +89,9 @@ let events = (
   main: RodsterAppEvent (app: RodsterApplication) => (
     # use engine
     let kvm = app.getKvm();
-    setupPerformers(APP_ERROR_HANDLER);
+    setupPerformers(APP_ERROR_HANDLER, APP_CLEANUP_FORMATTER);
     let ls = makeUbernimStatus(app.getInformation().getVersion(), APP_SIGNATURE_TEXT);
-    let ir = invokePerformers(ls, kvm[APP_INPUT_KEY], kvm[APP_DEFINES_KEY].split(STRINGS_COMMA), APP_CLEANUP_FORMATTER);
+    let ir = invokePerformers(ls, kvm[APP_INPUT_KEY], kvm[APP_DEFINES_KEY].split(STRINGS_COMMA));
     kvm[APP_ERRORLEVEL_KEY] = $ir.compilationErrorlevel;
     kvm[APP_REPORT_KEY] = ir.cleanupReport
   ),
