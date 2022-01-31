@@ -9,8 +9,7 @@ when defined(js):
 
 import
   rodster, xam,
-  ubernim / [errors, performers, status, preprocessing, compilation],
-  ubernim / language / implementation
+  ubernim / [errors, engine, status]
 
 use strutils,split
 use strutils,join
@@ -22,8 +21,8 @@ const
   APP_NAME = "ubernim"
   APP_VERSION = "0.5.0"
   APP_VERSION_TEXT = spaced(APP_NAME, STRINGS_LOWERCASE_V & APP_VERSION)
+  APP_SIGNATURE_TEXT = spaced(WORDS_GENERATED, WORDS_WITH, APP_VERSION_TEXT)
   APP_COPYRIGHT_TEXT = "copyright (c) 2021-2022 by Javier Santo Domingo"
-  APP_VERSION_KEY = "app:version"
   APP_INPUT_KEY = "app:input"
   APP_DEFINES_KEY = "app:defines"
   APP_ERRORLEVEL_KEY = "app:errorlevel"
@@ -72,43 +71,29 @@ const
 
 let events = (
   initializer: RodsterAppEvent (app: RodsterApplication) => (
-    # setup kvm
+    # load parameters
     let kvm = app.getKvm();
     let nfo = app.getInformation();
     let args = nfo.getArguments();
-    if args.len == 0 or nfo.hasArgument(APP_HELP_SWITCHES): quit(APP_HELP_MSG, 0);
+    if args.len == 0 or args.len > 2 or nfo.hasArgument(APP_HELP_SWITCHES): quit(APP_HELP_MSG, 0);
     if nfo.hasArgument(APP_VERSION_SWITCHES): quit(APP_VERSION_MSG, 0);
-    kvm[APP_VERSION_KEY] = APP_VERSION_TEXT;
     let idxs = nfo.findArgumentsWithPrefix(APP_DEFINE_SWITCHES);
     if idxs.len == 0: (
       kvm[APP_INPUT_KEY] = args[0];
       kvm[APP_DEFINES_KEY] = STRINGS_EMPTY
     ) else: (
-      if args.len != 2: quit(APP_HELP_MSG, 0);
-      let didx = idxs[0];
-      kvm[APP_DEFINES_KEY] = nfo.getArgumentWithoutPrefix(didx, APP_DEFINE_SWITCHES);
-      kvm[APP_INPUT_KEY] = args[if didx == 0: 1 else: 0]
-    );
-    # setup performers
-    UbernimPerformers.preprocessDoer = SimplePreprocessDoer;
-    UbernimPerformers.compilerInvoker = SimpleCompilerInvoker;
-    UbernimPerformers.errorHandler = APP_ERROR_HANDLER
+      kvm[APP_INPUT_KEY] = args[if idxs[0] == 0: 1 else: 0];
+      kvm[APP_DEFINES_KEY] = nfo.getArgumentWithoutPrefix(idxs[0], APP_DEFINE_SWITCHES)
+    )
   ),
   main: RodsterAppEvent (app: RodsterApplication) => (
-    # setup status
+    # use engine
     let kvm = app.getKvm();
-    let nfo = app.getInformation();
-    let ls = makeUbernimStatus();
-    ls.info.semver = nfo.getVersion();
-    ls.info.signature = spaced(WORDS_GENERATED, WORDS_WITH, kvm[APP_VERSION_KEY]);
-    ls.files.callstack.add(kvm[APP_INPUT_KEY]);
-    ls.defines = kvm[APP_DEFINES_KEY].split(STRINGS_COMMA);
-    ls.language.divisions.add(makeDefaultDivisions());
-    # invoke performers
-    var state = UbernimPerformers.preprocessDoer(kvm[APP_INPUT_KEY], ls);
-    silent () => (kvm[APP_ERRORLEVEL_KEY] = $compilationPerformer(state));
-    kvm[APP_REPORT_KEY] = cleanupPerformer(state, APP_CLEANUP_FORMATTER);
-    freeUbernimStatus(state)
+    setupPerformers(APP_ERROR_HANDLER);
+    let ls = makeUbernimStatus(app.getInformation().getVersion(), APP_SIGNATURE_TEXT);
+    let ir = invokePerformers(ls, kvm[APP_INPUT_KEY], kvm[APP_DEFINES_KEY].split(STRINGS_COMMA), APP_CLEANUP_FORMATTER);
+    kvm[APP_ERRORLEVEL_KEY] = $ir.compilationErrorlevel;
+    kvm[APP_REPORT_KEY] = ir.cleanupReport
   ),
   finalizer: RodsterAppEvent (app: RodsterApplication) => (
     # inform result

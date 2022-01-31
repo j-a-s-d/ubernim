@@ -43,7 +43,7 @@ let ppPreviewer: PreprodPreviewer = proc (state: var PreprodState, r: PreprodRes
         let ls = loadUbernimStatus(state)
         var ld = ls.getDivision(ls.language.currentName)
         if not assigned(ld):
-          return errors.BAD_STATE_IN_PREVIEW
+          return errors.BAD_STATE
         if s == SUBDIVISIONS_DOCS:
           if hasContent(ld.docs) or hasContent(l):
             ld.docs.add(l)

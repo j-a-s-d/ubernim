@@ -29,11 +29,11 @@ type
     language*: TUbernimLanguage
   UbernimStatus* = ptr TUbernimStatus
 
-template makeUbernimStatus*(): UbernimStatus =
+template makeUbernimStatus*(sver: SemanticVersion, sign: string, divs: LanguageDivisions = makeDefaultDivisions()): UbernimStatus =
   var ads = TUbernimStatus(
     info: TUbernimInfo (
-      semver: newSemanticVersion(),
-      signature: STRINGS_EMPTY
+      semver: sver,
+      signature: sign
     ),
     files: TUbernimFiles (
       callstack: newStringSeq(),
@@ -41,11 +41,11 @@ template makeUbernimStatus*(): UbernimStatus =
       exported: newStringSeq(),
       generated: newStringSeq()
     ),
-    defines: @[],
+    defines: newStringSeq(),
     language: TUbernimLanguage (
       currentName: STRINGS_EMPTY,
       currentImplementation: nil,
-      divisions: @[]
+      divisions: divs
     )
   )
   addr(ads)

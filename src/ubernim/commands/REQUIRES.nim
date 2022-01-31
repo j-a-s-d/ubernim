@@ -4,8 +4,7 @@
 import
   xam, preprod,
   commands,
-  ../errors, ../performers, ../constants, ../status,
-  ../language / [header, implementation]
+  ../errors, ../performers, ../constants, ../status
 
 use strutils,toLower
 
@@ -21,12 +20,9 @@ topCallback doRequire:
       return errors.NO_RECURSIVE_REQUIRE
     if ls.isCircularReference(parameters[0]):
       return errors.NO_CIRCULAR_REFERENCE
-    var rls = makeUbernimStatus()
-    rls.info.semver = ls.info.semver
-    rls.info.signature = ls.info.signature
+    var rls = makeUbernimStatus(ls.info.semver, ls.info.signature)
     rls.files.callstack.add(ls.files.callstack & parameters[0])
     rls.defines = ls.defines
-    rls.language.divisions.add(makeDefaultDivisions())
     var rstate = UbernimPerformers.preprocessDoer(parameters[0], rls)
     ls.files.generated.add(rls.files.generated)
     rls.language.divisions.each d:

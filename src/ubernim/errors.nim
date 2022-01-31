@@ -26,7 +26,6 @@ template error(id: untyped, msg: string): untyped =
 
 error UNEXPECTED, "an unexpected error occurred"
 error BAD_STATE, "bad state"
-error BAD_STATE_IN_PREVIEW, "bad state in preview"
 error BAD_VERSION, "a newer version is required"
 error BAD_FLAG, "only yes/no values allowed"
 error BAD_MODE, "only free/strict values allowed"
