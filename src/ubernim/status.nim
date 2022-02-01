@@ -22,10 +22,14 @@ type
     currentName: string
     currentImplementation: LanguageItem
     divisions: LanguageDivisions
+  TUbernimPreprocessing = tuple
+    defines: StringSeq
+    performingHandler: SingleArgProc[UbernimStatus, var PreprodState]
+    errorHandler: SingleArgVoidProc[string]
   TUbernimStatus = object of PreprodTag
     info*: TUbernimInfo
     files*: TUbernimFiles
-    defines*: StringSeq
+    preprocessing*: TUbernimPreprocessing
     language*: TUbernimLanguage
   UbernimStatus* = ptr TUbernimStatus
 
@@ -41,7 +45,11 @@ template makeUbernimStatus*(sver: SemanticVersion, sign: string, divs: LanguageD
       exported: newStringSeq(),
       generated: newStringSeq()
     ),
-    defines: newStringSeq(),
+    preprocessing: TUbernimPreprocessing (
+      defines: newStringSeq(),
+      performingHandler: nil,
+      errorHandler: nil
+    ),
     language: TUbernimLanguage (
       currentName: STRINGS_EMPTY,
       currentImplementation: nil,

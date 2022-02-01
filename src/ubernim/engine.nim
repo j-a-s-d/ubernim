@@ -3,31 +3,33 @@
 
 import
   xam, preprod,
-  constants, errors, status, preprocessing, compilation, cleanup, rendering, performers
-
-proc performGeneration(filename, content, error: string, ls: UbernimStatus) =
-  if writeToFile(filename, content):
-    ls.files.generated.add(filename)
-  else:
-    UbernimPerformers.errorHandler(error)
-
-# OVERRIDABLE
+  constants, errors, status, preprocessing, compilation, cleanup, rendering
 
 use os,execShellCmd
 
-let SimplePreprocessDoer* = proc (status: UbernimStatus): var PreprodState =
+# FIXED
+
+proc performGeneration(status: UbernimStatus, filename, content, error: string) =
+  if writeToFile(filename, content):
+    status.files.generated.add(filename)
+  else:
+    status.preprocessing.errorHandler(error)
+
+# OVERRIDABLE
+
+let DefaultPreprocessingHandler = proc (status: UbernimStatus): var PreprodState =
   # setup preprocessor
   var pp = makePreprocessor(status.getCurrentFile())
-  pp.state.defines = status.defines
+  pp.state.defines = status.preprocessing.defines
   pp.state.storeUbernimStatus(status)
   # run preprocessor
   var r = pp.run()
   if not r.ok:
-    UbernimPerformers.errorHandler(r.output)
+    status.preprocessing.errorHandler(r.output)
   # emit output
   if pp.state.getPropertyValue(UNIM_FLUSH_KEY) == FLAG_YES:
     let uf = pp.state.getPropertyValue(UNIM_FILE_KEY)
-    performGeneration(uf, renderSignature(uf, status.info.signature) & r.output, errors.CANT_WRITE_OUTPUT.output, status)
+    performGeneration(status, uf, renderSignature(uf, status.info.signature) & r.output, errors.CANT_WRITE_OUTPUT.output)
   pp.state
 
 # ENGINE
@@ -39,6 +41,7 @@ type
     compilerInvoker: DoubleArgsProc[string, StringSeq, int]
     cleanupFormatter: DoubleArgsProc[string, string, string]
     errorHandler: SingleArgVoidProc[string]
+    preprocessingHandler: SingleArgProc[UbernimStatus, var PreprodState]
   UbernimResult* = tuple
     compilationErrorlevel: int
     cleanupReport: string
@@ -49,14 +52,14 @@ proc newUbernimEngine*(version: SemanticVersion, signature: string): UbernimEngi
   result.signature = signature
   result.compilerInvoker = proc (project: string, defines: StringSeq): int = execShellCmd(spaced(NIMC_INVOKATION, spaced(defines), project))
   result.cleanupFormatter = proc (action, file: string): string = spaced(parenthesize(action), file)
-  UbernimPerformers.preprocessDoer = SimplePreprocessDoer
-  UbernimPerformers.errorHandler = (msg: string) => quit(msg, 0)
+  result.preprocessingHandler = DefaultPreprocessingHandler
+  result.errorHandler = (msg: string) => quit(msg, 0)
 
 proc setErrorHandler*(engine: UbernimEngine, errorHandler: SingleArgVoidProc[string]) =
-  UbernimPerformers.errorHandler = errorHandler
+  engine.errorHandler = errorHandler
 
-proc setPreprocessDoer*(engine: UbernimEngine, preprocessDoer: SingleArgProc[UbernimStatus, var PreprodState]) =
-  UbernimPerformers.preprocessDoer = preprocessDoer
+proc setPreprocessingHandler*(engine: UbernimEngine, preprocessingHandler: SingleArgProc[UbernimStatus, var PreprodState]) =
+  engine.preprocessingHandler = preprocessingHandler
 
 proc setCompilerInvoker*(engine: UbernimEngine, compilerInvoker: DoubleArgsProc[string, StringSeq, int]) =
   engine.compilerInvoker = compilerInvoker
@@ -74,7 +77,7 @@ proc performCompilation(engine: UbernimEngine, state: var PreprodState): int =
   if state.hasPropertyValue(NIMC_CFGFILE_KEY):
     let status = loadUbernimStatus(state)
     let cfg = state.getPropertyValue(NIMC_CFGFILE_KEY)
-    performGeneration(cfg, lined(spaced(STRINGS_NUMERAL, cfg, status.info.signature) & nimcSwitches), errors.CANT_WRITE_CONFIG.output, status)
+    performGeneration(status, cfg, lined(spaced(STRINGS_NUMERAL, cfg, status.info.signature) & nimcSwitches), errors.CANT_WRITE_CONFIG.output)
   else:
     clDefs &= nimcSwitches
   # compile
@@ -90,13 +93,15 @@ proc performCleanup(engine: UbernimEngine, state: var PreprodState): string =
       return informGeneratedFiles(status)
 
 proc invokePerformers(engine: UbernimEngine, status: UbernimStatus): UbernimResult =
-  var state = UbernimPerformers.preprocessDoer(status)
+  var state = status.preprocessing.performingHandler(status)
   result.compilationErrorlevel = engine.performCompilation(state)
   result.cleanupReport = engine.performCleanup(state)
   freeUbernimStatus(state)
 
 proc run*(engine: UbernimEngine, main: string, defines: StringSeq): UbernimResult =
   let status = makeUbernimStatus(engine.version, engine.signature)
-  status.defines = defines
+  status.preprocessing.performingHandler = engine.preprocessingHandler
+  status.preprocessing.errorHandler = engine.errorHandler
+  status.preprocessing.defines = defines
   status.files.callstack.add(main)
   engine.invokePerformers(status)

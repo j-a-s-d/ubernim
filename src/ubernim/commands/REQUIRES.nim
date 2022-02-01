@@ -4,7 +4,7 @@
 import
   xam, preprod,
   commands,
-  ../errors, ../performers, ../constants, ../status
+  ../errors, ../constants, ../status
 
 use strutils,toLower
 
@@ -22,8 +22,10 @@ topCallback doRequire:
       return errors.NO_CIRCULAR_REFERENCE
     var rls = makeUbernimStatus(ls.info.semver, ls.info.signature)
     rls.files.callstack.add(ls.files.callstack & parameters[0])
-    rls.defines = ls.defines
-    var rstate = UbernimPerformers.preprocessDoer(rls)
+    rls.preprocessing.defines = ls.preprocessing.defines
+    rls.preprocessing.performingHandler = ls.preprocessing.performingHandler
+    rls.preprocessing.errorHandler = ls.preprocessing.errorHandler
+    var rstate = ls.preprocessing.performingHandler(rls)
     ls.files.generated.add(rls.files.generated)
     rls.language.divisions.each d:
       if d.public and not d.imported:
