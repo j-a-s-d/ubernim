@@ -3,7 +3,7 @@
 
 import
   xam, preprod,
-  errors, constants, performers, rendering, status,
+  errors, constants, rendering, status,
   commands / [UNIMCMDS, SWITCHES, SHELLCMD, FSACCESS, REQUIRES, LANGUAGE],
   language / [header, implementation]
 
@@ -117,18 +117,3 @@ proc makePreprocessor*(filename: string): PreprodPreprocessor =
   result.state.setPropertyValue(UNIM_CLEANUP_KEY, VALUE_IGNORED)
   result.state.setPropertyValue(FREQ_IMPORTING_KEY, FREQUENCY_ALWAYS)
   result.state.setPropertyValue(FREQ_EXPORTING_KEY, FREQUENCY_ALWAYS)
-
-let SimplePreprocessDoer* = proc (ls: UbernimStatus): var PreprodState =
-  # setup preprocessor
-  var pp = makePreprocessor(ls.getCurrentFile())
-  pp.state.defines = ls.defines
-  pp.state.storeUbernimStatus(ls)
-  # run preprocessor
-  var r = pp.run()
-  if not r.ok:
-    UbernimPerformers.errorHandler(r.output)
-  # emit output
-  if pp.state.getPropertyValue(UNIM_FLUSH_KEY) == FLAG_YES:
-    let uf = pp.state.getPropertyValue(UNIM_FILE_KEY)
-    generationPerformer(uf, renderSignature(uf, ls.info.signature) & r.output, errors.CANT_WRITE_OUTPUT.output, ls)
-  pp.state
