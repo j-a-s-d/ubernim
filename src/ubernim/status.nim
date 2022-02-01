@@ -68,8 +68,14 @@ template inMainFile*(ls: UbernimStatus): bool =
 template isMainFile*(ls: UbernimStatus, name: string): bool =
   ls.files.callstack[0] == name
 
+template getMainFile*(ls: UbernimStatus): string =
+  ls.files.callstack[0]
+
 template isCurrentFile*(ls: UbernimStatus, name: string): bool =
   ls.files.callstack[^1] == name
+
+template getCurrentFile*(ls: UbernimStatus): string =
+  ls.files.callstack[^1]
 
 template isCircularReference*(ls: UbernimStatus, name: string): bool =
   name in ls.files.callstack

@@ -48,7 +48,7 @@ proc validateDivision*(ls: UbernimStatus, d: LanguageDivision): PreprodResult =
       else:
         ls.getFullDivisionItems(p).each b:
           if not isPresent(b):
-            return BAD("the item " & apostrophe(b.name) & " from " & apostrophe(a) & " is not present in " & apostrophe(ls.files.callstack[^1]))
+            return BAD("the item " & apostrophe(b.name) & " from " & apostrophe(a) & " is not present in " & apostrophe(ls.getCurrentFile()))
     m = ls.getDivision(m.extends)
 
 func renderDivision(ls: UbernimStatus, d: LanguageDivision): string =

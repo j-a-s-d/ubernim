@@ -23,7 +23,7 @@ topCallback doRequire:
     var rls = makeUbernimStatus(ls.info.semver, ls.info.signature)
     rls.files.callstack.add(ls.files.callstack & parameters[0])
     rls.defines = ls.defines
-    var rstate = UbernimPerformers.preprocessDoer(parameters[0], rls)
+    var rstate = UbernimPerformers.preprocessDoer(rls)
     ls.files.generated.add(rls.files.generated)
     rls.language.divisions.each d:
       if d.public and not d.imported:

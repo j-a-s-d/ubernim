@@ -7,7 +7,7 @@ import
 
 type
   TUbernimPerformers = tuple
-    preprocessDoer: DoubleArgsProc[string, UbernimStatus, var PreprodState]
+    preprocessDoer: SingleArgProc[UbernimStatus, var PreprodState]
     errorHandler: SingleArgVoidProc[string]
     compilerInvoker: DoubleArgsProc[string, StringSeq, int]
     cleanupFormatter: DoubleArgsProc[string, string, string]

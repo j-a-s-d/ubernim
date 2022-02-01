@@ -118,9 +118,9 @@ proc makePreprocessor*(filename: string): PreprodPreprocessor =
   result.state.setPropertyValue(FREQ_IMPORTING_KEY, FREQUENCY_ALWAYS)
   result.state.setPropertyValue(FREQ_EXPORTING_KEY, FREQUENCY_ALWAYS)
 
-let SimplePreprocessDoer* = proc (filename: string, ls: UbernimStatus): var PreprodState =
+let SimplePreprocessDoer* = proc (ls: UbernimStatus): var PreprodState =
   # setup preprocessor
-  var pp = makePreprocessor(filename)
+  var pp = makePreprocessor(ls.getCurrentFile())
   pp.state.defines = ls.defines
   pp.state.storeUbernimStatus(ls)
   # run preprocessor

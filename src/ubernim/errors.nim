@@ -8,8 +8,12 @@ const
   WORDS_AT* = "at"
   WORDS_FOR* = "for"
   WORDS_WITH* = "with"
+  WORDS_HELP* = "help"
   WORDS_ITEM* = "item"
+  WORDS_FLAGS* = "flags"
   WORDS_FIELD* = "field"
+  WORDS_USAGES* = "usages"
+  WORDS_DEFINE* = "define"
   WORDS_GETTER* = "getter"
   WORDS_SETTER* = "setter"
   WORDS_METHOD* = "method"
@@ -17,12 +21,15 @@ const
   WORDS_SEALED* = "sealed"
   WORDS_PRAGMAS* = "pragmas"
   WORDS_ROUTINE* = "routine"
+  WORDS_VERSION* = "version"
+  WORDS_EXAMPLES* = "examples"
   WORDS_TEMPLATE* = "template"
   WORDS_GENERATED* = "generated"
   WORDS_CONSTRUCTOR* = "constructor"
 
 template error(id: untyped, msg: string): untyped =
-  template id*(extra: string = STRINGS_EMPTY): PreprodResult {.inject.} = BAD(spaced(msg, extra))
+  template id*(extra: string = STRINGS_EMPTY): PreprodResult {.inject.} =
+    BAD(spaced(msg, extra))
 
 error UNEXPECTED, "an unexpected error occurred"
 error BAD_STATE, "bad state"
