@@ -70,23 +70,29 @@ template freeUbernimStatus*(state: var PreprodState) =
 
 # CALLSTACK
 
-template inMainFile*(ls: UbernimStatus): bool =
-  ls.files.callstack.len == 1
+template inMainFile*(status: UbernimStatus): bool =
+  status.files.callstack.len == 1
 
-template isMainFile*(ls: UbernimStatus, name: string): bool =
-  ls.files.callstack[0] == name
+template isMainFile*(status: UbernimStatus, name: string): bool =
+  status.files.callstack[0] == name
 
-template getMainFile*(ls: UbernimStatus): string =
-  ls.files.callstack[0]
+template getMainFile*(status: UbernimStatus): string =
+  status.files.callstack[0]
 
-template isCurrentFile*(ls: UbernimStatus, name: string): bool =
-  ls.files.callstack[^1] == name
+template isCurrentFile*(status: UbernimStatus, name: string): bool =
+  status.files.callstack[^1] == name
 
-template getCurrentFile*(ls: UbernimStatus): string =
-  ls.files.callstack[^1]
+template getCurrentFile*(status: UbernimStatus): string =
+  status.files.callstack[^1]
 
-template isCircularReference*(ls: UbernimStatus, name: string): bool =
-  name in ls.files.callstack
+template isCircularReference*(status: UbernimStatus, name: string): bool =
+  name in status.files.callstack
+
+template generateFile*(status: UbernimStatus, filename, content, error: string) =
+  if writeToFile(filename, content):
+    status.files.generated.add(filename)
+  else:
+    status.preprocessing.errorHandler(error)
 
 # DIVISION
 
