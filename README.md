@@ -34,6 +34,9 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 02-02-22 **[0.5.1]**
+	- added .templates child command to .protocol command to allow templates enforcing in classes, records and files
+	- general improvements
 * 01-02-22 **[0.5.0]**
 	- added .member to LANGUAGE feature to allow the declaration of initializable let and var locals
 	- added .value child command to .member command to allow immediate value assignments

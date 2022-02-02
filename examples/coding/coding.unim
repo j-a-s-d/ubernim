@@ -42,7 +42,7 @@ toString3():string
   abc[T](): T
 .docs # you can specifiy documentation inplace
   This is an example record.
-  Applying compound Base, interface Stringable and protocol M0ABCT, plus implying record Super.
+  Applying compound Base, interface Stringable and protocol M0ABCT.
 .templates
   foo(code: untyped): untyped
 .end
@@ -292,6 +292,24 @@ if aaa.testing(1):
 .member var uninitializedVar*:int
 .pragmas threadvar
 .end
+
+.# and you can apply a protocol to the whole file
+
+.protocol TestingProtocol
+.fields
+  uninitializedVar: int
+.methods
+  makeGreetingMessageTo(name: string): string
+.templates
+  globalTemplate()
+.end
+
+.template globalTemplate*()
+.code
+  echo "this is here to make the TestingProtocol fully applied to this file"
+.end
+
+.applying TestingProtocol
 
 .# and more regular nim code
 when defined(hello):

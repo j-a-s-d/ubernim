@@ -48,7 +48,7 @@ proc validateDivision*(ls: UbernimStatus, d: LanguageDivision): PreprodResult =
       else:
         ls.getFullDivisionItems(p).each b:
           if not isPresent(b):
-            return BAD("the item " & apostrophe(b.name) & " from " & apostrophe(a) & " is not present in " & apostrophe(ls.getCurrentFile()))
+            return BAD(spaced(WORDS_MISSING, apostrophe(b.name), WORDS_FROM, apostrophe(a), WORDS_AT, apostrophe(ls.getCurrentFile())))
     m = ls.getDivision(m.extends)
 
 func renderDivision(ls: UbernimStatus, d: LanguageDivision): string =
@@ -343,9 +343,11 @@ topCallback doTemplate:
   state.setPropertyValue(KEY_DIVISION, DIVISIONS_TEMPLATE)
   state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_CLAUSES)
   if state.isTranslating():
-    let parts = parameters.join(STRINGS_SPACE).split(STRINGS_PERIOD)
-    if parts.len != 2:
-      return errors.WRONGLY_DEFINED(WORDS_TEMPLATE)
+    var parts = newStringSeq()
+    let tmp = parameters.join(STRINGS_SPACE).split(STRINGS_PERIOD)
+    if tmp.len != 2:
+      parts.add(SCOPE_GLOBAL)
+    parts.add(tmp)
     let ls = loadUbernimStatus(state)
     var p = ls.getDivision(parts[0])
     if not assigned(p):
@@ -353,13 +355,18 @@ topCallback doTemplate:
     var lm = newLanguageItem(SUBDIVISIONS_TEMPLATES)
     if not lm.read(parts[1]):
       return errors.WRONGLY_DEFINED(WORDS_TEMPLATE)
-    if not ls.hasTemplate(p, lm.name):
-      return errors.NEVER_DEFINED(spaced(WORDS_TEMPLATE, apostrophe(parts[1])))
-    let pm = ls.getItem(p, SUBDIVISIONS_TEMPLATES, lm.name)
-    if not assigned(pm):
-      return errors.BAD_STATE
-    if pm.public != lm.public:
-      return errors.VISIBILITY_DOESNT_MATCH(spaced(WORDS_FOR, WORDS_TEMPLATE, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
+    if parts[0] == SCOPE_GLOBAL:
+      if ls.hasTemplate(p, lm.name):
+        return errors.ALREADY_DEFINED(spaced(WORDS_TEMPLATE, apostrophe(parts[1])))
+      p.items.add(lm)
+    else:
+      if not ls.hasTemplate(p, lm.name):
+        return errors.NEVER_DEFINED(spaced(WORDS_TEMPLATE, apostrophe(parts[1])))
+      let pm = ls.getItem(p, SUBDIVISIONS_TEMPLATES, lm.name)
+      if not assigned(pm):
+        return errors.BAD_STATE
+      if pm.public != lm.public:
+        return errors.VISIBILITY_DOESNT_MATCH(spaced(WORDS_FOR, WORDS_TEMPLATE, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
     ls.language.currentName = p.name
     ls.language.currentImplementation = lm
   return OK

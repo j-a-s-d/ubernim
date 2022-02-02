@@ -142,7 +142,7 @@ func renderConstructorEnd*(): string =
   #CODEGEN_INDENT & CODEGEN_SELF &
   STRINGS_EOL
 
-proc renderMethodBegin*(m: LanguageItem, isClass: bool, className: string, parentName: string): string =
+func renderMethodBegin*(m: LanguageItem, isClass: bool, className: string, parentName: string): string =
   let kw = if m.pragmas.find(NIMLANG_NOSIDEEFFECT) != -1: CODEGEN_FUNC else: CODEGEN_PROC
   let args = spaced(CODEGEN_SELF & STRINGS_COLON, (
     if m.data_var: CODEGEN_VAR & STRINGS_SPACE else: STRINGS_EMPTY
@@ -158,7 +158,7 @@ func renderMethodEnd*(): string =
   STRINGS_EOL
 
 func renderTemplateBegin*(m: LanguageItem, className: string): string =
-  let args = spaced(CODEGEN_SELF & STRINGS_COLON, className & (
+  let args = if className == SCOPE_GLOBAL: STRINGS_EMPTY else: spaced(CODEGEN_SELF & STRINGS_COLON, className & (
     if hasContent(m.data_extra): spaced(STRINGS_COMMA, m.data_extra) else: STRINGS_EMPTY
   ))
   renderRoutine(
@@ -168,7 +168,7 @@ func renderTemplateBegin*(m: LanguageItem, className: string): string =
 func renderTemplateEnd*(): string =
   STRINGS_EOL
 
-proc renderMemberBegin*(m: LanguageItem, init: bool): string =
+func renderMemberBegin*(m: LanguageItem, init: bool): string =
   let kw = if m.data_var: CODEGEN_VAR else: CODEGEN_LET
   let pragmas = renderPragmas(m.pragmas)
   let doc = renderDocs(m.docs)
