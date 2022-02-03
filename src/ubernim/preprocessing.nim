@@ -51,7 +51,7 @@ let ppPreviewer: PreprodPreviewer = proc (state: var PreprodState, r: PreprodRes
           var lm = newLanguageItem(s)
           if not lm.read(l):
             return errors.WRONGLY_DEFINED(WORDS_ITEM)
-          if not isValidNimIdentifier(lm.name):
+          if not lm.hasValidIdentifier():
             return errors.INVALID_IDENTIFIER
           if lm.kind == SUBDIVISIONS_FIELDS:
             if lm.public and d == DIVISIONS_RECORD:

@@ -3,7 +3,7 @@
 
 import
   xam, preprod,
-  commands,
+  common,
   ../errors
 
 use os,setCurrentDir

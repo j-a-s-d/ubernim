@@ -34,6 +34,8 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 03-02-22 **[0.5.2]**
+	- improved valid identifier check
 * 02-02-22 **[0.5.1]**
 	- added .templates child command to .protocol command to allow templates enforcing in classes, records and files
 	- general improvements

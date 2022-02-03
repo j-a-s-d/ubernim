@@ -1,5 +1,5 @@
-# ubernim / COMMANDS #
-#--------------------#
+# ubernim / COMMANDS COMMON #
+#---------------------------#
 
 import
   xam, preprod,

@@ -3,7 +3,7 @@
 
 import
   xam, preprod,
-  commands,
+  common,
   ../errors, ../rendering, ../constants, ../status,
   ../language / [header, implementation]
 
@@ -101,6 +101,8 @@ topCallback doClass:
     let p = ls.getDivision(ls.language.currentName)
     if not assigned(p):
       return errors.BAD_STATE
+    if not p.hasValidIdentifier():
+      return errors.INVALID_IDENTIFIER
     let v = ls.validateDivision(p)
     if not v.ok:
       return v
@@ -116,6 +118,8 @@ topCallback doRecord:
     let p = ls.getDivision(ls.language.currentName)
     if not assigned(p):
       return errors.BAD_STATE
+    if not p.hasValidIdentifier():
+      return errors.INVALID_IDENTIFIER
     let v = ls.validateDivision(p)
     if not v.ok:
       return v
@@ -241,6 +245,8 @@ topCallback doConstructor:
     var lm = newLanguageItem(SUBDIVISIONS_METHODS)
     if not lm.read(STRINGS_PLUS & parts[1]):
       return errors.WRONGLY_DEFINED(WORDS_CONSTRUCTOR)
+    if not lm.hasValidIdentifier():
+      return errors.INVALID_IDENTIFIER
     if not ls.hasMethod(p, lm.name):
       return errors.NEVER_DEFINED(spaced(WORDS_CONSTRUCTOR, apostrophe(parts[1])))
     let pm = ls.getItem(p, SUBDIVISIONS_METHODS, lm.name)
@@ -268,7 +274,7 @@ topCallback doGetter:
     lm.data_getter = true # before reading (for the getter)
     if not lm.read(parts[1]):
       return errors.WRONGLY_DEFINED(WORDS_GETTER)
-    if not isValidNimIdentifier(lm.name):
+    if not lm.hasValidIdentifier():
       return errors.INVALID_IDENTIFIER
     if not ls.hasMethod(p, lm.name, (item: LanguageItem) => item.data_getter):
       return errors.NEVER_DEFINED(spaced(WORDS_GETTER, apostrophe(parts[1])))
@@ -298,7 +304,7 @@ topCallback doSetter:
       return errors.WRONGLY_DEFINED(WORDS_SETTER)
     # NOTE: due to the differences between definition and implementation special flag has to be set
     lm.data_setter = true # after reading (for the setter)
-    if not isValidNimIdentifier(lm.name):
+    if not lm.hasValidIdentifier():
       return errors.INVALID_IDENTIFIER
     if not ls.hasMethod(p, lm.name, (item: LanguageItem) => item.data_setter):
       return errors.NEVER_DEFINED(spaced(WORDS_SETTER, apostrophe(parts[1])))
@@ -327,6 +333,8 @@ topCallback doMethod:
     var lm = newLanguageItem(SUBDIVISIONS_METHODS)
     if not lm.read(parts[1]):
       return errors.WRONGLY_DEFINED(WORDS_METHOD)
+    if not lm.hasValidIdentifier():
+      return errors.INVALID_IDENTIFIER
     if not ls.hasMethod(p, lm.name):
       return errors.NEVER_DEFINED(spaced(WORDS_METHOD, apostrophe(parts[1])))
     let pm = ls.getItem(p, SUBDIVISIONS_METHODS, lm.name)
@@ -355,6 +363,8 @@ topCallback doTemplate:
     var lm = newLanguageItem(SUBDIVISIONS_TEMPLATES)
     if not lm.read(parts[1]):
       return errors.WRONGLY_DEFINED(WORDS_TEMPLATE)
+    if not lm.hasValidIdentifier():
+      return errors.INVALID_IDENTIFIER
     if parts[0] == SCOPE_GLOBAL:
       if ls.hasTemplate(p, lm.name):
         return errors.ALREADY_DEFINED(spaced(WORDS_TEMPLATE, apostrophe(parts[1])))
@@ -386,6 +396,8 @@ topCallback doRoutine:
     var lm = newLanguageItem(SUBDIVISIONS_ROUTINES)
     if not lm.read(full):
       return errors.WRONGLY_DEFINED(WORDS_ROUTINE)
+    if not lm.hasValidIdentifier():
+      return errors.INVALID_IDENTIFIER
     if ls.hasMethod(p, lm.name):
       return errors.ALREADY_DEFINED(spaced(WORDS_ROUTINE, apostrophe(full)))
     ls.language.currentName = p.name
@@ -470,9 +482,8 @@ topCallback doMember:
     let l = (if isVar: parameters[1..^1] else: parameters).join(STRINGS_SPACE)
     var lm = newLanguageItem(SUBDIVISIONS_MEMBERS)
     if not lm.read(l):
-      echo l
       return errors.WRONGLY_DEFINED(WORDS_MEMBER)
-    if not isValidNimIdentifier(lm.name):
+    if not lm.hasValidIdentifier():
       return errors.INVALID_IDENTIFIER
     if ls.hasField(p, lm.name):
       return errors.ALREADY_DEFINED(spaced(WORDS_MEMBER, apostrophe(lm.name)))

@@ -12,6 +12,7 @@ use strutils,replace
 use strutils,join
 use strutils,split
 use strutils,find
+use strutils,toLower
 
 # ITEM
 
@@ -85,6 +86,9 @@ proc read*(mbr: LanguageItem, line: string): bool =
     mbr.readMethod(line)
   else:
     false
+
+func hasValidIdentifier*(mbr: LanguageItem): bool =
+  isValidNimIdentifier(mbr.name) and toLower(mbr.name) notin ["self", "parent"]
 
 func newLanguageItem*(kind: string): LanguageItem =
   result = new LanguageItem

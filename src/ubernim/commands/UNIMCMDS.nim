@@ -3,7 +3,7 @@
 
 import
   xam, preprod,
-  commands,
+  common,
   ../errors, ../constants, ../status
 
 use strutils,toLower
