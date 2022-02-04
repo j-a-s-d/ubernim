@@ -4,6 +4,7 @@
 # this example is to show the language tools that ubernim offers
 
 .# to understand the following lines, check the directives example
+.nimc:target cc
 .nimc:project coding.nim
 .nimc:config coding.nim.cfg
 .nimc:define hello
@@ -311,8 +312,27 @@ if aaa.testing(1):
 
 .applying TestingProtocol
 
+.# you can specify conditional target blocks
+.targeted cc # for example a block for when C is being targeted
+.targeted:pass # pass flags too (empty strings will be ignored)
+  to:compiler "-D BLAH=123"
+  to:local ""
+  to:linker ""
+.targeted:compile # add some files to compile
+  addints.c
+.#andWithParamsToo.c -f
+.targeted:link # and files to link
+.#blah.o
+.targeted:emit # and code to emit
+  int some_x = 0;
+  int some_y = 1;
+.targeted:end
+
+proc addTwoIntegers(a, b: cint): cint {.importc.}
+
 .# and more regular nim code
 when defined(hello):
+  echo addTwoIntegers(3, 7)
   echo makeGreetingMessageTo("world")
 
 .# you can specify to remove the generated files just to end up with the final binary only

@@ -52,7 +52,10 @@ childCallback doTargetedEmit:
   return OK
 
 childCallback doTargetedEnd:
-  if state.isTranslating():
+  if state.isPreviewing():
+    state.removePropertyValue(KEY_SUBDIVISION)
+    state.removePropertyValue(KEY_DIVISION)
+  elif state.isTranslating():
     if state.getPropertyValue(KEY_DIVISION) == DIVISIONS_TARGETED:
       let r = if state.getPropertyValue(KEY_SUBDIVISION) == SUBDIVISIONS_TARGETED_EMIT:
         CODEGEN_EMIT_CLOSE
