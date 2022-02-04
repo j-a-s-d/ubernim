@@ -266,21 +266,26 @@ See them working in the *coding* example.
 	- example: `.targeted cc`
 
 * **.targeted:pass** *(since 0.5.3)*
-	- values: none
+	- specifies compiler and linker flags
+	- values: literal values prefixed with 'to:compiler', 'to:local' and 'to:linker' to what you would pass to 'passC', 'localPassC' and 'passL' pragmas
 	- example: `.targeted:pass`
 
 * **.targeted:compile** *(since 0.5.3)*
-	- values: none
+	- specifies a list of files to compile
+	- values: any valid nim value for pragma compile including or not compilation parameters (for example, some .c files)
 	- example: `.targeted:compile`
 
 * **.targeted:link** *(since 0.5.3)*
-	- values: none
-	- example: `.targted:link`
+	- specifies a list of files to link
+	- values: any valid nim value for pragma link (for example, some .o files)
+	- example: `.targeted:link`
 
 * **.targeted:emit** *(since 0.5.3)*
-	- values: none
+	- specifies code to emit directly
+	- values: any valid nim emit block code (for example, regular c code)
 	- example: `.targeted:emit`
 
 * **.targeted:end** *(since 0.5.3)*
+	- specifies the end of this targeted block
 	- values: none
 	- example: `.targeted:end`

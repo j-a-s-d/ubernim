@@ -31,7 +31,7 @@ const
   SUBDIVISIONS_TARGETED_EMIT* = "TARGETED_EMIT"
   TO_COMPILER* = "to:compiler"
   TO_LOCAL* = "to:local"
-  TO_LINK* = "to:link"
+  TO_LINKER* = "to:linker"
   PASS_COMPILER* = "passC"
   PASS_LOCAL* = "localPassC"
   PASS_LINK* = "passL"

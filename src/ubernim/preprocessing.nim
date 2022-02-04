@@ -91,7 +91,7 @@ let ppTranslater: PreprodTranslater = proc (state: var PreprodState, r: PreprodR
                 case p[0]:
                 of TO_COMPILER: makePassLine(PASS_COMPILER)
                 of TO_LOCAL: makePassLine(PASS_LOCAL) # NOTE: supported in nim 1.2.0+
-                of TO_LINK: makePassLine(PASS_LINK)
+                of TO_LINKER: makePassLine(PASS_LINK)
                 else: STRINGS_EMPTY
               )
           of SUBDIVISIONS_TARGETED_COMPILE:
