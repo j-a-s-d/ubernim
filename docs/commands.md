@@ -257,3 +257,30 @@ See them working in the *coding* example.
 	- example: `.pop`
 
 See them working in the *coding* example.
+
+### TARGETED feature commands:
+
+* **.targeted** *(since 0.5.3)*
+	- specifies the target compiler of this block
+	- values: cc, cpp, objc or js (default: cc)
+	- example: `.targeted cc`
+
+* **.targeted:pass** *(since 0.5.3)*
+	- values: none
+	- example: `.targeted:pass`
+
+* **.targeted:compile** *(since 0.5.3)*
+	- values: none
+	- example: `.targeted:compile`
+
+* **.targeted:link** *(since 0.5.3)*
+	- values: none
+	- example: `.targted:link`
+
+* **.targeted:emit** *(since 0.5.3)*
+	- values: none
+	- example: `.targeted:emit`
+
+* **.targeted:end** *(since 0.5.3)*
+	- values: none
+	- example: `.targeted:end`

@@ -4,13 +4,14 @@
 import
   xam, preprod,
   errors, constants, rendering, status,
-  commands / [UNIMCMDS, SWITCHES, SHELLCMD, FSACCESS, REQUIRES, LANGUAGE],
+  commands / [UNIMCMDS, SWITCHES, SHELLCMD, FSACCESS, REQUIRES, LANGUAGE, TARGETED],
   language / [header, implementation]
 
 use os,changeFileExt
 use strutils,find
 use strutils,split
 use strutils,strip
+use strutils,replace
 
 let ppFeatures = [
   UNIMCMDS.initialize(), # ubernim general commands
@@ -18,7 +19,8 @@ let ppFeatures = [
   SHELLCMD.initialize(), # os shell commands execution
   FSACCESS.initialize(), # os filesystem access
   REQUIRES.initialize(), # ubernim external files requirement (differs from INCLUDE in that the required modules are preprocessed separatelly)
-  LANGUAGE.initialize()  # ubernim language extensions
+  LANGUAGE.initialize(), # ubernim language extensions
+  TARGETED.initialize()  # target dependant language extension
 ]
 
 var ppOptions: PreprodOptions = PREPROD_DEFAULT_OPTIONS
@@ -36,7 +38,7 @@ let ppPreviewer: PreprodPreviewer = proc (state: var PreprodState, r: PreprodRes
   result = r
   if hasContent(r.output) and state.hasPropertyValue(KEY_DIVISION):
     let d = state.getPropertyValue(KEY_DIVISION)
-    if d != DIVISIONS_NOTE and d != DIVISIONS_IMPORTS and d != DIVISIONS_EXPORTS:
+    if d != DIVISIONS_TARGETED and d != DIVISIONS_NOTE and d != DIVISIONS_IMPORTS and d != DIVISIONS_EXPORTS:
       let s = state.getPropertyValue(KEY_SUBDIVISION)
       let l = if s == SUBDIVISIONS_DOCS: r.output else: removeComments(state, r.output)
       if hasContent(l) and d notin DIVISIONS_WITH_CODE and s != SUBDIVISIONS_CLAUSES:
@@ -72,7 +74,36 @@ let ppTranslater: PreprodTranslater = proc (state: var PreprodState, r: PreprodR
       let d = state.getPropertyValue(KEY_DIVISION)
       let s = state.getPropertyValue(KEY_SUBDIVISION)
       let ls = loadUbernimStatus(state)
-      if d == DIVISIONS_NOTE or d == DIVISIONS_IMPORTS or d == DIVISIONS_EXPORTS:
+      if d == DIVISIONS_TARGETED:
+        if r.output != CODEGEN_EMIT_CLOSE:
+          let l = strip(r.output)
+          case s:
+          of SUBDIVISIONS_TARGETED_PASS:
+            let p = l.split(STRINGS_SPACE)
+            if p.len > 1:
+              template makePassLine(name: string): string =
+                let value: string = spaced(p[1..^1])
+                if value.replace(STRINGS_QUOTE, STRINGS_EMPTY).len > 0:
+                  renderPragmas(name & STRINGS_COLON & STRINGS_SPACE & value, false)
+                else:
+                  STRINGS_EMPTY
+              return GOOD(
+                case p[0]:
+                of TO_COMPILER: makePassLine(PASS_COMPILER)
+                of TO_LOCAL: makePassLine(PASS_LOCAL) # NOTE: supported in nim 1.2.0+
+                of TO_LINK: makePassLine(PASS_LINK)
+                else: STRINGS_EMPTY
+              )
+          of SUBDIVISIONS_TARGETED_COMPILE:
+            let p = l.split(STRINGS_SPACE)
+            let v = if p.len > 1:
+                parenthesize(quote(p[0]) & STRINGS_COMMA & STRINGS_SPACE & quote(spaced(p[1..^1]))) # NOTE: supported in nim 1.4.0+
+              else:
+                STRINGS_COLON & STRINGS_SPACE & quote(l)
+            return GOOD(renderPragmas(CODEGEN_COMPILE & v, false))
+          of SUBDIVISIONS_TARGETED_LINK:
+            return GOOD(renderPragmas(CODEGEN_LINK & STRINGS_COLON & STRINGS_SPACE & quote(l), false))
+      elif d == DIVISIONS_NOTE or d == DIVISIONS_IMPORTS or d == DIVISIONS_EXPORTS:
         if s == SUBDIVISIONS_BODY:
           state.setPropertyValue(KEY_SUBDIVISION, STRINGS_EMPTY)
           return OK

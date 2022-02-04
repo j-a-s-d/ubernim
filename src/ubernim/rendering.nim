@@ -13,13 +13,11 @@ use strutils,find
 
 const
   NIMLANG_NOSIDEEFFECT = "noSideEffect"
-  CODEGEN_INDENT* = "  "
+  NIMLANG_TRIPLEQUOTE = "\"\"\"" # heredoc
   CODEGEN_STATIC* = "static"
   CODEGEN_ECHO* = "echo"
   CODEGEN_CAST* = "cast"
   CODEGEN_FROM* = "from"
-  CODEGEN_CALL* = "()"
-  CODEGEN_DOCS* = "##"
   CODEGEN_OF* = "of"
   CODEGEN_REF* = "ref"
   CODEGEN_LET* = "let"
@@ -31,6 +29,8 @@ const
   CODEGEN_TYPE* = "type"
   CODEGEN_PROC* = "proc"
   CODEGEN_FUNC* = "func"
+  CODEGEN_LINK* = "link"
+  CODEGEN_EMIT* = "emit"
   CODEGEN_BLOCK* = "block"
   CODEGEN_TUPLE* = "tuple"
   CODEGEN_IMPORT* = "import"
@@ -41,10 +41,16 @@ const
   CODEGEN_RESULT* = "result"
   CODEGEN_ROOTOBJ* = "RootObj"
   CODEGEN_DISCARD* = "discard"
+  CODEGEN_COMPILE* = "compile"
   CODEGEN_DATATYPE* = "datatype"
   CODEGEN_TYPEDESC* = "typedesc"
   CODEGEN_TEMPLATE* = "template"
   CODEGEN_PROCCALL* = "procCall"
+  CODEGEN_EMIT_OPEN* = STRINGS_BRACES_OPEN & STRINGS_PERIOD & CODEGEN_EMIT & STRINGS_COLON & STRINGS_SPACE & NIMLANG_TRIPLEQUOTE
+  CODEGEN_EMIT_CLOSE* = NIMLANG_TRIPLEQUOTE & STRINGS_PERIOD & STRINGS_BRACES_CLOSE
+  CODEGEN_INDENT* = STRINGS_SPACE & STRINGS_SPACE
+  CODEGEN_CALL* = STRINGS_PARENTHESES_OPEN & STRINGS_PARENTHESES_CLOSE
+  CODEGEN_DOCS* = STRINGS_NUMERAL & STRINGS_NUMERAL
 
 func renderSignature*(file, signature: string): string =
   spaced(CODEGEN_STATIC & STRINGS_COLON, CODEGEN_ECHO, quote(spaced(file, signature))) & STRINGS_EOL & STRINGS_EOL

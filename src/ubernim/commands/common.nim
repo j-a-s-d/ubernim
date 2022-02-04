@@ -3,8 +3,7 @@
 
 import
   xam, preprod,
-  ../errors,
-  ../language / header
+  ../constants, ../errors
 
 # FEATURES
 

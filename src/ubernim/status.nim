@@ -23,6 +23,7 @@ type
     currentImplementation: LanguageItem
     divisions: LanguageDivisions
   TUbernimPreprocessing = tuple
+    target: string
     defines: StringSeq
     performingHandler: SingleArgProc[UbernimStatus, var PreprodState]
     errorHandler: SingleArgVoidProc[string]
@@ -46,6 +47,7 @@ template makeUbernimStatus*(sver: SemanticVersion, sign: string, divs: LanguageD
       generated: newStringSeq()
     ),
     preprocessing: TUbernimPreprocessing (
+      target: STRINGS_EMPTY,
       defines: newStringSeq(),
       performingHandler: nil,
       errorHandler: nil
@@ -119,7 +121,7 @@ func closeDivision*(state: var PreprodState) =
   ls.language.currentName = STRINGS_EMPTY
   ls.language.currentImplementation = nil
 
-func openDivision*(state: var PreprodState, kind: string, name: string) =
+func openDivision*(state: var PreprodState, kind: string, name: string): LanguageItem =
   let ls = loadUbernimStatus(state)
   var item = LanguageItem()
   item.setupItem(name)
@@ -128,6 +130,7 @@ func openDivision*(state: var PreprodState, kind: string, name: string) =
     ls.language.divisions.add(newLanguageDivision(kind, name))
   ls.language.currentName = item.name
   ls.language.currentImplementation = nil
+  return item
 
 # ITEM
 

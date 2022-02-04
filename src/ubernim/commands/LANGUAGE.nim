@@ -80,7 +80,9 @@ proc startDivision(state: var PreprodState, division, subdivision, id: string): 
       return errors.ALREADY_DEFINED(apostrophe(id))
   state.setPropertyValue(KEY_DIVISION, division)
   state.setPropertyValue(KEY_SUBDIVISION, subdivision)
-  openDivision(state, division, id)
+  let lm = openDivision(state, division, id)
+  if not lm.hasValidIdentifier():
+    return errors.INVALID_IDENTIFIER
   return OK
 
 # CALLBACKS
@@ -101,8 +103,6 @@ topCallback doClass:
     let p = ls.getDivision(ls.language.currentName)
     if not assigned(p):
       return errors.BAD_STATE
-    if not p.hasValidIdentifier():
-      return errors.INVALID_IDENTIFIER
     let v = ls.validateDivision(p)
     if not v.ok:
       return v
@@ -118,8 +118,6 @@ topCallback doRecord:
     let p = ls.getDivision(ls.language.currentName)
     if not assigned(p):
       return errors.BAD_STATE
-    if not p.hasValidIdentifier():
-      return errors.INVALID_IDENTIFIER
     let v = ls.validateDivision(p)
     if not v.ok:
       return v

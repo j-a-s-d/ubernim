@@ -19,7 +19,7 @@ use strutils,replace
 
 const
   APP_NAME = "ubernim"
-  APP_VERSION = "0.5.2"
+  APP_VERSION = "0.5.3"
   APP_COPYRIGHT = "copyright (c) 2021-2022 by Javier Santo Domingo"
   APP_KEYS = (
     INPUT: "app:input",
