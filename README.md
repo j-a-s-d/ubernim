@@ -34,6 +34,8 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 06-02-22 **[0.5.4]**
+	- general improvements
 * 04-02-22 **[0.5.3]**
 	- added TARGETED preprod feature
 * 03-02-22 **[0.5.2]**

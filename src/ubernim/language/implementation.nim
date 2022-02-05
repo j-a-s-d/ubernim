@@ -88,7 +88,7 @@ proc read*(mbr: LanguageItem, line: string): bool =
     false
 
 func hasValidIdentifier*(mbr: LanguageItem): bool =
-  isValidNimIdentifier(mbr.name) and toLower(mbr.name) notin ["self", "parent"]
+  isValidNimIdentifier(mbr.name) and toLower(mbr.name) notin UNIMLANG_KEYWORDS
 
 func newLanguageItem*(kind: string): LanguageItem =
   result = new LanguageItem

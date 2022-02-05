@@ -78,8 +78,8 @@ proc startDivision(state: var PreprodState, division, subdivision, id: string): 
     let ls = loadUbernimStatus(state)
     if ls.hasDivision(id):
       return errors.ALREADY_DEFINED(apostrophe(id))
-  state.setPropertyValue(KEY_DIVISION, division)
-  state.setPropertyValue(KEY_SUBDIVISION, subdivision)
+  setDivision(state, division)
+  setSubdivision(state, subdivision)
   let lm = openDivision(state, division, id)
   if not lm.hasValidIdentifier():
     return errors.INVALID_IDENTIFIER
@@ -144,7 +144,7 @@ childCallback doApplies:
 
 childCallback doExtends:
   if state.isPreviewing():
-    let d = state.getPropertyValue(KEY_DIVISION)
+    let d = fetchDivision(state)
     if d == DIVISIONS_RECORD:
       return errors.RECORDS_CANT_EXTEND
     let ls = loadUbernimStatus(state)
@@ -165,7 +165,7 @@ childCallback doExtends:
   return OK
 
 childCallback doPragmas:
-  let d = state.getPropertyValue(KEY_DIVISION)
+  let d = fetchDivision(state)
   if state.isPreviewing():
     if d != DIVISIONS_CONSTRUCTOR and d != DIVISIONS_METHOD and d != DIVISIONS_ROUTINE and d != DIVISIONS_MEMBER:
       if d != DIVISIONS_CLASS and d != DIVISIONS_RECORD:
@@ -194,44 +194,44 @@ childCallback doPragmas:
   return OK
 
 childCallback doFields:
-  let d = state.getPropertyValue(KEY_DIVISION)
+  let d = fetchDivision(state)
   if d notin DIVISIONS_WITH_FIELDS:
     return errors.CANT_HOLD_FIELDS
-  state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_FIELDS)
+  setSubdivision(state, SUBDIVISIONS_FIELDS)
   return OK
 
 childCallback doMethods:
-  let d = state.getPropertyValue(KEY_DIVISION)
+  let d = fetchDivision(state)
   if d notin DIVISIONS_WITH_METHODS:
     return errors.CANT_HOLD_METHODS
-  state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_METHODS)
+  setSubdivision(state, SUBDIVISIONS_METHODS)
   return OK
 
 childCallback doTemplates:
-  let d = state.getPropertyValue(KEY_DIVISION)
+  let d = fetchDivision(state)
   if d notin DIVISIONS_WITH_TEMPLATES:
     return errors.CANT_HOLD_TEMPLATES
-  state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_TEMPLATES)
+  setSubdivision(state, SUBDIVISIONS_TEMPLATES)
   return OK
 
 topCallback doNote:
-  state.setPropertyValue(KEY_DIVISION, DIVISIONS_NOTE)
-  state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_BODY)
+  setDivision(state, DIVISIONS_NOTE)
+  setSubdivision(state, SUBDIVISIONS_BODY)
   return OK
 
 topCallback doImports:
-  state.setPropertyValue(KEY_DIVISION, DIVISIONS_IMPORTS)
-  state.setPropertyValue(KEY_SUBDIVISION, STRINGS_EMPTY)
+  setDivision(state, DIVISIONS_IMPORTS)
+  setSubdivision(state, STRINGS_EMPTY)
   return OK
 
 topCallback doExports:
-  state.setPropertyValue(KEY_DIVISION, DIVISIONS_EXPORTS)
-  state.setPropertyValue(KEY_SUBDIVISION, STRINGS_EMPTY)
+  setDivision(state, DIVISIONS_EXPORTS)
+  setSubdivision(state, STRINGS_EMPTY)
   return OK
 
 topCallback doConstructor:
-  state.setPropertyValue(KEY_DIVISION, DIVISIONS_CONSTRUCTOR)
-  state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_CLAUSES)
+  setDivision(state, DIVISIONS_CONSTRUCTOR)
+  setSubdivision(state, SUBDIVISIONS_CLAUSES)
   if state.isTranslating():
     let parts = parameters.join(STRINGS_SPACE).split(STRINGS_PERIOD)
     if parts.len != 2:
@@ -257,8 +257,8 @@ topCallback doConstructor:
   return OK
 
 topCallback doGetter:
-  state.setPropertyValue(KEY_DIVISION, DIVISIONS_GETTER)
-  state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_CLAUSES)
+  setDivision(state, DIVISIONS_GETTER)
+  setSubdivision(state, SUBDIVISIONS_CLAUSES)
   if state.isTranslating():
     let parts = parameters.join(STRINGS_SPACE).split(STRINGS_PERIOD)
     if parts.len != 2:
@@ -286,8 +286,8 @@ topCallback doGetter:
   return OK
 
 topCallback doSetter:
-  state.setPropertyValue(KEY_DIVISION, DIVISIONS_SETTER)
-  state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_CLAUSES)
+  setDivision(state, DIVISIONS_SETTER)
+  setSubdivision(state, SUBDIVISIONS_CLAUSES)
   if state.isTranslating():
     let isVar = parameters[0] == CODEGEN_VAR
     let parts = (if isVar: parameters[1..^1] else: parameters).join(STRINGS_SPACE).split(STRINGS_PERIOD)
@@ -317,8 +317,8 @@ topCallback doSetter:
   return OK
 
 topCallback doMethod:
-  state.setPropertyValue(KEY_DIVISION, DIVISIONS_METHOD)
-  state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_CLAUSES)
+  setDivision(state, DIVISIONS_METHOD)
+  setSubdivision(state, SUBDIVISIONS_CLAUSES)
   if state.isTranslating():
     let isVar = parameters[0] == CODEGEN_VAR
     let parts = (if isVar: parameters[1..^1] else: parameters).join(STRINGS_SPACE).split(STRINGS_PERIOD)
@@ -346,8 +346,8 @@ topCallback doMethod:
   return OK
 
 topCallback doTemplate:
-  state.setPropertyValue(KEY_DIVISION, DIVISIONS_TEMPLATE)
-  state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_CLAUSES)
+  setDivision(state, DIVISIONS_TEMPLATE)
+  setSubdivision(state, SUBDIVISIONS_CLAUSES)
   if state.isTranslating():
     var parts = newStringSeq()
     let tmp = parameters.join(STRINGS_SPACE).split(STRINGS_PERIOD)
@@ -380,8 +380,8 @@ topCallback doTemplate:
   return OK
 
 topCallback doRoutine:
-  state.setPropertyValue(KEY_DIVISION, DIVISIONS_ROUTINE)
-  state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_CLAUSES)
+  setDivision(state, DIVISIONS_ROUTINE)
+  setSubdivision(state, SUBDIVISIONS_CLAUSES)
   if state.isTranslating():
     let full = parameters.join(STRINGS_SPACE)
     let parts = full.split(STRINGS_PERIOD)
@@ -404,7 +404,7 @@ topCallback doRoutine:
   return OK
 
 childCallback doDocs:
-  let d = state.getPropertyValue(KEY_DIVISION)
+  let d = fetchDivision(state)
   if d notin DIVISIONS_WITH_DOCS:
     return errors.CANT_OUTPUT_DOCS
   if state.isTranslating():
@@ -412,14 +412,14 @@ childCallback doDocs:
     let lm = ls.language.currentImplementation
     if assigned(lm) and lm.rendered:
       return errors.DEFINE_BEFORE_VALUE
-  state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_DOCS)
+  setSubdivision(state, SUBDIVISIONS_DOCS)
   return OK
 
 childCallback doCode:
-  let d = state.getPropertyValue(KEY_DIVISION)
+  let d = fetchDivision(state)
   if d notin DIVISIONS_WITH_CODE:
     return errors.CANT_OUTPUT_CODE
-  state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_BODY)
+  setSubdivision(state, SUBDIVISIONS_BODY)
   if state.isTranslating():
     let ls = loadUbernimStatus(state)
     var p = ls.getDivision(ls.language.currentName)
@@ -445,7 +445,7 @@ childCallback doCode:
   return OK
 
 childCallback doUses:
-  let d = state.getPropertyValue(KEY_DIVISION)
+  let d = fetchDivision(state)
   if d notin DIVISIONS_WITH_CODE:
     return errors.CANT_OUTPUT_CODE
   if state.isTranslating():
@@ -469,8 +469,8 @@ childCallback doUses:
   return OK
 
 topCallback doMember:
-  state.setPropertyValue(KEY_DIVISION, DIVISIONS_MEMBER)
-  state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_CLAUSES)
+  setDivision(state, DIVISIONS_MEMBER)
+  setSubdivision(state, SUBDIVISIONS_CLAUSES)
   if state.isTranslating():
     let ls = loadUbernimStatus(state)
     var p = ls.getDivision(SCOPE_GLOBAL)
@@ -492,10 +492,10 @@ topCallback doMember:
   return OK
 
 childCallback doValue:
-  let d = state.getPropertyValue(KEY_DIVISION)
+  let d = fetchDivision(state)
   if d notin DIVISIONS_WITH_VALUE:
     return errors.CANT_HOLD_VALUE
-  state.setPropertyValue(KEY_SUBDIVISION, SUBDIVISIONS_BODY)
+  setSubdivision(state, SUBDIVISIONS_BODY)
   if state.isTranslating():
     let ls = loadUbernimStatus(state)
     var p = ls.getDivision(ls.language.currentName)
@@ -516,9 +516,9 @@ childCallback doValue:
   return OK
 
 childCallback doEnd:
-  let d = state.getPropertyValue(KEY_DIVISION)
-  state.removePropertyValue(KEY_SUBDIVISION)
-  state.removePropertyValue(KEY_DIVISION)
+  let d = fetchDivision(state)
+  unsetDivision(state)
+  unsetSubdivision(state)
   let ls = loadUbernimStatus(state)
   var p = ls.getDivision(ls.language.currentName)
   let lc = assigned(p) and p.kind == DIVISIONS_CLASS

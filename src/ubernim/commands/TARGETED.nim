@@ -9,13 +9,12 @@ import
 use strutils,toLower
 
 template targetedSection(section: string) =
-  if state.getPropertyValue(KEY_DIVISION) == DIVISIONS_TARGETED:
+  if fetchDivision(state) == DIVISIONS_TARGETED:
     let ls = loadUbernimStatus(state)
     if state.getPropertyValue(NIMC_TARGET_KEY) == ls.preprocessing.target:
-      let wasEmitting = state.hasPropertyValue(KEY_SUBDIVISION) and
-        state.getPropertyValue(KEY_SUBDIVISION) == SUBDIVISIONS_TARGETED_EMIT
+      let s = fetchSubdivision(state)
       state.setPropertyValue(KEY_SUBDIVISION, section)
-      if wasEmitting:
+      if s == SUBDIVISIONS_TARGETED_EMIT:
         return GOOD(CODEGEN_EMIT_CLOSE)
 
 # CALLBACKS
@@ -52,20 +51,14 @@ childCallback doTargetedEmit:
   return OK
 
 childCallback doTargetedEnd:
-  if state.isPreviewing():
-    state.removePropertyValue(KEY_SUBDIVISION)
-    state.removePropertyValue(KEY_DIVISION)
-  elif state.isTranslating():
-    if state.getPropertyValue(KEY_DIVISION) == DIVISIONS_TARGETED:
-      let r = if state.getPropertyValue(KEY_SUBDIVISION) == SUBDIVISIONS_TARGETED_EMIT:
-        CODEGEN_EMIT_CLOSE
-      else:
-        STRINGS_EMPTY
-      state.removePropertyValue(KEY_SUBDIVISION)
-      state.removePropertyValue(KEY_DIVISION)
-      let ls = loadUbernimStatus(state)
-      ls.preprocessing.target = STRINGS_EMPTY
-      return GOOD(r)
+  let d = fetchDivision(state)
+  let s = fetchSubdivision(state)
+  unsetDivision(state)
+  unsetSubdivision(state)
+  if state.isTranslating() and d == DIVISIONS_TARGETED:
+    let ls = loadUbernimStatus(state)
+    ls.preprocessing.target = STRINGS_EMPTY
+    return GOOD(if s == SUBDIVISIONS_TARGETED_EMIT: CODEGEN_EMIT_CLOSE else: STRINGS_EMPTY)
   return OK
 
 # INITIALIZATION
