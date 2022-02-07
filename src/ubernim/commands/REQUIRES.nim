@@ -13,28 +13,28 @@ use strutils,toLower
 topCallback doRequire:
   result = OK
   if state.isPreviewing():
-    let ls = loadUbernimStatus(state)
-    if ls.isMainFile(parameters[0]):
+    let status = loadUbernimStatus(state)
+    if status.isMainFile(parameters[0]):
       return errors.CANT_BE_REQUIRED
-    if ls.isCurrentFile(parameters[0]):
+    if status.isCurrentFile(parameters[0]):
       return errors.NO_RECURSIVE_REQUIRE
-    if ls.isCircularReference(parameters[0]):
+    if status.isCircularReference(parameters[0]):
       return errors.NO_CIRCULAR_REFERENCE
-    var rls = makeUbernimStatus(ls.info.semver, ls.info.signature)
-    rls.files.callstack.add(ls.files.callstack & parameters[0])
-    rls.preprocessing.defines = ls.preprocessing.defines
-    rls.preprocessing.performingHandler = ls.preprocessing.performingHandler
-    rls.preprocessing.errorHandler = ls.preprocessing.errorHandler
-    var rstate = ls.preprocessing.performingHandler(rls)
-    ls.files.generated.add(rls.files.generated)
+    var rls = makeUbernimStatus(status.info.semver, status.info.signature)
+    rls.files.callstack.add(status.files.callstack & parameters[0])
+    rls.preprocessing.defines = status.preprocessing.defines
+    rls.preprocessing.performingHandler = status.preprocessing.performingHandler
+    rls.preprocessing.errorHandler = status.preprocessing.errorHandler
+    var rstate = status.preprocessing.performingHandler(rls)
+    status.files.generated.add(rls.files.generated)
     rls.language.divisions.each d:
       if d.public and not d.imported:
-        let p = ls.getDivision(d.name)
+        let p = status.getDivision(d.name)
         if assigned(p):
           result = errors.ALREADY_DEFINED(apostrophe(d.name))
           break
         d.imported = true
-        ls.language.divisions.add(d)
+        status.language.divisions.add(d)
     freeUbernimStatus(rstate)
     reset(rstate)
 
@@ -43,8 +43,8 @@ topCallback doRequirable:
     let flag = parameters[0].toLower()
     if flag notin [FLAG_YES, FLAG_NO]:
       return errors.BAD_FLAG
-    let ls = loadUbernimStatus(state)
-    if not ls.inMainFile() and flag == FLAG_NO:
+    let status = loadUbernimStatus(state)
+    if not status.inMainFile() and flag == FLAG_NO:
       return errors.CANT_BE_REQUIRED
   return OK
 

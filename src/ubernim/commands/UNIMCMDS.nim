@@ -12,8 +12,8 @@ use strutils,toLower
 
 topCallback doVersion:
   if state.isPreviewing():
-    let ls = loadUbernimStatus(state)
-    if newSemanticVersion(parameters[0]).isNewerThan(ls.info.semver):
+    let status = loadUbernimStatus(state)
+    if newSemanticVersion(parameters[0]).isNewerThan(status.info.semver):
       return errors.BAD_VERSION(parenthesize(parameters[0]))
   return OK
 

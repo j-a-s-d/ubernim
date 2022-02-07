@@ -46,7 +46,7 @@ const
   DIVISIONS_NOT_PREVIEWING = [DIVISIONS_NOTE, DIVISIONS_IMPORTS, DIVISIONS_EXPORTS, DIVISIONS_TARGETED]
   SEALED_EXAMINER = (item: LanguageItem) => not item.data_constructor and not item.data_getter and not item.data_setter and item.data_sealed
 
-func previewItem(ls: UbernimStatus, ld: LanguageDivision, lm: LanguageItem, inRecord: bool, line: string, original: PreprodResult): PreprodResult =
+func previewItem(status: UbernimStatus, ld: LanguageDivision, lm: LanguageItem, inRecord: bool, line: string, original: PreprodResult): PreprodResult =
   if not lm.read(line):
     return errors.WRONGLY_DEFINED(WORDS_ITEM)
   if not lm.hasValidIdentifier():
@@ -54,12 +54,12 @@ func previewItem(ls: UbernimStatus, ld: LanguageDivision, lm: LanguageItem, inRe
   if lm.kind == SUBDIVISIONS_FIELDS:
     if lm.public and inRecord:
       return errors.RECORDS_DONT_ASTERISK
-    if ls.hasField(ld, lm.name):
+    if status.hasField(ld, lm.name):
       return errors.ALREADY_DEFINED(spaced(WORDS_FIELD, apostrophe(lm.name)))
-    if ls.hasMethod(ld, lm.name, SEALED_EXAMINER):
+    if status.hasMethod(ld, lm.name, SEALED_EXAMINER):
       return errors.ALREADY_DEFINED(spaced(WORDS_SEALED, WORDS_METHOD, apostrophe(lm.name)))
   else:
-    if (lm.data_getter or lm.data_setter) and ls.hasField(ld, lm.name):
+    if (lm.data_getter or lm.data_setter) and status.hasField(ld, lm.name):
       return errors.ALREADY_DEFINED(spaced(WORDS_FIELD, apostrophe(lm.name)))
   ld.items.add(lm)
   return original
@@ -72,15 +72,15 @@ let ppPreviewer: PreprodPreviewer = proc (state: var PreprodState, original: Pre
       let subdivision = state.getPropertyValue(KEY_SUBDIVISION)
       let line = if subdivision == SUBDIVISIONS_DOCS: original.output else: removeComments(state, original.output)
       if hasContent(line) and division notin DIVISIONS_WITH_CODE and subdivision != SUBDIVISIONS_CLAUSES:
-        let ls = loadUbernimStatus(state)
-        var ld = ls.getDivision(ls.language.currentName)
+        let status = loadUbernimStatus(state)
+        var ld = status.getDivision(status.language.currentName)
         if not assigned(ld):
           return errors.BAD_STATE
         if subdivision == SUBDIVISIONS_DOCS:
           if hasContent(ld.docs) or hasContent(line):
             ld.docs.add(line)
         else:
-          return previewItem(ls, ld, newLanguageItem(subdivision), division == DIVISIONS_RECORD, line, original)
+          return previewItem(status, ld, newLanguageItem(subdivision), division == DIVISIONS_RECORD, line, original)
 
 # TRANSLATING
 
@@ -119,18 +119,18 @@ func translateDocs(original: PreprodResult, lm: LanguageItem): PreprodResult =
     lm.docs.add(original.output)
   return OK
 
-func translateExports(original: PreprodResult, state: PreprodState, ls: UbernimStatus, once: bool): PreprodResult =
+func translateExports(original: PreprodResult, state: PreprodState, status: UbernimStatus, once: bool): PreprodResult =
   let item = strip(original.output)
-  if not ls.files.exported.contains(item):
-    ls.files.exported.add(item)
+  if not status.files.exported.contains(item):
+    status.files.exported.add(item)
   elif once:
     return OK
   return GOOD(CODEGEN_EXPORT & STRINGS_SPACE & item)
 
-func translateImports(original: PreprodResult, state: PreprodState, ls: UbernimStatus, once: bool): PreprodResult =
+func translateImports(original: PreprodResult, state: PreprodState, status: UbernimStatus, once: bool): PreprodResult =
   let item = strip(original.output)
-  if not ls.files.imported.contains(item):
-    ls.files.imported.add(item)
+  if not status.files.imported.contains(item):
+    status.files.imported.add(item)
   elif once:
     return OK
   if original.output.find(STRINGS_PERIOD) > -1:
@@ -174,7 +174,7 @@ let ppTranslater: PreprodTranslater = proc (state: var PreprodState, original: P
 
 # PREPROCESSOR
 
-proc makePreprocessor*(filename: string): PreprodPreprocessor =
+proc makePreprocessor*(filename: string, defines: StringSeq = newStringSeq()): PreprodPreprocessor =
   result = newPreprodPreprocessor(filename, ppOptions, ppCommands, ppTranslater, ppPreviewer)
   result.state.setPropertyValue(UNIM_FILE_KEY, filename.changeFileExt(NIM_EXTENSION))
   result.state.setPropertyValue(UNIM_FLUSH_KEY, FLAG_YES)
@@ -182,3 +182,4 @@ proc makePreprocessor*(filename: string): PreprodPreprocessor =
   result.state.setPropertyValue(UNIM_CLEANUP_KEY, VALUE_IGNORED)
   result.state.setPropertyValue(FREQ_IMPORTING_KEY, FREQUENCY_ALWAYS)
   result.state.setPropertyValue(FREQ_EXPORTING_KEY, FREQUENCY_ALWAYS)
+  result.state.defines = defines

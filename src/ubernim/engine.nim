@@ -36,8 +36,7 @@ let DefaultErrorHandler: UbernimErrorHandler = proc (msg: string) =
 
 let DefaultPreprocessingHandler: UbernimPreprocessingHandler = proc (status: UbernimStatus): var PreprodState =
   # setup preprocessor
-  var pp = makePreprocessor(status.getCurrentFile())
-  pp.state.defines = status.preprocessing.defines
+  var pp = makePreprocessor(status.getCurrentFile(), status.preprocessing.defines)
   pp.state.storeUbernimStatus(status)
   # run preprocessor
   var r = pp.run()

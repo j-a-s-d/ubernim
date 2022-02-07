@@ -10,8 +10,8 @@ use strutils,toLower
 
 template targetedSection(section: string) =
   if fetchDivision(state) == DIVISIONS_TARGETED:
-    let ls = loadUbernimStatus(state)
-    if state.getPropertyValue(NIMC_TARGET_KEY) == ls.preprocessing.target:
+    let status = loadUbernimStatus(state)
+    if state.getPropertyValue(NIMC_TARGET_KEY) == status.preprocessing.target:
       let s = fetchSubdivision(state)
       state.setPropertyValue(KEY_SUBDIVISION, section)
       if s == SUBDIVISIONS_TARGETED_EMIT:
@@ -25,8 +25,8 @@ topCallback doTargeted:
     let target = parameters[0].toLower()
     if target notin NIMC_TARGETS:
       return errors.BAD_TARGET
-    let ls = loadUbernimStatus(state)
-    ls.preprocessing.target = target
+    let status = loadUbernimStatus(state)
+    status.preprocessing.target = target
   return OK
 
 childCallback doTargetedPass:
@@ -56,8 +56,8 @@ childCallback doTargetedEnd:
   unsetDivision(state)
   unsetSubdivision(state)
   if state.isTranslating() and d == DIVISIONS_TARGETED:
-    let ls = loadUbernimStatus(state)
-    ls.preprocessing.target = STRINGS_EMPTY
+    let status = loadUbernimStatus(state)
+    status.preprocessing.target = STRINGS_EMPTY
     return GOOD(if s == SUBDIVISIONS_TARGETED_EMIT: CODEGEN_EMIT_CLOSE else: STRINGS_EMPTY)
   return OK
 
