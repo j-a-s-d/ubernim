@@ -136,7 +136,7 @@ childCallback doApplies:
     if not assigned(ld):
       return errors.UNDEFINED_REFERENCE(apostrophe(parameters[0]))
     if ld.kind notin DIVISIONS_ON_APPLY:
-      return errors.NOT_APPLICABLE
+      return errors.NOT_APPLIABLE
     if parameters[0] in p.applies:
       return errors.ALREADY_APPLYING(apostrophe(parameters[0]))
     p.applies.add(parameters[0])
@@ -584,7 +584,7 @@ topCallback doApplying:
     if not assigned(ld):
       return errors.UNDEFINED_REFERENCE(apostrophe(parameters[0]))
     if ld.kind notin DIVISIONS_ON_APPLY:
-      return errors.NOT_APPLICABLE
+      return errors.NOT_APPLIABLE
     if parameters[0] in p.applies:
       return errors.ALREADY_APPLYING(apostrophe(parameters[0]))
     p.applies.add(parameters[0])

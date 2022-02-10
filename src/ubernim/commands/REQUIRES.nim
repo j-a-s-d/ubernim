@@ -21,10 +21,10 @@ topCallback doRequire:
     if status.isCircularReference(parameters[0]):
       return errors.NO_CIRCULAR_REFERENCE
     var rls = makeUbernimStatus(status.info.semver, status.info.signature)
-    rls.files.callstack.add(status.files.callstack & parameters[0])
     rls.preprocessing.defines = status.preprocessing.defines
     rls.preprocessing.performingHandler = status.preprocessing.performingHandler
     rls.preprocessing.errorHandler = status.preprocessing.errorHandler
+    rls.files.callstack.add(status.files.callstack & parameters[0])
     var rstate = status.preprocessing.performingHandler(rls)
     status.files.generated.add(rls.files.generated)
     rls.language.divisions.each d:

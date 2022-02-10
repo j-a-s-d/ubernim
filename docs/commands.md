@@ -4,6 +4,35 @@ This is the documentation of the ubernim commands (separated by preprod features
 
 ## COMMANDS
 
+### UNIMPRJS feature commands:
+
+* **.project** *(since 0.5.4)*
+	- specifies the project name and opens the associated block
+	- values: any valid identifier
+	- example: `.project SomeProject`
+* **.defines** *(since 0.5.4)*
+	- specifies conditional defines to be added to the project before invokation
+	- values: any valid define names in a comma separated fashion
+	- example: `.defines SOME_OS,SOMETHING_CUSTOM`
+* **.undefines** *(since 0.5.4)*
+	- specifies conditional defines to be removed from the project before invokation
+	- values: any valid define names in a comma separated fashion
+	- example: `.undefines SOME_DEFINES,TO_BE_DROPPED`
+* **.main** *(since 0.5.4)*
+	- specifies the project file name for a ubernim invokation
+	- values: any valid file name (typically a .unim extension file)
+	- example: `.main file.unim`
+* **.end** *(since 0.5.4)*
+	- specifies the end of the current block
+	- values: none
+	- example: `.end`
+* **.make** *(since 0.5.4)*
+	- makes the specified project by invoking ubernim
+	- values: any existing project name
+	- example: `.make SomeProject`
+
+See them working in the *projects* example.
+
 ### UNIMCMDS feature commands:
 
 * **.unim:version** *(since 0.2.0)*

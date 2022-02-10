@@ -10,10 +10,14 @@ use strutils,endsWith
 use strutils,strip
 
 type
+  UbernimResult* = tuple
+    compilationErrorlevel: int
+    cleanupReport: string
   TUbernimInfo = tuple
     semver: SemanticVersion
     signature: string
   TUbernimFiles = tuple
+    executable: string
     callstack: StringSeq
     imported: StringSeq
     exported: StringSeq
@@ -27,9 +31,20 @@ type
     defines: StringSeq
     performingHandler: SingleArgProc[UbernimStatus, var PreprodState]
     errorHandler: SingleArgVoidProc[string]
+  TUbernimProject = tuple
+    name: string
+    defines: StringSeq
+    undefines: StringSeq
+    main: string
+  TUbernimProjects = seq[TUbernimProject]
+  TUbernimProjecting = tuple
+    currentProject: string
+    projects: TUbernimProjects
+    results: seq[UbernimResult]
   TUbernimStatus = object of PreprodTag
     info*: TUbernimInfo
     files*: TUbernimFiles
+    projecting*: TUbernimProjecting
     preprocessing*: TUbernimPreprocessing
     language*: TUbernimLanguage
   UbernimStatus* = ptr TUbernimStatus
@@ -41,10 +56,16 @@ template makeUbernimStatus*(sver: SemanticVersion, sign: string, divs: LanguageD
       signature: sign
     ),
     files: TUbernimFiles (
+      executable: STRINGS_EMPTY,
       callstack: newStringSeq(),
       imported: newStringSeq(),
       exported: newStringSeq(),
       generated: newStringSeq()
+    ),
+    projecting: TUbernimProjecting (
+      currentProject: STRINGS_EMPTY,
+      projects: @[],
+      results: @[]
     ),
     preprocessing: TUbernimPreprocessing (
       target: STRINGS_EMPTY,
@@ -163,3 +184,33 @@ func hasMethod*(status: UbernimStatus, d: LanguageDivision, name: string, examin
 
 func hasTemplate*(status: UbernimStatus, d: LanguageDivision, name: string, examiner: SingleArgProc[LanguageItem, bool] = DUMMY_EXAMINER): bool =
   status.hasItem(d, SUBDIVISIONS_TEMPLATES, name, examiner)
+
+# PROJECT
+
+func openProject*(status: UbernimStatus, name: string) =
+  status.projecting.projects.add((name: name, defines: @[], undefines: @[], main: STRINGS_EMPTY))
+  status.projecting.currentProject = name
+
+func closeProject*(status: UbernimStatus) =
+  status.projecting.currentProject = STRINGS_EMPTY
+
+func inProject*(status: UbernimStatus): bool =
+  hasContent(status.projecting.currentProject)
+
+template withCurrentProject(code: untyped) =
+  status.projecting.projects.meach prj {.inject.}:
+    if prj.name == status.projecting.currentProject:
+      code
+      break
+
+func addDefineToCurrentProject*(status: UbernimStatus, define: string) =
+  withCurrentProject:
+    prj.defines.add(define)
+
+func addUndefineToCurrentProject*(status: UbernimStatus, define: string) =
+  withCurrentProject:
+    prj.undefines.add(define)
+
+func setMainToCurrentProject*(status: UbernimStatus, main: string) =
+  withCurrentProject:
+    prj.main = main

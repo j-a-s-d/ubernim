@@ -73,7 +73,7 @@ const
     TITLE: ansiMagenta(spaced(STRINGS_ASTERISK, APP_TEXTS.VERSION))
   )
   APP_PERFORMERS = (
-    ERROR_HANDLER: (msg: string) => quit(spaced(ansiRed(APP_MSGS.ERROR), msg), 0),
+    ERROR_HANDLER: (msg: string) => quit(spaced(ansiRed(APP_MSGS.ERROR), msg), -1),
     CLEANUP_FORMATTER: proc (action, file: string): string = spaced(STRINGS_ASTERISK, parenthesize(action), file) & STRINGS_EOL
   )
 
@@ -99,7 +99,8 @@ let events = (
   main: RodsterAppEvent (app: RodsterApplication) => (
     # use engine
     let kvm = app.getKvm();
-    let engine = newUbernimEngine(app.getInformation().getVersion(), APP_TEXTS.SIGNATURE);
+    let nfo = app.getInformation();
+    let engine = newUbernimEngine(nfo.getFilename(), nfo.getVersion(), APP_TEXTS.SIGNATURE);
     engine.setErrorHandler(APP_PERFORMERS.ERROR_HANDLER);
     engine.setCleanupFormatter(APP_PERFORMERS.CLEANUP_FORMATTER);
     withIt engine.run(kvm[APP_KEYS.INPUT], kvm[APP_KEYS.DEFINES].split(STRINGS_COMMA)): (

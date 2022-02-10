@@ -4,7 +4,7 @@
 import
   xam, preprod,
   errors, constants, rendering, status,
-  commands / [UNIMCMDS, SWITCHES, SHELLCMD, FSACCESS, REQUIRES, LANGUAGE, TARGETED],
+  commands / [UNIMPRJS, UNIMCMDS, SWITCHES, SHELLCMD, FSACCESS, REQUIRES, LANGUAGE, TARGETED],
   language / [header, implementation]
 
 use os,changeFileExt
@@ -12,31 +12,40 @@ use strutils,find
 use strutils,split
 use strutils,strip
 use strutils,replace
+use strutils,endsWith
 
 # FEATURES
 
-let ppFeatures = [
+let DEFAULT_FEATURES = @[
   UNIMCMDS.initialize(), # ubernim general commands
   SWITCHES.initialize(), # nim compiler command line switches
   SHELLCMD.initialize(), # os shell commands execution
   FSACCESS.initialize(), # os filesystem access
-  REQUIRES.initialize(), # ubernim external files requirement (differs from INCLUDE in that the required modules are preprocessed separatelly)
+  REQUIRES.initialize() # ubernim external files requirement (differs from INCLUDE in that the required modules are preprocessed separatelly)
+]
+
+let ppUnimFeatures = DEFAULT_FEATURES & @[
   LANGUAGE.initialize(), # ubernim language extensions
   TARGETED.initialize()  # target dependant language extension
 ]
 
+let ppUnimpFeatures = DEFAULT_FEATURES & @[
+  UNIMPRJS.initialize() # ubernim project extension
+]
+
 # OPTIONS
 
-var ppOptions: PreprodOptions = PREPROD_DEFAULT_OPTIONS
-ppOptions.keepBlankLines = false
-ppFeatures.each x:
-  ppOptions.initialEnabledFeatures &= x.name
+let getOptions = proc (isProject: bool): PreprodOptions =
+  result = PREPROD_DEFAULT_OPTIONS
+  result.keepBlankLines = false
+  (if isProject: ppUnimpFeatures else: ppUnimFeatures).each x:
+    result.initialEnabledFeatures &= x.name
 
 # COMMANDS
 
-let ppCommands: PreprodCommands = block:
+let getCommands = proc (isProject: bool): PreprodCommands =
   var cmds: PreprodCommands = @[]
-  ppFeatures.each x:
+  (if isProject: ppUnimpFeatures else: ppUnimFeatures).each x:
     cmds &= x.commands
   cmds
 
@@ -81,6 +90,12 @@ let ppPreviewer: PreprodPreviewer = proc (state: var PreprodState, original: Pre
             ld.docs.add(line)
         else:
           return previewItem(status, ld, newLanguageItem(subdivision), division == DIVISIONS_RECORD, line, original)
+
+let ppDummyPreviewer: PreprodPreviewer = proc (state: var PreprodState, original: PreprodResult): PreprodResult =
+  result = original
+
+let getPreviewer = proc (isProject: bool): PreprodPreviewer =
+  if isProject: ppDummyPreviewer else: ppPreviewer
 
 # TRANSLATING
 
@@ -139,7 +154,7 @@ func translateImports(original: PreprodResult, state: PreprodState, status: Uber
   else:
     return GOOD(spaced(CODEGEN_IMPORT, item))
 
-let ppTranslater: PreprodTranslater = proc (state: var PreprodState, original: PreprodResult): PreprodResult =
+let ppTranslator: PreprodTranslator = proc (state: var PreprodState, original: PreprodResult): PreprodResult =
   result = original
   if hasText(original.output):
     if state.hasPropertyValue(KEY_DIVISION):
@@ -172,14 +187,20 @@ let ppTranslater: PreprodTranslater = proc (state: var PreprodState, original: P
     elif state.getPropertyValue(UNIM_MODE_KEY) == MODE_STRICT:
       return errors.STRICT_MODE
 
+let ppDummyTranslator: PreprodTranslator = proc (state: var PreprodState, original: PreprodResult): PreprodResult =
+  result = original
+
+let getTranslator = proc (isProject: bool): PreprodTranslator =
+  if isProject: ppDummyTranslator else: ppTranslator
+
 # PREPROCESSOR
 
 proc makePreprocessor*(filename: string, defines: StringSeq = newStringSeq()): PreprodPreprocessor =
-  result = newPreprodPreprocessor(filename, ppOptions, ppCommands, ppTranslater, ppPreviewer)
+  let isProject = filename.endsWith(UNIM_PROJECT_EXTENSION)
+  result = newPreprodPreprocessor(filename, defines, getOptions(isProject), getCommands(isProject), getTranslator(isProject), getPreviewer(isProject))
   result.state.setPropertyValue(UNIM_FILE_KEY, filename.changeFileExt(NIM_EXTENSION))
-  result.state.setPropertyValue(UNIM_FLUSH_KEY, FLAG_YES)
-  result.state.setPropertyValue(UNIM_MODE_KEY, MODE_FREE)
+  result.state.setPropertyValue(UNIM_FLUSH_KEY, if isProject: FLAG_NO else: FLAG_YES)
+  result.state.setPropertyValue(UNIM_MODE_KEY, if isProject: MODE_STRICT else: MODE_FREE)
   result.state.setPropertyValue(UNIM_CLEANUP_KEY, VALUE_IGNORED)
   result.state.setPropertyValue(FREQ_IMPORTING_KEY, FREQUENCY_ALWAYS)
   result.state.setPropertyValue(FREQ_EXPORTING_KEY, FREQUENCY_ALWAYS)
-  result.state.defines = defines

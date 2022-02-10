@@ -16,6 +16,8 @@ template targetedSection(section: string) =
       state.setPropertyValue(KEY_SUBDIVISION, section)
       if s == SUBDIVISIONS_TARGETED_EMIT:
         return GOOD(CODEGEN_EMIT_CLOSE)
+  else:
+    return errors.NOT_IN_TARGETED
 
 # CALLBACKS
 

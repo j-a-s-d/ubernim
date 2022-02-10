@@ -10,10 +10,8 @@ type
   UbernimCleanupFormatter* = DoubleArgsProc[string, string, string]
   UbernimErrorHandler* = SingleArgVoidProc[string]
   UbernimPreprocessingHandler* = SingleArgProc[UbernimStatus, var PreprodState]
-  UbernimResult* = tuple
-    compilationErrorlevel: int
-    cleanupReport: string
   UbernimEngine* = ref object
+    executableFilename: string
     version: SemanticVersion
     signature: string
     compilerInvoker: UbernimCompilerInvoker
@@ -32,7 +30,7 @@ let DefaultCleanupFormatter: UbernimCleanupFormatter = proc (action, file: strin
   spaced(parenthesize(action), file)
 
 let DefaultErrorHandler: UbernimErrorHandler = proc (msg: string) =
-  quit(msg, 0)
+  quit(msg, -1)
 
 let DefaultPreprocessingHandler: UbernimPreprocessingHandler = proc (status: UbernimStatus): var PreprodState =
   # setup preprocessor
@@ -51,8 +49,9 @@ let DefaultPreprocessingHandler: UbernimPreprocessingHandler = proc (status: Ube
 
 # ENGINE
 
-proc newUbernimEngine*(version: SemanticVersion, signature: string): UbernimEngine =
+proc newUbernimEngine*(filename: string, version: SemanticVersion, signature: string): UbernimEngine =
   result = new UbernimEngine
+  result.executableFilename = filename
   result.version = version
   result.signature = signature
   result.compilerInvoker = DefaultCompilerInvoker
@@ -101,13 +100,14 @@ proc performCleanup(engine: UbernimEngine, state: var PreprodState): string =
 proc invokePerformers(engine: UbernimEngine, status: UbernimStatus): UbernimResult =
   var state = status.preprocessing.performingHandler(status)
   result.compilationErrorlevel = engine.performCompilation(state)
-  result.cleanupReport = engine.performCleanup(state)
+  result.cleanupReport = if result.compilationErrorlevel == 0: engine.performCleanup(state) else: STRINGS_EMPTY
   freeUbernimStatus(state)
 
 proc run*(engine: UbernimEngine, main: string, defines: StringSeq): UbernimResult =
-  let status = makeUbernimStatus(engine.version, engine.signature)
+  var status = makeUbernimStatus(engine.version, engine.signature)
   status.preprocessing.performingHandler = engine.preprocessingHandler
   status.preprocessing.errorHandler = engine.errorHandler
   status.preprocessing.defines = defines
   status.files.callstack.add(main)
+  status.files.executable = engine.executableFilename
   engine.invokePerformers(status)

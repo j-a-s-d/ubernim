@@ -1,0 +1,32 @@
+# ubernim / PROJECTS EXAMPLE #
+#----------------------------#
+
+# this example is to show the project definition and making in .unimp files
+
+.# NOTE: when handling Ubernim Project (.unimp files) the preprod UNIMPRJS feature is active
+.# but the preprod LANGUAGE and TARGETED features are disabled to avoid mixing code here
+.# (in any case, the mode is set to strict and flush is set to no by default for projects).
+.# Besides that, you can use others features freely:
+
+.unim:version 0.5.4
+
+.# defining a project is easy an straight forward, and allows to define some conditional defines to be added
+.# and/or removed before the project making (they will be applied on top of those received from command line)
+
+.project Testing
+.defines BLAH, HELLO
+.undefines TESTING
+.main test.unim # this is the main/index/entrypoint/project .unim file
+.end
+
+.# then you can make the project
+
+.make Testing
+
+.# and make it again if you need
+
+.make Testing
+
+.# also doing other build actions or defining more projects is ok
+
+.remove test

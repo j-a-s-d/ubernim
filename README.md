@@ -34,10 +34,12 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
-* 07-02-22 **[0.5.4]**
+* 10-02-22 **[0.5.4]**
+	- added UNIMPRJS preprod feature to allow projects definition and handling
+	- updated preprod dependency to 1.0.2
 	- general improvements
 * 04-02-22 **[0.5.3]**
-	- added TARGETED preprod feature
+	- added TARGETED preprod feature to allow targeted code blocks
 * 03-02-22 **[0.5.2]**
 	- improved valid identifier check
 * 02-02-22 **[0.5.1]**

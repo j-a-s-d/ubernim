@@ -2,6 +2,7 @@
 #---------------------#
 
 const
+  UNIM_PROJECT_EXTENSION* = ".unimp"
   UNIM_FILE_KEY* = "UNIM_FILE"
   UNIM_FLUSH_KEY* = "UNIM_FLUSH"
   FLAG_YES* = "yes" # default
@@ -29,6 +30,7 @@ const
   SUBDIVISIONS_TARGETED_COMPILE* = "TARGETED_COMPILE"
   SUBDIVISIONS_TARGETED_LINK* = "TARGETED_LINK"
   SUBDIVISIONS_TARGETED_EMIT* = "TARGETED_EMIT"
+  DIVISIONS_PROJECT* = "PROJECT"
   TO_COMPILER* = "to:compiler"
   TO_LOCAL* = "to:local"
   TO_LINKER* = "to:linker"

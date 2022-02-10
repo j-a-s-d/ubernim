@@ -1,0 +1,13 @@
+.nimc:project test.nim
+.nimc:switch -r
+
+.routine hello()
+.code
+  echo "hello world!"
+.end
+
+.$IFDEF HELLO
+hello()
+.$ENDIF
+
+.unim:cleanup performed
