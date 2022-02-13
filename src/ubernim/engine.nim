@@ -3,7 +3,7 @@
 
 import
   xam, preprod,
-  constants, errors, status, preprocessing, compilation, cleanup, rendering
+  constants, status, preprocessing, compilation, cleanup, rendering
 
 # TYPES
 
@@ -11,6 +11,7 @@ type
   UbernimCompilerInvoker* = DoubleArgsProc[string, StringSeq, int]
   UbernimCleanupFormatter* = DoubleArgsProc[string, string, string]
   UbernimErrorHandler* = SingleArgVoidProc[string]
+  UbernimErrorGetter* = DoubleArgsProc[string, StringSeq, string]
   UbernimPreprocessingHandler* = SingleArgProc[UbernimStatus, var PreprodState]
   UbernimEngine* = ref object
     executableFilename: string
@@ -18,6 +19,7 @@ type
     signature: string
     compilerInvoker: UbernimCompilerInvoker
     cleanupFormatter: UbernimCleanupFormatter
+    errorGetter: UbernimErrorGetter
     errorHandler: UbernimErrorHandler
     preprocessingHandler: UbernimPreprocessingHandler
 
@@ -34,6 +36,9 @@ let DefaultCleanupFormatter: UbernimCleanupFormatter = proc (action, file: strin
 let DefaultErrorHandler: UbernimErrorHandler = proc (msg: string) =
   quit(msg, -1)
 
+let DefaultErrorGetter: UbernimErrorGetter = proc (msg: string, values: StringSeq): string =
+  msg
+
 let DefaultPreprocessingHandler: UbernimPreprocessingHandler = proc (status: UbernimStatus): var PreprodState =
   # setup preprocessor
   var pp = makePreprocessor(status.getCurrentFile(), status.preprocessing.defines)
@@ -46,7 +51,7 @@ let DefaultPreprocessingHandler: UbernimPreprocessingHandler = proc (status: Ube
   if pp.state.getPropertyValue(UNIM_FLUSH_KEY) == FLAG_YES:
     let uf = pp.state.getPropertyValue(UNIM_FILE_KEY)
     let txt = renderSignature(uf, status.info.signature) & r.output
-    status.generateFile(uf, txt, errors.CANT_WRITE_OUTPUT.output)
+    status.generateFile(uf, txt, "errors.CANT_WRITE_OUTPUT")
   pp.state
 
 # ENGINE
@@ -60,6 +65,10 @@ proc newUbernimEngine*(filename: string, version: SemanticVersion, signature: st
   result.cleanupFormatter = DefaultCleanupFormatter
   result.preprocessingHandler = DefaultPreprocessingHandler
   result.errorHandler = DefaultErrorHandler
+  result.errorGetter = DefaultErrorGetter
+
+proc setErrorGetter*(engine: UbernimEngine, handler: UbernimErrorGetter) =
+  engine.errorGetter = handler
 
 proc setErrorHandler*(engine: UbernimEngine, handler: UbernimErrorHandler) =
   engine.errorHandler = handler
@@ -84,7 +93,7 @@ proc performCompilation(engine: UbernimEngine, state: var PreprodState): int =
     let status = loadUbernimStatus(state)
     let cfg = state.getPropertyValue(NIMC_CFGFILE_KEY)
     let txt = lined(spaced(STRINGS_NUMERAL, cfg, status.info.signature) & nimcSwitches)
-    status.generateFile(cfg, txt, errors.CANT_WRITE_CONFIG.output)
+    status.generateFile(cfg, txt, "errors.CANT_WRITE_CONFIG")
   else:
     clDefs &= nimcSwitches
   # compile
@@ -109,6 +118,7 @@ proc run*(engine: UbernimEngine, main: string, defines: StringSeq): UbernimResul
   var status = makeUbernimStatus(engine.version, engine.signature)
   status.preprocessing.performingHandler = engine.preprocessingHandler
   status.preprocessing.errorHandler = engine.errorHandler
+  status.preprocessing.errorGetter = engine.errorGetter
   status.preprocessing.defines = defines
   status.files.callstack.add(main)
   status.files.executable = engine.executableFilename

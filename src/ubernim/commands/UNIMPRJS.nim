@@ -4,7 +4,7 @@
 import
   xam, preprod,
   common,
-  ../errors, ../constants, ../status
+  ../constants, ../status
 
 use strutils,join
 use strutils,split
@@ -17,42 +17,42 @@ use os,execShellCmd
 topCallback doProject:
   state.setPropertyValue(KEY_DIVISION, DIVISIONS_PROJECT)
   if state.isTranslating():
+    let status = loadUbernimStatus(state)
     let name = strip(parameters[0])
     if not isValidNimIdentifier(name):
-      return errors.INVALID_IDENTIFIER
-    let status = loadUbernimStatus(state)
+      return status.getError(errors.INVALID_IDENTIFIER)
     status.openProject(name)
   return OK
 
 childCallback doDefines:
   if state.isTranslating():
-    if fetchDivision(state) != DIVISIONS_PROJECT:
-      return errors.NOT_IN_PROJECT
     let status = loadUbernimStatus(state)
+    if fetchDivision(state) != DIVISIONS_PROJECT:
+      return status.getError(errors.NOT_IN_PROJECT)
     if not status.inProject():
-      return errors.BAD_STATE
+      return status.getError(errors.BAD_STATE)
     parameters.join(STRINGS_SPACE).split(STRINGS_COMMA).each u:
       status.addDefineToCurrentProject(strip(u))
   return OK
 
 childCallback doUndefines:
   if state.isTranslating():
-    if fetchDivision(state) != DIVISIONS_PROJECT:
-      return errors.NOT_IN_PROJECT
     let status = loadUbernimStatus(state)
+    if fetchDivision(state) != DIVISIONS_PROJECT:
+      return status.getError(errors.NOT_IN_PROJECT)
     if not status.inProject():
-      return errors.BAD_STATE
+      return status.getError(errors.BAD_STATE)
     parameters.join(STRINGS_SPACE).split(STRINGS_COMMA).each u:
       status.addUndefineToCurrentProject(strip(u))
   return OK
 
 childCallback doMain:
   if state.isTranslating():
-    if fetchDivision(state) != DIVISIONS_PROJECT:
-      return errors.NOT_IN_PROJECT
     let status = loadUbernimStatus(state)
+    if fetchDivision(state) != DIVISIONS_PROJECT:
+      return status.getError(errors.NOT_IN_PROJECT)
     if not status.inProject():
-      return errors.BAD_STATE
+      return status.getError(errors.BAD_STATE)
     status.setMainToCurrentProject(strip(parameters[0]))
   return OK
 
@@ -61,9 +61,9 @@ childCallback doEnd:
   unsetDivision(state)
   unsetSubdivision(state)
   if state.isTranslating():
-    if d != DIVISIONS_PROJECT:
-      return errors.NOT_IN_PROJECT
     let status = loadUbernimStatus(state)
+    if d != DIVISIONS_PROJECT:
+      return status.getError(errors.NOT_IN_PROJECT)
     status.closeProject()
   return OK
 
@@ -77,7 +77,7 @@ topCallback doMake:
         prj.defines.each define: defines.add(define)
         prj.undefines.each define: defines.remove(define)
         if execShellCmd(spaced(status.files.executable, prj.main, NIMC_DEFINE & defines.filter((it) => it != STRINGS_EMPTY).join(STRINGS_COMMA))) != 0:
-          return errors.FAILURE_PROCESSING(prj.name)
+          return status.getError(errors.FAILURE_PROCESSING, prj.name)
   return OK
 
 # INITIALIZATION

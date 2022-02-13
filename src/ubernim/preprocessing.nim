@@ -3,7 +3,7 @@
 
 import
   xam, preprod,
-  errors, constants, rendering, status,
+  constants, rendering, status,
   commands / [UNIMPRJS, UNIMCMDS, SWITCHES, SHELLCMD, FSACCESS, REQUIRES, LANGUAGE, TARGETED],
   language / [header, implementation]
 
@@ -55,21 +55,21 @@ const
   DIVISIONS_NOT_PREVIEWING = [DIVISIONS_NOTE, DIVISIONS_IMPORTS, DIVISIONS_EXPORTS, DIVISIONS_TARGETED]
   SEALED_EXAMINER = (item: LanguageItem) => not item.data_constructor and not item.data_getter and not item.data_setter and item.data_sealed
 
-func previewItem(status: UbernimStatus, ld: LanguageDivision, lm: LanguageItem, inRecord: bool, line: string, original: PreprodResult): PreprodResult =
+proc previewItem(status: UbernimStatus, ld: LanguageDivision, lm: LanguageItem, inRecord: bool, line: string, original: PreprodResult): PreprodResult =
   if not lm.read(line):
-    return errors.WRONGLY_DEFINED(WORDS_ITEM)
+    return status.getError(errors.WRONGLY_DEFINED, WORDS_ITEM)
   if not lm.hasValidIdentifier():
-    return errors.INVALID_IDENTIFIER
+    return status.getError(errors.INVALID_IDENTIFIER)
   if lm.kind == SUBDIVISIONS_FIELDS:
     if lm.public and inRecord:
-      return errors.RECORDS_DONT_ASTERISK
+      return status.getError(errors.RECORDS_DONT_ASTERISK)
     if status.hasField(ld, lm.name):
-      return errors.ALREADY_DEFINED(spaced(WORDS_FIELD, apostrophe(lm.name)))
+      return status.getError(errors.ALREADY_DEFINED, spaced(WORDS_FIELD, apostrophe(lm.name)))
     if status.hasMethod(ld, lm.name, SEALED_EXAMINER):
-      return errors.ALREADY_DEFINED(spaced(WORDS_SEALED, WORDS_METHOD, apostrophe(lm.name)))
+      return status.getError(errors.ALREADY_DEFINED, spaced(WORDS_SEALED, WORDS_METHOD, apostrophe(lm.name)))
   else:
     if (lm.data_getter or lm.data_setter) and status.hasField(ld, lm.name):
-      return errors.ALREADY_DEFINED(spaced(WORDS_FIELD, apostrophe(lm.name)))
+      return status.getError(errors.ALREADY_DEFINED, spaced(WORDS_FIELD, apostrophe(lm.name)))
   ld.items.add(lm)
   return original
 
@@ -84,7 +84,7 @@ let ppPreviewer: PreprodPreviewer = proc (state: var PreprodState, original: Pre
         let status = loadUbernimStatus(state)
         var ld = status.getDivision(status.language.currentName)
         if not assigned(ld):
-          return errors.BAD_STATE
+          return status.getError(errors.BAD_STATE)
         if subdivision == SUBDIVISIONS_DOCS:
           if hasContent(ld.docs) or hasContent(line):
             ld.docs.add(line)
@@ -185,7 +185,8 @@ let ppTranslator: PreprodTranslator = proc (state: var PreprodState, original: P
       else:
         state.setPropertyValue(PREPROD_LINE_APPENDIX_KEY, STRINGS_EOL)
     elif state.getPropertyValue(UNIM_MODE_KEY) == MODE_STRICT:
-      return errors.STRICT_MODE
+      let status = loadUbernimStatus(state)
+      return status.getError(errors.STRICT_MODE)
 
 let ppDummyTranslator: PreprodTranslator = proc (state: var PreprodState, original: PreprodResult): PreprodResult =
   result = original

@@ -3,7 +3,7 @@
 
 import
   xam, preprod,
-  ../constants, ../errors
+  ../constants, ../status
 
 # FEATURES
 
@@ -21,6 +21,10 @@ template initFeature*(feature: string, code: untyped): untyped =
 
 # CALLBACKS
 
+template makeError(state: var PreprodState, code: string, values: varargs[string]): PreprodResult =
+  let status = loadUbernimStatus(state)
+  BAD(status.preprocessing.errorGetter(code, newStringSeq(values)))
+
 template callback(name, code: untyped): untyped =
   let name {.inject.}: PreprodCallback = proc (ustate: var PreprodState, params: StringSeq): PreprodResult =
     var state {.inject, used.} = ustate
@@ -28,18 +32,18 @@ template callback(name, code: untyped): untyped =
     try:
       code
     except:
-      return errors.UNEXPECTED(getCurrentExceptionMsg())
+      return makeError(state, errors.UNEXPECTED, getCurrentExceptionMsg())
 
 template topCallback*(name, code: untyped): untyped =
   callback name:
     if state.hasPropertyValue(KEY_DIVISION):
-      return errors.ONLY_TOP_LEVEL
+      return makeError(state, errors.ONLY_TOP_LEVEL)
     code
 
 template childCallback*(name, code: untyped): untyped =
   callback name:
     if not state.hasPropertyValue(KEY_DIVISION):
-      return errors.DONT_TOP_LEVEL
+      return makeError(state, errors.DONT_TOP_LEVEL)
     code
 
 # DIVISIONS

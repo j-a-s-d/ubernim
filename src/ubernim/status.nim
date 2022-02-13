@@ -33,6 +33,7 @@ type
     defines: StringSeq
     performingHandler: SingleArgProc[UbernimStatus, var PreprodState]
     errorHandler: SingleArgVoidProc[string]
+    errorGetter: DoubleArgsProc[string, StringSeq, string]
   TUbernimProject = tuple
     name: string
     defines: StringSeq
@@ -73,7 +74,8 @@ template makeUbernimStatus*(sver: SemanticVersion, sign: string, divs: LanguageD
       target: STRINGS_EMPTY,
       defines: newStringSeq(),
       performingHandler: nil,
-      errorHandler: nil
+      errorHandler: nil,
+      errorGetter: nil
     ),
     language: TUbernimLanguage (
       currentName: STRINGS_EMPTY,
@@ -92,6 +94,9 @@ template storeUbernimStatus*(state: var PreprodState, status: UbernimStatus) =
 template freeUbernimStatus*(state: var PreprodState) =
   if assigned(state.tag):
     reset(state.tag)
+
+template getError*(status: UbernimStatus, code: string, values: varargs[string]): PreprodResult =
+  BAD(status.preprocessing.errorGetter(code, newStringSeq(values)))
 
 # FILES
 
@@ -113,11 +118,11 @@ template getCurrentFile*(status: UbernimStatus): string =
 template isCircularReference*(status: UbernimStatus, name: string): bool =
   name in status.files.callstack
 
-template generateFile*(status: UbernimStatus, filename, content, error: string) =
+template generateFile*(status: UbernimStatus, filename, content, errorCode: string) =
   if writeToFile(filename, content):
     status.files.generated.add(filename)
   else:
-    status.preprocessing.errorHandler(error)
+    status.preprocessing.errorHandler(status.getError(errorCode).output)
 
 # DIVISION
 

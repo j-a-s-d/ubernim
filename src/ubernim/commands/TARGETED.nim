@@ -4,30 +4,30 @@
 import
   xam, preprod,
   common,
-  ../constants, ../errors, ../status, ../rendering
+  ../constants, ../status, ../rendering
 
 use strutils,toLower
 
 template targetedSection(section: string) =
+  let status = loadUbernimStatus(state)
   if fetchDivision(state) == DIVISIONS_TARGETED:
-    let status = loadUbernimStatus(state)
     if state.getPropertyValue(NIMC_TARGET_KEY) == status.preprocessing.target:
       let s = fetchSubdivision(state)
       state.setPropertyValue(KEY_SUBDIVISION, section)
       if s == SUBDIVISIONS_TARGETED_EMIT:
         return GOOD(CODEGEN_EMIT_CLOSE)
   else:
-    return errors.NOT_IN_TARGETED
+    return status.getError(errors.NOT_IN_TARGETED)
 
 # CALLBACKS
 
 topCallback doTargeted:
   state.setPropertyValue(KEY_DIVISION, DIVISIONS_TARGETED)
   if state.isTranslating():
+    let status = loadUbernimStatus(state)
     let target = parameters[0].toLower()
     if target notin NIMC_TARGETS:
-      return errors.BAD_TARGET
-    let status = loadUbernimStatus(state)
+      return status.getError(errors.BAD_TARGET)
     status.preprocessing.target = target
   return OK
 

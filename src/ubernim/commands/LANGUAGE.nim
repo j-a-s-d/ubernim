@@ -4,7 +4,7 @@
 import
   xam, preprod,
   common,
-  ../errors, ../rendering, ../constants, ../status,
+  ../rendering, ../constants, ../status,
   ../language / [header, implementation]
 
 use strutils,strip
@@ -44,7 +44,7 @@ proc validateDivision*(status: UbernimStatus, d: LanguageDivision): PreprodResul
     m.applies.each a:
       let p = status.getDivision(a)
       if not assigned(p):
-        return errors.UNDEFINED_REFERENCE(apostrophe(a))
+        return status.getError(errors.UNDEFINED_REFERENCE, apostrophe(a))
       else:
         status.getFullDivisionItems(p).each b:
           if not isPresent(b):
@@ -74,15 +74,15 @@ func renderDivision(status: UbernimStatus, d: LanguageDivision): string =
     return STRINGS_EMPTY
 
 proc startDivision(state: var PreprodState, division, subdivision, id: string): PreprodResult =
+  let status = loadUbernimStatus(state)
   if state.isPreviewing():
-    let status = loadUbernimStatus(state)
     if status.hasDivision(id):
-      return errors.ALREADY_DEFINED(apostrophe(id))
+      return status.getError(errors.ALREADY_DEFINED, apostrophe(id))
   setDivision(state, division)
   setSubdivision(state, subdivision)
   let lm = openDivision(state, division, id)
   if not lm.hasValidIdentifier():
-    return errors.INVALID_IDENTIFIER
+    return status.getError(errors.INVALID_IDENTIFIER)
   return OK
 
 # CALLBACKS
@@ -102,7 +102,7 @@ topCallback doClass:
     let status = loadUbernimStatus(state)
     let p = status.getDivision(status.language.currentName)
     if not assigned(p):
-      return errors.BAD_STATE
+      return status.getError(errors.BAD_STATE)
     let v = status.validateDivision(p)
     if not v.ok:
       return v
@@ -117,7 +117,7 @@ topCallback doRecord:
     let status = loadUbernimStatus(state)
     let p = status.getDivision(status.language.currentName)
     if not assigned(p):
-      return errors.BAD_STATE
+      return status.getError(errors.BAD_STATE)
     let v = status.validateDivision(p)
     if not v.ok:
       return v
@@ -131,86 +131,89 @@ childCallback doApplies:
     let status = loadUbernimStatus(state)
     var p = status.getDivision(status.language.currentName)
     if not assigned(p):
-      return errors.BAD_STATE
+      return status.getError(errors.BAD_STATE)
     let ld = status.getDivision(parameters[0])
     if not assigned(ld):
-      return errors.UNDEFINED_REFERENCE(apostrophe(parameters[0]))
+      return status.getError(errors.UNDEFINED_REFERENCE, apostrophe(parameters[0]))
     if ld.kind notin DIVISIONS_ON_APPLY:
-      return errors.NOT_APPLIABLE
+      return status.getError(errors.NOT_APPLIABLE)
     if parameters[0] in p.applies:
-      return errors.ALREADY_APPLYING(apostrophe(parameters[0]))
+      return status.getError(errors.ALREADY_APPLYING, apostrophe(parameters[0]))
     p.applies.add(parameters[0])
   return OK
 
 childCallback doExtends:
   if state.isPreviewing():
+    let status = loadUbernimStatus(state)
     let d = fetchDivision(state)
     if d == DIVISIONS_RECORD:
-      return errors.RECORDS_CANT_EXTEND
-    let status = loadUbernimStatus(state)
+      return status.getError(errors.RECORDS_CANT_EXTEND)
     var p = status.getDivision(status.language.currentName)
     if not assigned(p):
-      return errors.BAD_STATE
+      return status.getError(errors.BAD_STATE)
     if hasContent(p.extends):
-      return errors.ALREADY_EXTENDING(apostrophe(p.extends))
+      return status.getError(errors.ALREADY_EXTENDING, apostrophe(p.extends))
     if parameters[0] != CODEGEN_ROOTOBJ:
       let x = status.getDivision(parameters[0])
       if not assigned(x):
-        return errors.CANT_EXTEND_INEXISTENT(apostrophe(parameters[0]))
+        return status.getError(errors.CANT_EXTEND_INEXISTENT, apostrophe(parameters[0]))
       if p.kind != x.kind:
-        return errors.CANT_EXTEND_DIFFERENT
+        return status.getError(errors.CANT_EXTEND_DIFFERENT)
       if x.data_sealed:
-        return errors.CANT_EXTEND_SEALED(apostrophe(parameters[0]))
+        return status.getError(errors.CANT_EXTEND_SEALED, apostrophe(parameters[0]))
     p.extends = parameters[0]
   return OK
 
 childCallback doPragmas:
+  let status = loadUbernimStatus(state)
   let d = fetchDivision(state)
   if state.isPreviewing():
     if d != DIVISIONS_CONSTRUCTOR and d != DIVISIONS_METHOD and d != DIVISIONS_ROUTINE and d != DIVISIONS_MEMBER:
       if d != DIVISIONS_CLASS and d != DIVISIONS_RECORD:
-        return errors.CANT_HOLD_PRAGMAS
-      let status = loadUbernimStatus(state)
+        return status.getError(errors.CANT_HOLD_PRAGMAS)
       var p = status.getDivision(status.language.currentName)
       if not assigned(p):
-        return errors.BAD_STATE
+        return status.getError(errors.BAD_STATE)
       if hasContent(p.pragmas):
-        return errors.ALREADY_DEFINED(WORDS_PRAGMAS)
+        return status.getError(errors.ALREADY_DEFINED, WORDS_PRAGMAS)
       p.pragmas = spaced(parameters)
   elif state.isTranslating():
     if d != DIVISIONS_CLASS and d != DIVISIONS_RECORD:
       if d != DIVISIONS_CONSTRUCTOR and d != DIVISIONS_METHOD and d != DIVISIONS_ROUTINE and d != DIVISIONS_MEMBER:
-        return errors.CANT_HOLD_PRAGMAS
+        return status.getError(errors.CANT_HOLD_PRAGMAS)
       let status = loadUbernimStatus(state)
       var p = status.getDivision(status.language.currentName)
       if not assigned(p):
-        return errors.BAD_STATE
+        return status.getError(errors.BAD_STATE)
       let lm = status.language.currentImplementation
       if lm.rendered:
-        return errors.DEFINE_BEFORE_VALUE
+        return status.getError(errors.DEFINE_BEFORE_VALUE)
       if hasContent(lm.pragmas):
-        return errors.ALREADY_DEFINED(WORDS_PRAGMAS)
+        return status.getError(errors.ALREADY_DEFINED, WORDS_PRAGMAS)
       lm.pragmas = spaced(parameters)
   return OK
 
 childCallback doFields:
   let d = fetchDivision(state)
   if d notin DIVISIONS_WITH_FIELDS:
-    return errors.CANT_HOLD_FIELDS
+    let status = loadUbernimStatus(state)
+    return status.getError(errors.CANT_HOLD_FIELDS)
   setSubdivision(state, SUBDIVISIONS_FIELDS)
   return OK
 
 childCallback doMethods:
   let d = fetchDivision(state)
   if d notin DIVISIONS_WITH_METHODS:
-    return errors.CANT_HOLD_METHODS
+    let status = loadUbernimStatus(state)
+    return status.getError(errors.CANT_HOLD_METHODS)
   setSubdivision(state, SUBDIVISIONS_METHODS)
   return OK
 
 childCallback doTemplates:
   let d = fetchDivision(state)
   if d notin DIVISIONS_WITH_TEMPLATES:
-    return errors.CANT_HOLD_TEMPLATES
+    let status = loadUbernimStatus(state)
+    return status.getError(errors.CANT_HOLD_TEMPLATES)
   setSubdivision(state, SUBDIVISIONS_TEMPLATES)
   return OK
 
@@ -233,25 +236,25 @@ topCallback doConstructor:
   setDivision(state, DIVISIONS_CONSTRUCTOR)
   setSubdivision(state, SUBDIVISIONS_CLAUSES)
   if state.isTranslating():
+    let status = loadUbernimStatus(state)
     let parts = parameters.join(STRINGS_SPACE).split(STRINGS_PERIOD)
     if parts.len != 2:
-      return errors.WRONGLY_DEFINED(WORDS_CONSTRUCTOR)
-    let status = loadUbernimStatus(state)
+      return status.getError(errors.WRONGLY_DEFINED, WORDS_CONSTRUCTOR)
     var p = status.getDivision(parts[0])
     if not assigned(p):
-      return errors.NEVER_DEFINED(apostrophe(parts[0]))
+      return status.getError(errors.NEVER_DEFINED, apostrophe(parts[0]))
     var lm = newLanguageItem(SUBDIVISIONS_METHODS)
     if not lm.read(STRINGS_PLUS & parts[1]):
-      return errors.WRONGLY_DEFINED(WORDS_CONSTRUCTOR)
+      return status.getError(errors.WRONGLY_DEFINED, WORDS_CONSTRUCTOR)
     if not lm.hasValidIdentifier():
-      return errors.INVALID_IDENTIFIER
+      return status.getError(errors.INVALID_IDENTIFIER)
     if not status.hasMethod(p, lm.name):
-      return errors.NEVER_DEFINED(spaced(WORDS_CONSTRUCTOR, apostrophe(parts[1])))
+      return status.getError(errors.NEVER_DEFINED, spaced(WORDS_CONSTRUCTOR, apostrophe(parts[1])))
     let pm = status.getItem(p, SUBDIVISIONS_METHODS, lm.name)
     if not assigned(pm):
-      return errors.BAD_STATE
+      return status.getError(errors.BAD_STATE)
     if pm.public != lm.public:
-      return errors.VISIBILITY_DOESNT_MATCH(spaced(WORDS_FOR, WORDS_CONSTRUCTOR, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
+      return status.getError(errors.VISIBILITY_DOESNT_MATCH, spaced(WORDS_FOR, WORDS_CONSTRUCTOR, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
     status.language.currentName = p.name
     status.language.currentImplementation = lm
   return OK
@@ -260,27 +263,27 @@ topCallback doGetter:
   setDivision(state, DIVISIONS_GETTER)
   setSubdivision(state, SUBDIVISIONS_CLAUSES)
   if state.isTranslating():
+    let status = loadUbernimStatus(state)
     let parts = parameters.join(STRINGS_SPACE).split(STRINGS_PERIOD)
     if parts.len != 2:
-      return errors.WRONGLY_DEFINED(WORDS_GETTER)
-    let status = loadUbernimStatus(state)
+      return status.getError(errors.WRONGLY_DEFINED, WORDS_GETTER)
     var p = status.getDivision(parts[0])
     if not assigned(p):
-      return errors.NEVER_DEFINED(apostrophe(parts[0]))
+      return status.getError(errors.NEVER_DEFINED, apostrophe(parts[0]))
     var lm = newLanguageItem(SUBDIVISIONS_METHODS)
     # NOTE: due to the differences between definition and implementation special flag has to be set
     lm.data_getter = true # before reading (for the getter)
     if not lm.read(parts[1]):
-      return errors.WRONGLY_DEFINED(WORDS_GETTER)
+      return status.getError(errors.WRONGLY_DEFINED, WORDS_GETTER)
     if not lm.hasValidIdentifier():
-      return errors.INVALID_IDENTIFIER
+      return status.getError(errors.INVALID_IDENTIFIER)
     if not status.hasMethod(p, lm.name, (item: LanguageItem) => item.data_getter):
-      return errors.NEVER_DEFINED(spaced(WORDS_GETTER, apostrophe(parts[1])))
+      return status.getError(errors.NEVER_DEFINED, spaced(WORDS_GETTER, apostrophe(parts[1])))
     let pm = status.getItem(p, SUBDIVISIONS_METHODS, lm.name)
     if not assigned(pm):
-      return errors.BAD_STATE
+      return status.getError(errors.BAD_STATE)
     if pm.public != lm.public:
-      return errors.VISIBILITY_DOESNT_MATCH(spaced(WORDS_FOR, WORDS_GETTER, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
+      return status.getError(errors.VISIBILITY_DOESNT_MATCH, spaced(WORDS_FOR, WORDS_GETTER, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
     status.language.currentName = p.name
     status.language.currentImplementation = lm
   return OK
@@ -289,28 +292,28 @@ topCallback doSetter:
   setDivision(state, DIVISIONS_SETTER)
   setSubdivision(state, SUBDIVISIONS_CLAUSES)
   if state.isTranslating():
+    let status = loadUbernimStatus(state)
     let isVar = parameters[0] == CODEGEN_VAR
     let parts = (if isVar: parameters[1..^1] else: parameters).join(STRINGS_SPACE).split(STRINGS_PERIOD)
     if parts.len != 2:
-      return errors.WRONGLY_DEFINED(WORDS_SETTER)
-    let status = loadUbernimStatus(state)
+      return status.getError(errors.WRONGLY_DEFINED, WORDS_SETTER)
     var p = status.getDivision(parts[0])
     if not assigned(p):
-      return errors.NEVER_DEFINED(apostrophe(parts[0]))
+      return status.getError(errors.NEVER_DEFINED, apostrophe(parts[0]))
     var lm = newLanguageItem(SUBDIVISIONS_METHODS)
     if not lm.read(parts[1]):
-      return errors.WRONGLY_DEFINED(WORDS_SETTER)
+      return status.getError(errors.WRONGLY_DEFINED, WORDS_SETTER)
     # NOTE: due to the differences between definition and implementation special flag has to be set
     lm.data_setter = true # after reading (for the setter)
     if not lm.hasValidIdentifier():
-      return errors.INVALID_IDENTIFIER
+      return status.getError(errors.INVALID_IDENTIFIER)
     if not status.hasMethod(p, lm.name, (item: LanguageItem) => item.data_setter):
-      return errors.NEVER_DEFINED(spaced(WORDS_SETTER, apostrophe(parts[1])))
+      return status.getError(errors.NEVER_DEFINED, spaced(WORDS_SETTER, apostrophe(parts[1])))
     let pm = status.getItem(p, SUBDIVISIONS_METHODS, lm.name)
     if not assigned(pm):
-      return errors.BAD_STATE
+      return status.getError(errors.BAD_STATE)
     if pm.public != lm.public:
-      return errors.VISIBILITY_DOESNT_MATCH(spaced(WORDS_FOR, WORDS_SETTER, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
+      return status.getError(errors.VISIBILITY_DOESNT_MATCH, spaced(WORDS_FOR, WORDS_SETTER, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
     status.language.currentName = p.name
     lm.data_var = isVar
     status.language.currentImplementation = lm
@@ -320,26 +323,26 @@ topCallback doMethod:
   setDivision(state, DIVISIONS_METHOD)
   setSubdivision(state, SUBDIVISIONS_CLAUSES)
   if state.isTranslating():
+    let status = loadUbernimStatus(state)
     let isVar = parameters[0] == CODEGEN_VAR
     let parts = (if isVar: parameters[1..^1] else: parameters).join(STRINGS_SPACE).split(STRINGS_PERIOD)
     if parts.len != 2:
-      return errors.WRONGLY_DEFINED(WORDS_METHOD)
-    let status = loadUbernimStatus(state)
+      return status.getError(errors.WRONGLY_DEFINED, WORDS_METHOD)
     var p = status.getDivision(parts[0])
     if not assigned(p):
-      return errors.NEVER_DEFINED(apostrophe(parts[0]))
+      return status.getError(errors.NEVER_DEFINED, apostrophe(parts[0]))
     var lm = newLanguageItem(SUBDIVISIONS_METHODS)
     if not lm.read(parts[1]):
-      return errors.WRONGLY_DEFINED(WORDS_METHOD)
+      return status.getError(errors.WRONGLY_DEFINED, WORDS_METHOD)
     if not lm.hasValidIdentifier():
-      return errors.INVALID_IDENTIFIER
+      return status.getError(errors.INVALID_IDENTIFIER)
     if not status.hasMethod(p, lm.name):
-      return errors.NEVER_DEFINED(spaced(WORDS_METHOD, apostrophe(parts[1])))
+      return status.getError(errors.NEVER_DEFINED, spaced(WORDS_METHOD, apostrophe(parts[1])))
     let pm = status.getItem(p, SUBDIVISIONS_METHODS, lm.name)
     if not assigned(pm):
-      return errors.BAD_STATE
+      return status.getError(errors.BAD_STATE)
     if pm.public != lm.public:
-      return errors.VISIBILITY_DOESNT_MATCH(spaced(WORDS_FOR, WORDS_METHOD, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
+      return status.getError(errors.VISIBILITY_DOESNT_MATCH, spaced(WORDS_FOR, WORDS_METHOD, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
     status.language.currentName = p.name
     lm.data_var = isVar
     status.language.currentImplementation = lm
@@ -357,24 +360,24 @@ topCallback doTemplate:
     let status = loadUbernimStatus(state)
     var p = status.getDivision(parts[0])
     if not assigned(p):
-      return errors.NEVER_DEFINED(apostrophe(parts[0]))
+      return status.getError(errors.NEVER_DEFINED, apostrophe(parts[0]))
     var lm = newLanguageItem(SUBDIVISIONS_TEMPLATES)
     if not lm.read(parts[1]):
-      return errors.WRONGLY_DEFINED(WORDS_TEMPLATE)
+      return status.getError(errors.WRONGLY_DEFINED, WORDS_TEMPLATE)
     if not lm.hasValidIdentifier():
-      return errors.INVALID_IDENTIFIER
+      return status.getError(errors.INVALID_IDENTIFIER)
     if parts[0] == SCOPE_GLOBAL:
       if status.hasTemplate(p, lm.name):
-        return errors.ALREADY_DEFINED(spaced(WORDS_TEMPLATE, apostrophe(parts[1])))
+        return status.getError(errors.ALREADY_DEFINED, spaced(WORDS_TEMPLATE, apostrophe(parts[1])))
       p.items.add(lm)
     else:
       if not status.hasTemplate(p, lm.name):
-        return errors.NEVER_DEFINED(spaced(WORDS_TEMPLATE, apostrophe(parts[1])))
+        return status.getError(errors.NEVER_DEFINED, spaced(WORDS_TEMPLATE, apostrophe(parts[1])))
       let pm = status.getItem(p, SUBDIVISIONS_TEMPLATES, lm.name)
       if not assigned(pm):
-        return errors.BAD_STATE
+        return status.getError(errors.BAD_STATE)
       if pm.public != lm.public:
-        return errors.VISIBILITY_DOESNT_MATCH(spaced(WORDS_FOR, WORDS_TEMPLATE, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
+        return status.getError(errors.VISIBILITY_DOESNT_MATCH, spaced(WORDS_FOR, WORDS_TEMPLATE, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
     status.language.currentName = p.name
     status.language.currentImplementation = lm
   return OK
@@ -383,54 +386,54 @@ topCallback doRoutine:
   setDivision(state, DIVISIONS_ROUTINE)
   setSubdivision(state, SUBDIVISIONS_CLAUSES)
   if state.isTranslating():
+    let status = loadUbernimStatus(state)
     let full = parameters.join(STRINGS_SPACE)
     let parts = full.split(STRINGS_PERIOD)
     if parts.len == 2:
-      return errors.WRONGLY_DEFINED(WORDS_ROUTINE)
-    let status = loadUbernimStatus(state)
+      return status.getError(errors.WRONGLY_DEFINED, WORDS_ROUTINE)
     var p = status.getDivision(SCOPE_GLOBAL)
     if not assigned(p):
-      return errors.BAD_STATE
+      return status.getError(errors.BAD_STATE)
     var lm = newLanguageItem(SUBDIVISIONS_ROUTINES)
     if not lm.read(full):
-      return errors.WRONGLY_DEFINED(WORDS_ROUTINE)
+      return status.getError(errors.WRONGLY_DEFINED, WORDS_ROUTINE)
     if not lm.hasValidIdentifier():
-      return errors.INVALID_IDENTIFIER
+      return status.getError(errors.INVALID_IDENTIFIER)
     if status.hasMethod(p, lm.name):
-      return errors.ALREADY_DEFINED(spaced(WORDS_ROUTINE, apostrophe(full)))
+      return status.getError(errors.ALREADY_DEFINED, spaced(WORDS_ROUTINE, apostrophe(full)))
     status.language.currentName = p.name
     status.language.currentImplementation = lm
     p.items.add(lm)
   return OK
 
 childCallback doDocs:
+  let status = loadUbernimStatus(state)
   let d = fetchDivision(state)
   if d notin DIVISIONS_WITH_DOCS:
-    return errors.CANT_OUTPUT_DOCS
+    return status.getError(errors.CANT_OUTPUT_DOCS)
   if state.isTranslating():
-    let status = loadUbernimStatus(state)
     let lm = status.language.currentImplementation
     if assigned(lm) and lm.rendered:
-      return errors.DEFINE_BEFORE_VALUE
+      return status.getError(errors.DEFINE_BEFORE_VALUE)
   setSubdivision(state, SUBDIVISIONS_DOCS)
   return OK
 
 childCallback doCode:
+  let status = loadUbernimStatus(state)
   let d = fetchDivision(state)
   if d notin DIVISIONS_WITH_CODE:
-    return errors.CANT_OUTPUT_CODE
+    return status.getError(errors.CANT_OUTPUT_CODE)
   setSubdivision(state, SUBDIVISIONS_BODY)
   if state.isTranslating():
-    let status = loadUbernimStatus(state)
     var p = status.getDivision(status.language.currentName)
     if not assigned(p):
-      return errors.BAD_STATE
+      return status.getError(errors.BAD_STATE)
     let lc = p.kind == DIVISIONS_CLASS
     let lp = p.extends
     let ln = status.language.currentName
     let lm = status.language.currentImplementation
     if lm.rendered:
-      return errors.ALREADY_RENDERED
+      return status.getError(errors.ALREADY_RENDERED)
     lm.rendered = true
     if d == DIVISIONS_CONSTRUCTOR:
       return GOOD(renderUses(lm.uses) & renderConstructorBegin(lm, lc, ln))
@@ -445,19 +448,19 @@ childCallback doCode:
   return OK
 
 childCallback doUses:
+  let status = loadUbernimStatus(state)
   let d = fetchDivision(state)
   if d notin DIVISIONS_WITH_CODE:
-    return errors.CANT_OUTPUT_CODE
+    return status.getError(errors.CANT_OUTPUT_CODE)
   if state.isTranslating():
-    let status = loadUbernimStatus(state)
     var p = status.getDivision(status.language.currentName)
     if not assigned(p):
-      return errors.BAD_STATE
+      return status.getError(errors.BAD_STATE)
     let lm = status.language.currentImplementation
     if not assigned(lm):
-      return errors.BAD_STATE
+      return status.getError(errors.BAD_STATE)
     if lm.rendered:
-      return errors.DEFINE_BEFORE_VALUE
+      return status.getError(errors.DEFINE_BEFORE_VALUE)
     let once = state.getPropertyValue(FREQ_IMPORTING_KEY) == FREQUENCY_ONCE
     parameters.join(STRINGS_SPACE).split(STRINGS_COMMA).each u:
       let lu = strip(u)
@@ -475,16 +478,16 @@ topCallback doMember:
     let status = loadUbernimStatus(state)
     var p = status.getDivision(SCOPE_GLOBAL)
     if not assigned(p):
-      return errors.BAD_STATE
+      return status.getError(errors.BAD_STATE)
     let isVar = parameters[0] == CODEGEN_VAR
     let l = (if isVar: parameters[1..^1] else: parameters).join(STRINGS_SPACE)
     var lm = newLanguageItem(SUBDIVISIONS_MEMBERS)
     if not lm.read(l):
-      return errors.WRONGLY_DEFINED(WORDS_MEMBER)
+      return status.getError(errors.WRONGLY_DEFINED, WORDS_MEMBER)
     if not lm.hasValidIdentifier():
-      return errors.INVALID_IDENTIFIER
+      return status.getError(errors.INVALID_IDENTIFIER)
     if status.hasField(p, lm.name):
-      return errors.ALREADY_DEFINED(spaced(WORDS_MEMBER, apostrophe(lm.name)))
+      return status.getError(errors.ALREADY_DEFINED, spaced(WORDS_MEMBER, apostrophe(lm.name)))
     status.language.currentName = p.name
     lm.data_var = isVar
     status.language.currentImplementation = lm
@@ -492,20 +495,20 @@ topCallback doMember:
   return OK
 
 childCallback doValue:
+  let status = loadUbernimStatus(state)
   let d = fetchDivision(state)
   if d notin DIVISIONS_WITH_VALUE:
-    return errors.CANT_HOLD_VALUE
+    return status.getError(errors.CANT_HOLD_VALUE)
   setSubdivision(state, SUBDIVISIONS_BODY)
   if state.isTranslating():
-    let status = loadUbernimStatus(state)
     var p = status.getDivision(status.language.currentName)
     if not assigned(p):
-      return errors.BAD_STATE
+      return status.getError(errors.BAD_STATE)
     let lm = status.language.currentImplementation
     if not assigned(lm):
-      return errors.BAD_STATE
+      return status.getError(errors.BAD_STATE)
     if lm.rendered:
-      return errors.ALREADY_RENDERED
+      return status.getError(errors.ALREADY_RENDERED)
     lm.rendered = true
     #let lc = p.kind == DIVISIONS_CLASS
     #let lp = p.extends
@@ -541,7 +544,7 @@ childCallback doEnd:
       return GOOD(p & renderRoutineEnd())
     elif d == DIVISIONS_MEMBER:
       if not lm.rendered and not lm.data_var:
-        return errors.UNDEFINED_MEMBER_VALUE
+        return status.getError(errors.UNDEFINED_MEMBER_VALUE)
       let p = if lm.rendered: STRINGS_EMPTY else: renderUses(lm.uses) & renderMemberBegin(lm, false)
       return GOOD(p & renderMemberEnd())
     elif d == DIVISIONS_NOTE or d == DIVISIONS_IMPORTS or d == DIVISIONS_EXPORTS:
@@ -560,17 +563,19 @@ topCallback doPop:
 
 topCallback doImporting:
   if state.isTranslating():
+    let status = loadUbernimStatus(state)
     let frequency = parameters[0].toLower()
     if frequency notin [FREQUENCY_ALWAYS, FREQUENCY_ONCE]:
-      return errors.BAD_FREQUENCY
+      return status.getError(errors.BAD_FREQUENCY)
     state.setPropertyValue(FREQ_IMPORTING_KEY, frequency)
   return OK
 
 topCallback doExporting:
   if state.isTranslating():
+    let status = loadUbernimStatus(state)
     let frequency = parameters[0].toLower()
     if frequency notin [FREQUENCY_ALWAYS, FREQUENCY_ONCE]:
-      return errors.BAD_FREQUENCY
+      return status.getError(errors.BAD_FREQUENCY)
     state.setPropertyValue(FREQ_EXPORTING_KEY, frequency)
   return OK
 
@@ -579,14 +584,14 @@ topCallback doApplying:
     let status = loadUbernimStatus(state)
     var p = status.getDivision(SCOPE_GLOBAL)
     if not assigned(p):
-      return errors.BAD_STATE
+      return status.getError(errors.BAD_STATE)
     let ld = status.getDivision(parameters[0])
     if not assigned(ld):
-      return errors.UNDEFINED_REFERENCE(apostrophe(parameters[0]))
+      return status.getError(errors.UNDEFINED_REFERENCE, apostrophe(parameters[0]))
     if ld.kind notin DIVISIONS_ON_APPLY:
-      return errors.NOT_APPLIABLE
+      return status.getError(errors.NOT_APPLIABLE)
     if parameters[0] in p.applies:
-      return errors.ALREADY_APPLYING(apostrophe(parameters[0]))
+      return status.getError(errors.ALREADY_APPLYING, apostrophe(parameters[0]))
     p.applies.add(parameters[0])
     return validateDivision(status, p)
   return OK

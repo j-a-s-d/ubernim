@@ -4,7 +4,7 @@
 import
   xam, preprod,
   common,
-  ../errors, ../constants, ../status
+  ../constants, ../status
 
 use strutils,toLower
 
@@ -14,30 +14,33 @@ topCallback doVersion:
   if state.isPreviewing():
     let status = loadUbernimStatus(state)
     if newSemanticVersion(parameters[0]).isNewerThan(status.info.semver):
-      return errors.BAD_VERSION(parenthesize(parameters[0]))
+      return status.getError(errors.BAD_VERSION, parenthesize(parameters[0]))
   return OK
 
 topCallback doCleanup:
   if state.isTranslating():
+    let status = loadUbernimStatus(state)
     let value = parameters[0].toLower()
     if value notin [VALUE_IGNORED, VALUE_INFORMED, VALUE_PERFORMED]:
-      return errors.BAD_CLEANUP
+      return status.getError(errors.BAD_CLEANUP)
     state.setPropertyValue(UNIM_CLEANUP_KEY, value)
   return OK
 
 topCallback doFlush:
   if state.isTranslating():
+    let status = loadUbernimStatus(state)
     let flag = parameters[0].toLower()
     if flag notin [FLAG_YES, FLAG_NO]:
-      return errors.BAD_FLAG
+      return status.getError(errors.BAD_FLAG)
     state.setPropertyValue(UNIM_FLUSH_KEY, flag)
   return OK
 
 topCallback doMode:
   if state.isTranslating():
+    let status = loadUbernimStatus(state)
     let mode = parameters[0].toLower()
     if mode notin [MODE_FREE, MODE_STRICT]:
-      return errors.BAD_MODE
+      return status.getError(errors.BAD_MODE)
     state.setPropertyValue(UNIM_MODE_KEY, mode)
   return OK
 

@@ -9,11 +9,12 @@ when defined(js):
 
 import
   rodster, xam,
-  ubernim / [errors, engine]
+  ubernim / [constants, engine]
 
 use strutils,split
 use strutils,join
 use strutils,replace
+use json,JsonNode
 
 # CONSTANTS
 
@@ -77,12 +78,71 @@ const
     CLEANUP_FORMATTER: proc (action, file: string): string = spaced(STRINGS_ASTERISK, parenthesize(action), file) & STRINGS_EOL
   )
 
+# ERRORS
+
+template makeText(code, message: string): JsonNode =
+  newJObjectBuilder().set("code", code).set("message", message).getAsJObject()
+
+proc getENErrorMessages(): JsonNode =
+  wrapInJArray(
+    makeText(errors.UNEXPECTED, "an unexpected error occurred"),
+    makeText(errors.BAD_STATE, "bad state"),
+    makeText(errors.BAD_VERSION, "a newer version is required"),
+    makeText(errors.BAD_FLAG, "only yes/no values allowed"),
+    makeText(errors.BAD_MODE, "only free/strict values allowed"),
+    makeText(errors.BAD_FREQUENCY, "only always/once values allowed"),
+    makeText(errors.BAD_CLEANUP, "only ignored/informed/performed values allowed"),
+    makeText(errors.BAD_TARGET, "only cc/cpp/objc/js values allowed"),
+    makeText(errors.STRICT_MODE, "only ubernim code is allowed in strict mode"),
+    makeText(errors.ONLY_TOP_LEVEL, "this can only be defined in the top level"),
+    makeText(errors.DONT_TOP_LEVEL, "this can not be defined in the top level"),
+    makeText(errors.CANT_BE_REQUIRED, "this can not be required"),
+    makeText(errors.NO_RECURSIVE_REQUIRE, "recursive require is not allowed"),
+    makeText(errors.NO_CIRCULAR_REFERENCE, "circular references are not allowed"),
+    makeText(errors.INVALID_IDENTIFIER, "invalid identifier"),
+    makeText(errors.UNDEFINED_REFERENCE, "undefined reference"),
+    makeText(errors.ALREADY_DEFINED, "already defined"),
+    makeText(errors.NEVER_DEFINED, "never defined"),
+    makeText(errors.WRONGLY_DEFINED, "wrongly defined"),
+    makeText(errors.CANT_HOLD_FIELDS, "this can not hold fields"),
+    makeText(errors.CANT_HOLD_METHODS, "this can not hold methods"),
+    makeText(errors.CANT_HOLD_TEMPLATES, "this can not hold templates"),
+    makeText(errors.CANT_HOLD_PRAGMAS, "this can not hold pragmas"),
+    makeText(errors.CANT_HOLD_VALUE, "this can not hold value"),
+    makeText(errors.CANT_OUTPUT_DOCS, "this can not output documentation"),
+    makeText(errors.CANT_OUTPUT_CODE, "this can not output code"),
+    makeText(errors.UNDEFINED_MEMBER_VALUE, "undefined value for immutable member"),
+    makeText(errors.DEFINE_BEFORE_VALUE, "this must be defined before code or value"),
+    makeText(errors.ALREADY_RENDERED, "this is already rendered"),
+    makeText(errors.NOT_APPLIABLE, "only a compound, an interface or a protocol can be applied to something else"),
+    makeText(errors.ALREADY_APPLYING, "this is already applying"),
+    makeText(errors.ALREADY_EXTENDING, "this is already extending"),
+    makeText(errors.CANT_EXTEND_INEXISTENT, "can not extend from inexistent"),
+    makeText(errors.CANT_EXTEND_DIFFERENT, "can not extend from a different type"),
+    makeText(errors.CANT_EXTEND_SEALED, "can not extend from sealed"),
+    makeText(errors.RECORDS_CANT_EXTEND, "records can not be extended"),
+    makeText(errors.RECORDS_DONT_ASTERISK,  "the * modifier is not allowed in record fields"),
+    makeText(errors.VISIBILITY_DOESNT_MATCH, "visibility does not match definition"),
+    makeText(errors.NOT_IN_TARGETED, "not in a targeted block"),
+    makeText(errors.NOT_IN_PROJECT, "not in a project block"),
+    makeText(errors.CANT_CREATE_DIRECTORY, "can not create directory"),
+    makeText(errors.CANT_APPEND_FILE, "can not append file"),
+    makeText(errors.CANT_WRITE_FILE, "can not write file"),
+    makeText(errors.CANT_REMOVE_FILE, "can not remove file"),
+    makeText(errors.CANT_WRITE_CONFIG, "can not write configuration file"),
+    makeText(errors.CANT_WRITE_OUTPUT, "can not write output file"),
+    makeText(errors.FAILURE_PROCESSING, "a failure ocurred when processing"),
+    makeText(errors.MINIMUM_NIM_VERSION, "the installed nim version does not met the specified minimum")
+  )
+
 # EVENTS
 
 let events = (
   initializer: RodsterAppEvent (app: RodsterApplication) => (
     # load parameters
     let kvm = app.getKvm();
+    let loc = app.getI18n();
+    discard loc.loadTextsFromJArray("EN", getENErrorMessages());
     let nfo = app.getInformation();
     let args = nfo.getArguments();
     if args.len notin [1, 2] or nfo.hasArgument(APP_SWITCHES.HELP): quit(APP_MSGS.HELP, 0);
@@ -100,7 +160,9 @@ let events = (
     # use engine
     let kvm = app.getKvm();
     let nfo = app.getInformation();
+    let loc = app.getI18n();
     let engine = newUbernimEngine(nfo.getFilename(), nfo.getVersion(), APP_TEXTS.SIGNATURE);
+    engine.setErrorGetter(proc (msg: string, values: StringSeq): string = loc.getText(msg, values));
     engine.setErrorHandler(APP_PERFORMERS.ERROR_HANDLER);
     engine.setCleanupFormatter(APP_PERFORMERS.CLEANUP_FORMATTER);
     withIt engine.run(kvm[APP_KEYS.INPUT], kvm[APP_KEYS.DEFINES].split(STRINGS_COMMA)): (
