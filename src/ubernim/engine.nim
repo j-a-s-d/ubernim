@@ -5,6 +5,8 @@ import
   xam, preprod,
   constants, errors, status, preprocessing, compilation, cleanup, rendering
 
+# TYPES
+
 type
   UbernimCompilerInvoker* = DoubleArgsProc[string, StringSeq, int]
   UbernimCleanupFormatter* = DoubleArgsProc[string, string, string]
@@ -89,13 +91,13 @@ proc performCompilation(engine: UbernimEngine, state: var PreprodState): int =
   return engine.compilerInvoker(state.getPropertyValue(NIMC_PROJECT_KEY), clDefs)
 
 proc performCleanup(engine: UbernimEngine, state: var PreprodState): string =
-  let value = state.getPropertyValue(UNIM_CLEANUP_KEY)
-  if value != VALUE_IGNORED:
-    let status = loadUbernimStatus(state)
-    if value == VALUE_PERFORMED:
-      return removeGeneratedFiles(status, engine.cleanupFormatter)
-    else: # value == VALUE_INFORMED
-      return informGeneratedFiles(status)
+  withIt state.getPropertyValue(UNIM_CLEANUP_KEY):
+    if it != VALUE_IGNORED:
+      let status = loadUbernimStatus(state)
+      return if it == VALUE_PERFORMED:
+        removeGeneratedFiles(status, engine.cleanupFormatter)
+      else: # value == VALUE_INFORMED
+        informGeneratedFiles(status)
 
 proc invokePerformers(engine: UbernimEngine, status: UbernimStatus): UbernimResult =
   var state = status.preprocessing.performingHandler(status)

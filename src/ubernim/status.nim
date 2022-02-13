@@ -9,6 +9,8 @@ use strutils,startsWith
 use strutils,endsWith
 use strutils,strip
 
+# TYPES
+
 type
   UbernimResult* = tuple
     compilationErrorlevel: int
@@ -40,7 +42,6 @@ type
   TUbernimProjecting = tuple
     currentProject: string
     projects: TUbernimProjects
-    results: seq[UbernimResult]
   TUbernimStatus = object of PreprodTag
     info*: TUbernimInfo
     files*: TUbernimFiles
@@ -48,6 +49,8 @@ type
     preprocessing*: TUbernimPreprocessing
     language*: TUbernimLanguage
   UbernimStatus* = ptr TUbernimStatus
+
+# STATUS
 
 template makeUbernimStatus*(sver: SemanticVersion, sign: string, divs: LanguageDivisions = makeDefaultDivisions()): UbernimStatus =
   var ads = TUbernimStatus(
@@ -64,8 +67,7 @@ template makeUbernimStatus*(sver: SemanticVersion, sign: string, divs: LanguageD
     ),
     projecting: TUbernimProjecting (
       currentProject: STRINGS_EMPTY,
-      projects: @[],
-      results: @[]
+      projects: @[]
     ),
     preprocessing: TUbernimPreprocessing (
       target: STRINGS_EMPTY,
@@ -91,7 +93,7 @@ template freeUbernimStatus*(state: var PreprodState) =
   if assigned(state.tag):
     reset(state.tag)
 
-# CALLSTACK
+# FILES
 
 template inMainFile*(status: UbernimStatus): bool =
   status.files.callstack.len == 1

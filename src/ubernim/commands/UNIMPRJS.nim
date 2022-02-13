@@ -58,7 +58,6 @@ childCallback doMain:
 
 childCallback doEnd:
   let d = fetchDivision(state)
-  #let s = fetchSubdivision(state)
   unsetDivision(state)
   unsetSubdivision(state)
   if state.isTranslating():

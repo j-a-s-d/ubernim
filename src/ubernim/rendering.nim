@@ -5,7 +5,7 @@ import
   xam,
   language / header
 
-use sequtils,filterIt
+use sequtils,filter
 use strutils,split
 use strutils,strip
 use strutils,join
@@ -140,7 +140,7 @@ func renderConstructorBegin*(m: LanguageItem, isClass: bool, className: string):
   let args = spaced(CODEGEN_DATATYPE & STRINGS_COLON, CODEGEN_TYPEDESC & bracketize(className) & (
     if hasContent(m.data_extra): spaced(STRINGS_COMMA, m.data_extra) else: STRINGS_EMPTY
   ))
-  let pragmas = renderPragmas(m.pragmas.split(STRINGS_COMMA).filterIt(it.strip() != NIMLANG_NOSIDEEFFECT).join(STRINGS_COMMA))
+  let pragmas = renderPragmas(m.pragmas.split(STRINGS_COMMA).filter((it) => it.strip() != NIMLANG_NOSIDEEFFECT).join(STRINGS_COMMA))
   let stub = if isClass: renderClassSelf(className) else: renderRecordSelf(className)
   renderRoutine(kw, renderId(m.name, m.public, m.generics), args, className, pragmas) & renderDocs(m.docs) & stub
 
@@ -155,7 +155,7 @@ func renderMethodBegin*(m: LanguageItem, isClass: bool, className: string, paren
   ) & className & (
     if hasContent(m.data_extra): spaced(STRINGS_COMMA, m.data_extra) else: STRINGS_EMPTY
   ))
-  let pragmas = renderPragmas(m.pragmas.split(STRINGS_COMMA).filterIt(it.strip() != NIMLANG_NOSIDEEFFECT).join(STRINGS_COMMA).strip())
+  let pragmas = renderPragmas(m.pragmas.split(STRINGS_COMMA).filter((it) => it.strip() != NIMLANG_NOSIDEEFFECT).join(STRINGS_COMMA).strip())
   let stub = if isClass and hasContent(parentName): renderParent(parentName) else: STRINGS_EMPTY
   let name = if m.data_setter: enclose(m.name & STRINGS_EQUAL, STRINGS_BACKTICK) else: m.name
   renderRoutine(kw, renderId(name, m.public, m.generics), args, m.data_type, pragmas) & renderDocs(m.docs) & stub
@@ -192,7 +192,7 @@ func renderMemberEnd*(): string =
 
 func renderRoutineBegin*(m: LanguageItem): string =
   let kw = if m.pragmas.find(NIMLANG_NOSIDEEFFECT) != -1: CODEGEN_FUNC else: CODEGEN_PROC
-  let pragmas = renderPragmas(m.pragmas.split(STRINGS_COMMA).filterIt(it.strip() != NIMLANG_NOSIDEEFFECT).join(STRINGS_COMMA))
+  let pragmas = renderPragmas(m.pragmas.split(STRINGS_COMMA).filter((it) => it.strip() != NIMLANG_NOSIDEEFFECT).join(STRINGS_COMMA))
   renderRoutine(
     kw, renderId(m.name, m.public, m.generics), m.data_extra, m.data_type, pragmas
   ) & renderDocs(m.docs)
