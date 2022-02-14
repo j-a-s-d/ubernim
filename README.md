@@ -34,7 +34,8 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
-* 13-02-22 **[0.5.5]**
+* 14-02-22 **[0.5.5]**
+	- improved .applies command to support multiple comma separated values
 	- general improvements
 * 10-02-22 **[0.5.4]**
 	- added UNIMPRJS preprod feature to allow projects definition and handling

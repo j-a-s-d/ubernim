@@ -15,7 +15,7 @@ topCallback doNimcTarget:
     let target = parameters[0].toLower()
     if target notin NIMC_TARGETS:
       let status = loadUbernimStatus(state)
-      return status.getError("errors.BAD_TARGET")
+      return status.getError(errors.BAD_TARGET)
     state.setPropertyValue(NIMC_TARGET_KEY, target)
   return OK
 
@@ -43,7 +43,7 @@ topCallback doNimcMinimum:
   if state.isPreviewing():
     if newSemanticVersion(NimMajor, NimMinor, NimPatch).isOlderThan(newSemanticVersion(parameters[0])):
       let status = loadUbernimStatus(state)
-      return status.getError("errors.MINIMUM_NIM_VERSION")
+      return status.getError(errors.MINIMUM_NIM_VERSION)
   return OK
 
 # INITIALIZATION

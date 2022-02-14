@@ -11,7 +11,7 @@ type
   UbernimCompilerInvoker* = DoubleArgsProc[string, StringSeq, int]
   UbernimCleanupFormatter* = DoubleArgsProc[string, string, string]
   UbernimErrorHandler* = SingleArgVoidProc[string]
-  UbernimErrorGetter* = DoubleArgsProc[string, StringSeq, string]
+  UbernimErrorGetter* = DoubleArgsProc[string, varargs[string], string]
   UbernimPreprocessingHandler* = SingleArgProc[UbernimStatus, var PreprodState]
   UbernimEngine* = ref object
     executableFilename: string
@@ -36,7 +36,7 @@ let DefaultCleanupFormatter: UbernimCleanupFormatter = proc (action, file: strin
 let DefaultErrorHandler: UbernimErrorHandler = proc (msg: string) =
   quit(msg, -1)
 
-let DefaultErrorGetter: UbernimErrorGetter = proc (msg: string, values: StringSeq): string =
+let DefaultErrorGetter: UbernimErrorGetter = proc (msg: string, values: varargs[string]): string =
   msg
 
 let DefaultPreprocessingHandler: UbernimPreprocessingHandler = proc (status: UbernimStatus): var PreprodState =

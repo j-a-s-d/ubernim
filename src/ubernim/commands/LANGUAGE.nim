@@ -75,9 +75,8 @@ func renderDivision(status: UbernimStatus, d: LanguageDivision): string =
 
 proc startDivision(state: var PreprodState, division, subdivision, id: string): PreprodResult =
   let status = loadUbernimStatus(state)
-  if state.isPreviewing():
-    if status.hasDivision(id):
-      return status.getError(errors.ALREADY_DEFINED, apostrophe(id))
+  if state.isPreviewing() and status.hasDivision(id):
+    return status.getError(errors.ALREADY_DEFINED, apostrophe(id))
   setDivision(state, division)
   setSubdivision(state, subdivision)
   let lm = openDivision(state, division, id)
@@ -132,14 +131,16 @@ childCallback doApplies:
     var p = status.getDivision(status.language.currentName)
     if not assigned(p):
       return status.getError(errors.BAD_STATE)
-    let ld = status.getDivision(parameters[0])
-    if not assigned(ld):
-      return status.getError(errors.UNDEFINED_REFERENCE, apostrophe(parameters[0]))
-    if ld.kind notin DIVISIONS_ON_APPLY:
-      return status.getError(errors.NOT_APPLIABLE)
-    if parameters[0] in p.applies:
-      return status.getError(errors.ALREADY_APPLYING, apostrophe(parameters[0]))
-    p.applies.add(parameters[0])
+    parameters.join(STRINGS_SPACE).split(STRINGS_COMMA).each u:
+      let lu = strip(u)
+      let ld = status.getDivision(lu)
+      if not assigned(ld):
+        return status.getError(errors.UNDEFINED_REFERENCE, apostrophe(lu))
+      if ld.kind notin DIVISIONS_ON_APPLY:
+        return status.getError(errors.NOT_APPLIABLE)
+      if lu in p.applies:
+        return status.getError(errors.ALREADY_APPLYING, apostrophe(lu))
+      p.applies.add(lu)
   return OK
 
 childCallback doExtends:
@@ -614,7 +615,7 @@ proc initialize*(): UbernimFeature =
     cmd("compound", PreprodArguments.uaOne, doCompound)
     cmd("interface", PreprodArguments.uaOne, doInterface)
     cmd("protocol", PreprodArguments.uaOne, doProtocol)
-    cmd("applies", PreprodArguments.uaOne, doApplies)
+    cmd("applies", PreprodArguments.uaNonZero, doApplies)
     cmd("extends", PreprodArguments.uaOne, doExtends)
     cmd("fields", PreprodArguments.uaNone, doFields)
     cmd("methods", PreprodArguments.uaNone, doMethods)

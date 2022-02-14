@@ -178,9 +178,9 @@ See them working in the *coding* example.
 	- values: any valid pragmas in the regular comma separated fashion (the same you would write inside {. .})
 	- example: `.pragmas noSideEffect, deprecated: "use something else"`
 * **.applies** *(since 0.1.0)*
-	- specifies a compound, interface or protocol that will be applied to this protocol, class or record
-	- values: any valid existing compound, interface or protocol
-	- example: `.applies SomeInterface`
+	- specifies one or more compounds, interfaces or protocols that will be applied to this protocol, class or record
+	- values: any valid existing compounds, interfaces or protocols in a comma separated fashion
+	- example: `.applies SomeInterface, SomeCompound`
 * **.extends** *(since 0.1.0)*
 	- specifies a class or record to extend the current class or record
 	- values: any valid existing class or record (type must match)

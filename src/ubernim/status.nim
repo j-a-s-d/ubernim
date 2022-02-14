@@ -33,7 +33,7 @@ type
     defines: StringSeq
     performingHandler: SingleArgProc[UbernimStatus, var PreprodState]
     errorHandler: SingleArgVoidProc[string]
-    errorGetter: DoubleArgsProc[string, StringSeq, string]
+    errorGetter: DoubleArgsProc[string, varargs[string], string]
   TUbernimProject = tuple
     name: string
     defines: StringSeq
@@ -96,7 +96,7 @@ template freeUbernimStatus*(state: var PreprodState) =
     reset(state.tag)
 
 template getError*(status: UbernimStatus, code: string, values: varargs[string]): PreprodResult =
-  BAD(status.preprocessing.errorGetter(code, newStringSeq(values)))
+  BAD(status.preprocessing.errorGetter(code, values))
 
 # FILES
 
