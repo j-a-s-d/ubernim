@@ -97,7 +97,8 @@ proc performCompilation(engine: UbernimEngine, state: var PreprodState): int =
   else:
     clDefs &= nimcSwitches
   # compile
-  return engine.compilerInvoker(state.getPropertyValue(NIMC_PROJECT_KEY), clDefs)
+  if state.hasPropertyValue(NIMC_PROJECT_KEY):
+    return engine.compilerInvoker(state.getPropertyValue(NIMC_PROJECT_KEY), clDefs)
 
 proc performCleanup(engine: UbernimEngine, state: var PreprodState): string =
   withIt state.getPropertyValue(UNIM_CLEANUP_KEY):

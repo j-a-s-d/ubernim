@@ -34,6 +34,9 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 21-02-22 **[0.6.0]**
+	- added initial test cases
+	- general improvements
 * 14-02-22 **[0.5.5]**
 	- improved .applies command to support multiple comma separated values
 	- general improvements
