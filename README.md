@@ -34,6 +34,10 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 24-02-22 **[0.6.1]**
+	- added more test cases
+	- updated xam dependency to 1.7.1
+	- general improvements
 * 21-02-22 **[0.6.0]**
 	- added initial test cases
 	- general improvements

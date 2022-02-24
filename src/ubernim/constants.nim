@@ -71,6 +71,7 @@ const
 let errors* = (
   UNEXPECTED: "errors.UNEXPECTED",
   BAD_STATE: "errors.BAD_STATE",
+  OLD_VERSION: "errors.OLD_VERSION",
   BAD_VERSION: "errors.BAD_VERSION",
   BAD_FLAG: "errors.BAD_FLAG",
   BAD_MODE: "errors.BAD_MODE",
