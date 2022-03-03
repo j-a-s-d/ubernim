@@ -20,7 +20,7 @@ use json,JsonNode
 
 const
   APP_NAME = "ubernim"
-  APP_VERSION = "0.6.1"
+  APP_VERSION = "0.6.2"
   APP_COPYRIGHT = "copyright (c) 2021-2022 by Javier Santo Domingo"
   APP_SWITCHES = (
     DEFINE: [STRINGS_MINUS & STRINGS_LOWERCASE_D & STRINGS_COLON, STRINGS_MINUS & STRINGS_MINUS & WORDS_DEFINE & STRINGS_COLON],

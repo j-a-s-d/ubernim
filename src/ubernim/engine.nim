@@ -26,6 +26,8 @@ type
 # DEFAULTS
 
 use os,execShellCmd
+use os,getCurrentDir
+use os,setCurrentDir
 
 let DefaultCompilerInvoker: UbernimCompilerInvoker = proc (project: string, defines: StringSeq): int =
   execShellCmd(spaced(NIMC_INVOKATION, spaced(defines), project))
@@ -110,7 +112,9 @@ proc performCleanup(engine: UbernimEngine, state: var PreprodState): string =
         informGeneratedFiles(status)
 
 proc invokePerformers(engine: UbernimEngine, status: UbernimStatus): UbernimResult =
+  let dir = getCurrentDir()
   var state = status.preprocessing.performingHandler(status)
+  setCurrentDir(dir)
   result.compilationErrorlevel = engine.performCompilation(state)
   result.cleanupReport = if result.compilationErrorlevel == 0: engine.performCleanup(state) else: STRINGS_EMPTY
   freeUbernimStatus(state)

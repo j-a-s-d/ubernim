@@ -24,6 +24,7 @@ topCallback doRequire:
     rls.preprocessing.defines = status.preprocessing.defines
     rls.preprocessing.performingHandler = status.preprocessing.performingHandler
     rls.preprocessing.errorHandler = status.preprocessing.errorHandler
+    rls.preprocessing.errorGetter = status.preprocessing.errorGetter
     rls.files.callstack.add(status.files.callstack & parameters[0])
     var rstate = status.preprocessing.performingHandler(rls)
     status.files.generated.add(rls.files.generated)

@@ -11,7 +11,7 @@ use strutils,toLower
 template targetedSection(section: string) =
   let status = loadUbernimStatus(state)
   if fetchDivision(state) == DIVISIONS_TARGETED:
-    if state.getPropertyValue(NIMC_TARGET_KEY) == status.preprocessing.target:
+    if not state.hasPropertyValue(NIMC_TARGET_KEY) or state.getPropertyValue(NIMC_TARGET_KEY) == status.preprocessing.target:
       let s = fetchSubdivision(state)
       state.setPropertyValue(KEY_SUBDIVISION, section)
       if s == SUBDIVISIONS_TARGETED_EMIT:
