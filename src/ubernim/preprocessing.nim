@@ -164,20 +164,19 @@ let ppTranslator: PreprodTranslator = proc (state: var PreprodState, original: P
       if division == DIVISIONS_TARGETED:
         if original.output != CODEGEN_EMIT_CLOSE:
           return translateTargeted(original, subdivision)
-      elif division == DIVISIONS_NOTE or division == DIVISIONS_IMPORTS or division == DIVISIONS_EXPORTS:
+      elif division == DIVISIONS_NOTE:
+        return GOOD(STRINGS_NUMERAL & STRINGS_SPACE & original.output)
+      elif division == DIVISIONS_IMPORTS or division == DIVISIONS_EXPORTS:
         if subdivision == SUBDIVISIONS_BODY:
           state.setPropertyValue(KEY_SUBDIVISION, STRINGS_EMPTY)
           return OK
         else:
-          if division == DIVISIONS_NOTE:
-            return GOOD(STRINGS_NUMERAL & STRINGS_SPACE & original.output)
-          else:
-            template isOnce(state: PreprodState, key: string): bool =
-              state.hasPropertyValue(key) and state.getPropertyValue(key) == FREQUENCY_ONCE
-            if division == DIVISIONS_EXPORTS:
-              return translateExports(original, state, status, isOnce(state, FREQ_EXPORTING_KEY))
-            else: # d == DIVISIONS_IMPORTS
-              return translateImports(original, state, status, isOnce(state, FREQ_IMPORTING_KEY))
+          template isOnce(state: PreprodState, key: string): bool =
+            state.hasPropertyValue(key) and state.getPropertyValue(key) == FREQUENCY_ONCE
+          if division == DIVISIONS_EXPORTS:
+            return translateExports(original, state, status, isOnce(state, FREQ_EXPORTING_KEY))
+          else: # d == DIVISIONS_IMPORTS
+            return translateImports(original, state, status, isOnce(state, FREQ_IMPORTING_KEY))
       elif subdivision == SUBDIVISIONS_DOCS:
         return translateDocs(original, status.language.currentImplementation)
       elif subdivision != SUBDIVISIONS_CLAUSES and subdivision != SUBDIVISIONS_BODY:

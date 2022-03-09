@@ -401,6 +401,199 @@ suite "test ubernim":
     check(rr.cleanupReport.isEmpty())
     removeFiles("emit_code.unim", "emit_code.nim", "emit_code")
 
-  test "test LANGUAGE feature":
+  template testLanguageCommand(name, input, output: string, debug: bool = false) =
+    writeFile(name & ".unim", lined(".nimc:project " & name, input))
+    let eng = makeTestEngine()
+    let rr = eng.run(name & ".unim", newStringSeq())
+    check(rr.compilationErrorlevel == 0)
+    check(rr.cleanupReport.isEmpty())
+    let sig = "static: echo \"" & name & ".nim testing\""
+    let expected = if output.isEmpty(): sig else: lined(sig, output)
+    check(strip(readFile(name & ".nim")) == expected)
+    if debug:
+      echo "---"
+      echo strip(readFile(name & ".nim"))
+      echo "---"
+      echo expected
+      echo "---"
+    else:
+      removeFiles(name & ".unim", name & ".nim", name)
+
+  test "test LANGUAGE push/pop":
+    #
+    testLanguageCommand("push_pop", lined(
+      ".push inline",
+      "proc hey() = discard",
+      ".pop",
+      "hey()"
+    ), lined(
+      STRINGS_EOL,
+      "{.push inline.}",
+      "proc hey() = discard",
+      "{.pop.}",
+      STRINGS_EMPTY,
+      "hey()"
+    ))
+
+  test "test LANGUAGE exports":
+    #
+    testLanguageCommand("exports", lined(
+      "import os, strtabs",
+      ".exports",
+      "  os",
+      "  strtabs",
+      "  os",
+      ".end",
+      STRINGS_EMPTY,
+      ".exports",
+      "  os",
+      ".end"
+    ), STRINGS_EOL & lined(
+      "import os, strtabs",
+      "export os",
+      "export strtabs",
+      "export os",
+      STRINGS_EMPTY,
+      "export os"
+    ))
+
+  test "test LANGUAGE exporting always":
+    #
+    testLanguageCommand("exporting_always", lined(
+      "import os, strtabs",
+      ".exporting always",
+      ".exports",
+      "  os",
+      "  strtabs",
+      "  os",
+      ".end",
+      STRINGS_EMPTY,
+      ".exports",
+      "  os",
+      ".end"
+    ), STRINGS_EOL & lined(
+      "import os, strtabs",
+      "export os",
+      "export strtabs",
+      "export os",
+      STRINGS_EMPTY,
+      "export os"
+    ))
+
+  test "test LANGUAGE exporting once":
+    #
+    testLanguageCommand("exporting_once", lined(
+      "import os, strtabs",
+      ".exporting once",
+      ".exports",
+      "  os",
+      "  strtabs",
+      "  os",
+      ".end",
+      STRINGS_EMPTY,
+      ".exports",
+      "  os",
+      ".end"
+    ), STRINGS_EOL & lined(
+      "import os, strtabs",
+      "export os",
+      "export strtabs"
+    ))
+
+  test "test LANGUAGE imports":
+    #
+    testLanguageCommand("imports", lined(
+      ".imports",
+      "  os",
+      "  strutils.split",
+      "  strtabs",
+      "  os",
+      ".end",
+      STRINGS_EMPTY,
+      ".imports",
+      "  os",
+      ".end"
+    ), STRINGS_EOL & lined(
+      "import os",
+      "from strutils import split",
+      "import strtabs",
+      "import os",
+      STRINGS_EMPTY,
+      "import os",
+    ))
+
+  test "test LANGUAGE importing always":
+    #
+    testLanguageCommand("importing_always", lined(
+      ".importing always",
+      ".imports",
+      "  os",
+      "  strutils.split",
+      "  strtabs",
+      "  os",
+      ".end",
+      STRINGS_EMPTY,
+      ".imports",
+      "  os",
+      ".end"
+    ), STRINGS_EOL & lined(
+      "import os",
+      "from strutils import split",
+      "import strtabs",
+      "import os",
+      STRINGS_EMPTY,
+      "import os",
+    ))
+
+  test "test LANGUAGE importing once":
+    #
+    testLanguageCommand("importing_once", lined(
+      ".importing once",
+      ".imports",
+      "  os",
+      "  strutils.split",
+      "  strtabs",
+      "  os",
+      ".end",
+      STRINGS_EMPTY,
+      ".imports",
+      "  os",
+      ".end"
+    ), STRINGS_EOL & lined(
+      "import os",
+      "from strutils import split",
+      "import strtabs"
+    ))
+
+  test "test LANGUAGE note nothing":
+    #
+    testLanguageCommand("note_nothing", lined(
+      ".note",
+      ".end"
+    ), STRINGS_EMPTY)
+
+  test "test LANGUAGE note line":
+    #
+    testLanguageCommand("note_line", lined(
+      ".note",
+      "  This will be a comment in the source code.",
+      ".end"
+    ), STRINGS_EOL & lined(
+      "#   This will be a comment in the source code.",
+    ))
+
+  test "test LANGUAGE note lines":
+    #
+    testLanguageCommand("note_lines", lined(
+      ".note",
+      "  You can insert a note into the emitted source code.",
+      "  Just like this.",
+      ".end"
+    ), STRINGS_EOL & lined(
+      "#   You can insert a note into the emitted source code.",
+      "#   Just like this."
+    ))
+
+  test "test more commands of the LANGUAGE feature":
     #
     echo "TODO"
