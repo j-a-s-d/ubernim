@@ -20,7 +20,7 @@ use json,JsonNode
 
 const
   APP_NAME = "ubernim"
-  APP_VERSION = "0.6.3"
+  APP_VERSION = "0.6.4"
   APP_COPYRIGHT = "copyright (c) 2021-2022 by Javier Santo Domingo"
   APP_SWITCHES = (
     DEFINE: [STRINGS_MINUS & STRINGS_LOWERCASE_D & STRINGS_COLON, STRINGS_MINUS & STRINGS_MINUS & WORDS_DEFINE & STRINGS_COLON],
@@ -163,7 +163,7 @@ let events = (
     engine.setErrorHandler((msg: string) => quit(spaced(ansiRed(APP_MSGS.ERROR), msg), -1));
     engine.setCleanupFormatter(proc (action, file: string): string = spaced(STRINGS_ASTERISK, parenthesize(action), file) & STRINGS_EOL);
     withIt engine.run(kvm[APP_KEYS.INPUT], kvm[APP_KEYS.DEFINES].split(STRINGS_COMMA)): (
-      kvm[APP_KEYS.ERRORLEVEL] = $it.compilationErrorlevel;
+      kvm[APP_KEYS.ERRORLEVEL] = $(if it.isProject: 0 else: it.compilationErrorlevel);
       kvm[APP_KEYS.REPORT] = it.cleanupReport
     )
   ),

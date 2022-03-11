@@ -12,7 +12,6 @@ use strutils,find
 use strutils,split
 use strutils,strip
 use strutils,replace
-use strutils,endsWith
 
 # FEATURES
 
@@ -195,8 +194,7 @@ let getTranslator = proc (isProject: bool): PreprodTranslator =
 
 # PREPROCESSOR
 
-proc makePreprocessor*(filename: string, defines: StringSeq = newStringSeq()): PreprodPreprocessor =
-  let isProject = filename.endsWith(UNIM_PROJECT_EXTENSION)
+proc makePreprocessor*(isProject: bool, filename: string, defines: StringSeq = newStringSeq()): PreprodPreprocessor =
   result = newPreprodPreprocessor(filename, defines, getOptions(isProject), getCommands(isProject), getTranslator(isProject), getPreviewer(isProject))
   result.state.setPropertyValue(UNIM_FILE_KEY, filename.changeFileExt(NIM_EXTENSION))
   result.state.setPropertyValue(UNIM_FLUSH_KEY, if isProject: FLAG_NO else: FLAG_YES)

@@ -13,6 +13,7 @@ use strutils,strip
 
 type
   UbernimResult* = tuple
+    isProject: bool
     compilationErrorlevel: int
     cleanupReport: string
   TUbernimInfo = tuple
@@ -41,6 +42,7 @@ type
     main: string
   TUbernimProjects = seq[TUbernimProject]
   TUbernimProjecting = tuple
+    isUnimp: bool
     currentProject: string
     projects: TUbernimProjects
   TUbernimStatus = object of PreprodTag
@@ -67,6 +69,7 @@ template makeUbernimStatus*(sver: SemanticVersion, sign: string, divs: LanguageD
       generated: newStringSeq()
     ),
     projecting: TUbernimProjecting (
+      isUnimp: false,
       currentProject: STRINGS_EMPTY,
       projects: @[]
     ),

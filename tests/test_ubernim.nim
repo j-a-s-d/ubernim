@@ -375,7 +375,7 @@ suite "test ubernim":
 
   test "test TARGETED pass params":
     #
-    writeFile("pass_params.unim", lined(".nimc:project pass_params", ".nimc:target cpp", ".targeted cpp", ".targeted:pass", "  to:compiler \"\"", "  to:local \"\"", "  to:linker \"\"", ".targeted:end"))
+    writeFile("pass_params.unim", lined(".nimc:project pass_params", ".nimc:switch --hints:off", ".nimc:switch --warnings:off", ".nimc:target cpp", ".targeted cpp", ".targeted:pass", "  to:compiler \"\"", "  to:local \"\"", "  to:linker \"\"", ".targeted:end"))
     let eng = makeTestEngine()
     let rr = eng.run("pass_params.unim", newStringSeq())
     check(rr.compilationErrorlevel == 0)
@@ -385,7 +385,7 @@ suite "test ubernim":
   test "test TARGETED compile files":
     #
     writeFile("extra.c", "int some_var = 123;")
-    writeFile("compile_files.unim", lined(".nimc:project compile_files", ".nimc:target cpp", ".targeted cpp", ".targeted:compile", "  extra.c", ".targeted:end"))
+    writeFile("compile_files.unim", lined(".nimc:project compile_files", ".nimc:switch --hints:off", ".nimc:switch --warnings:off", ".nimc:target cpp", ".targeted cpp", ".targeted:compile", "  extra.c", ".targeted:end"))
     let eng = makeTestEngine()
     let rr = eng.run("compile_files.unim", newStringSeq())
     check(rr.compilationErrorlevel == 0)
@@ -394,7 +394,7 @@ suite "test ubernim":
 
   test "test TARGETED emit code":
     #
-    writeFile("emit_code.unim", lined(".nimc:project emit_code", ".targeted cc", ".targeted:emit", "  int some_x = 0;", ".targeted:end"))
+    writeFile("emit_code.unim", lined(".nimc:project emit_code", ".nimc:switch --hints:off", ".nimc:switch --warnings:off", ".targeted cc", ".targeted:emit", "  int some_x = 0;", ".targeted:end"))
     let eng = makeTestEngine()
     let rr = eng.run("emit_code.unim", newStringSeq())
     check(rr.compilationErrorlevel == 0)
@@ -402,7 +402,7 @@ suite "test ubernim":
     removeFiles("emit_code.unim", "emit_code.nim", "emit_code")
 
   template testLanguageCommand(name, input, output: string, debug: bool = false) =
-    writeFile(name & ".unim", lined(".nimc:project " & name, input))
+    writeFile(name & ".unim", lined(".nimc:project " & name, ".nimc:switch --hints:off", ".nimc:switch --warnings:off", input))
     let eng = makeTestEngine()
     let rr = eng.run(name & ".unim", newStringSeq())
     check(rr.compilationErrorlevel == 0)
@@ -592,6 +592,284 @@ suite "test ubernim":
     ), STRINGS_EOL & lined(
       "#   You can insert a note into the emitted source code.",
       "#   Just like this."
+    ))
+
+  test "test LANGUAGE member immutable immediate":
+    #
+    testLanguageCommand("member_immutable_immediate", lined(
+      ".member immLet*:int",
+      ".value 12345",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "let immLet*: int = 12345"
+    ))
+
+  test "test LANGUAGE member mutable immediate":
+    #
+    testLanguageCommand("member_mutable_immediate", lined(
+      ".member var immVar*:int",
+      ".value 12345",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "var immVar*: int = 12345"
+    ))
+
+  test "test LANGUAGE member immutable block initialized":
+    #
+    testLanguageCommand("member_immutable_block_initialized", lined(
+      ".member biLet*: string",
+      ".code",
+      "  let res = \"   initializing a member...   \"",
+      "  res",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "let biLet*: string = block:",
+      "  let res = \"   initializing a member...   \"",
+      "  res"
+    ))
+
+  test "test LANGUAGE member mutable block initialized":
+    #
+    testLanguageCommand("member_mutable_block_initialized", lined(
+      ".member var biVar*: string",
+      ".code",
+      "  let res = \"   initializing a member...   \"",
+      "  res",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "var biVar*: string = block:",
+      "  let res = \"   initializing a member...   \"",
+      "  res"
+    ))
+
+  test "test LANGUAGE member immutable immediate documented":
+    #
+    testLanguageCommand("member_immutable_immediate_documented", lined(
+      ".member immLetWithDocs*:int",
+      ".docs",
+      "  This is an immutable local with an immediate value.",
+      ".value 12345",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "let immLetWithDocs*: int = 12345 ## \\",
+      "  ##  This is an immutable local with an immediate value."
+    ))
+
+  test "test LANGUAGE member mutable immediate documented":
+    #
+    testLanguageCommand("member_mutable_immediate_documented", lined(
+      ".member var immVarWithDocs*:int",
+      ".docs",
+      "  This is an mutable local with an immediate value.",
+      ".value 12345",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "var immVarWithDocs*: int = 12345 ## \\",
+      "  ##  This is an mutable local with an immediate value."
+    ))
+
+  test "test LANGUAGE member immutable block initialized documented":
+    #
+    testLanguageCommand("member_immutable_block_initialized_documented", lined(
+      ".member biLetWithDocs*: string",
+      ".docs",
+      "  This is an immutable local.",
+      ".code",
+      "  let res = \"   initializing a member...   \"",
+      "  res",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "let biLetWithDocs*: string = block:",
+      "  ##  This is an immutable local.",
+      "  let res = \"   initializing a member...   \"",
+      "  res"
+    ))
+
+  test "test LANGUAGE member mutable block initialized documented":
+    #
+    testLanguageCommand("member_mutable_block_initialized_documented", lined(
+      ".member biVarWithDocs*: string",
+      ".docs",
+      "  This is an mutable local.",
+      ".code",
+      "  let res = \"   initializing a member...   \"",
+      "  res",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "let biVarWithDocs*: string = block:",
+      "  ##  This is an mutable local.",
+      "  let res = \"   initializing a member...   \"",
+      "  res"
+    ))
+
+  test "test LANGUAGE member mutable block initialized with uses":
+    #
+    testLanguageCommand("member_mutable_block_initialized_with_uses", lined(
+      ".member biVarWithUses*: string",
+      ".uses strutils.strip",
+      ".code",
+      "  let res = \"   initializing a member...   \"",
+      "  strip res",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "from strutils import strip",
+      STRINGS_EMPTY,
+      "let biVarWithUses*: string = block:",
+      "  let res = \"   initializing a member...   \"",
+      "  strip res"
+    ))
+
+  test "test LANGUAGE member mutable uninitialized":
+    #
+    testLanguageCommand("member_mutable_uninitialized", lined(
+      ".member var uninitializedVar*:int",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "var uninitializedVar*: int"
+    ))
+
+  test "test LANGUAGE member mutable uninitialized with pragma":
+    #
+    testLanguageCommand("member_mutable_uninitialized_with_pragma", lined(
+      ".member var uninitializedVarWithPragma*:int",
+      ".pragmas threadvar",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "var uninitializedVarWithPragma* {.threadvar.}: int"
+    ))
+
+  test "test LANGUAGE routine simple":
+    #
+    testLanguageCommand("routine_simple", lined(
+      ".routine greet(name: string): string",
+      ".code",
+      "  echo \"hello \" & name",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "proc greet(name: string): string =",
+      "  echo \"hello \" & name",
+    ))
+
+  test "test LANGUAGE routine with comments":
+    #
+    testLanguageCommand("routine_with_comments", lined(
+      ".routine greet(name: string): string # a non-preserved ubernim comment",
+      ".code",
+      "  echo \"hello \" & name # a preserved nim comment",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "proc greet(name: string): string =",
+      "  echo \"hello \" & name # a preserved nim comment",
+    ))
+
+  test "test LANGUAGE routine with uses":
+    #
+    testLanguageCommand("routine_with_uses", lined(
+      ".routine greet(name: string): string",
+      ".uses strutils.join, md5",
+      ".code",
+      "  join([\"hello\", name, \"!\"], \" \") & \" | \" & getMD5(name)",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "from strutils import join",
+      "import md5",
+      STRINGS_EMPTY,
+      "proc greet(name: string): string =",
+      "  join([\"hello\", name, \"!\"], \" \") & \" | \" & getMD5(name)"
+    ))
+
+  test "test LANGUAGE routine with pragmas":
+    #
+    testLanguageCommand("routine_with_pragmas", lined(
+      ".routine greet(name: string): string",
+      ".pragmas deprecated: \"do not use it\", used",
+      ".code",
+      "  echo \"hello \" & name",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "proc greet(name: string): string {.deprecated: \"do not use it\", used.} =",
+      "  echo \"hello \" & name",
+    ))
+
+  test "test LANGUAGE routine with docs":
+    #
+    testLanguageCommand("routine_with_docs", lined(
+      ".routine greet(name: string): string",
+      ".docs",
+      "  This is a test routine.",
+      ".code",
+      "  echo \"hello \" & name",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "proc greet(name: string): string =",
+      "  ##  This is a test routine.",
+      "  echo \"hello \" & name"
+    ))
+
+  test "test LANGUAGE routine full":
+    #
+    testLanguageCommand("routine_full", lined(
+      ".routine greet*(name: string): string # a non-preserved ubernim comment",
+      ".uses strutils.join, md5",
+      ".pragmas deprecated: \"do not use it\", used",
+      ".docs",
+      "  This is a test routine.",
+      ".code",
+      "  join([\"hello\", name, \"!\"], \" \") & \" | \" & getMD5(name) # a preserved nim comment",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "from strutils import join",
+      "import md5",
+      STRINGS_EMPTY,
+      "proc greet*(name: string): string {.deprecated: \"do not use it\", used.} =",
+      "  ##  This is a test routine.",
+      "  join([\"hello\", name, \"!\"], \" \") & \" | \" & getMD5(name) # a preserved nim comment"
+    ))
+
+  test "test LANGUAGE template simple":
+    #
+    testLanguageCommand("template_simple", lined(
+      ".template globalTemplate*()",
+      ".code",
+      "  echo \"this is here to make the TestingProtocol fully applied to this file\"",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "template globalTemplate*() =",
+      "  echo \"this is here to make the TestingProtocol fully applied to this file\""
+    ))
+
+  test "test LANGUAGE template with docs":
+    #
+    testLanguageCommand("template_with_docs", lined(
+      ".template foo(something: int): string",
+      ".docs",
+      "  This is a test template.",
+      ".code",
+      "  \"bar\"",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "template foo(something: int): string =",
+      "  ##  This is a test template.",
+      "  \"bar\""
     ))
 
   test "test more commands of the LANGUAGE feature":

@@ -14,7 +14,7 @@ type
   UbernimErrorGetter* = DoubleArgsProc[string, varargs[string], string]
   UbernimPreprocessingHandler* = SingleArgProc[UbernimStatus, var PreprodState]
   UbernimEngine* = ref object
-    executableFilename: string
+    executable: string
     version: SemanticVersion
     signature: string
     compilerInvoker: UbernimCompilerInvoker
@@ -28,6 +28,7 @@ type
 use os,execShellCmd
 use os,getCurrentDir
 use os,setCurrentDir
+use strutils,endsWith
 
 let DefaultCompilerInvoker: UbernimCompilerInvoker = proc (project: string, defines: StringSeq): int =
   execShellCmd(spaced(NIMC_INVOKATION, spaced(defines), project))
@@ -43,7 +44,7 @@ let DefaultErrorGetter: UbernimErrorGetter = proc (msg: string, values: varargs[
 
 let DefaultPreprocessingHandler: UbernimPreprocessingHandler = proc (status: UbernimStatus): var PreprodState =
   # setup preprocessor
-  var pp = makePreprocessor(status.getCurrentFile(), status.preprocessing.defines)
+  var pp = makePreprocessor(status.projecting.isUnimp, status.getCurrentFile(), status.preprocessing.defines)
   pp.state.storeUbernimStatus(status)
   # run preprocessor
   var r = pp.run()
@@ -58,9 +59,9 @@ let DefaultPreprocessingHandler: UbernimPreprocessingHandler = proc (status: Ube
 
 # ENGINE
 
-proc newUbernimEngine*(filename: string, version: SemanticVersion, signature: string): UbernimEngine =
+proc newUbernimEngine*(executable: string, version: SemanticVersion, signature: string): UbernimEngine =
   result = new UbernimEngine
-  result.executableFilename = filename
+  result.executable = executable
   result.version = version
   result.signature = signature
   result.compilerInvoker = DefaultCompilerInvoker
@@ -115,6 +116,7 @@ proc invokePerformers(engine: UbernimEngine, status: UbernimStatus): UbernimResu
   let dir = getCurrentDir()
   var state = status.preprocessing.performingHandler(status)
   setCurrentDir(dir)
+  result.isProject = status.projecting.isUnimp
   result.compilationErrorlevel = engine.performCompilation(state)
   result.cleanupReport = if result.compilationErrorlevel == 0: engine.performCleanup(state) else: STRINGS_EMPTY
   freeUbernimStatus(state)
@@ -125,6 +127,7 @@ proc run*(engine: UbernimEngine, main: string, defines: StringSeq): UbernimResul
   status.preprocessing.errorHandler = engine.errorHandler
   status.preprocessing.errorGetter = engine.errorGetter
   status.preprocessing.defines = defines
+  status.projecting.isUnimp = main.endsWith(UNIM_PROJECT_EXTENSION)
   status.files.callstack.add(main)
-  status.files.executable = engine.executableFilename
+  status.files.executable = engine.executable
   engine.invokePerformers(status)

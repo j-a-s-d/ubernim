@@ -164,9 +164,8 @@ func renderMethodEnd*(): string =
   STRINGS_EOL
 
 func renderTemplateBegin*(m: LanguageItem, className: string): string =
-  let args = if className == SCOPE_GLOBAL: STRINGS_EMPTY else: spaced(CODEGEN_SELF & STRINGS_COLON, className & (
-    if hasContent(m.data_extra): spaced(STRINGS_COMMA, m.data_extra) else: STRINGS_EMPTY
-  ))
+  let self = if className == SCOPE_GLOBAL: STRINGS_EMPTY else: spaced(CODEGEN_SELF & STRINGS_COLON, className)
+  let args = self & (if hasContent(m.data_extra): spaced(if isEmpty(self): STRINGS_EMPTY else: STRINGS_COMMA, m.data_extra) else: STRINGS_EMPTY)
   renderRoutine(
     CODEGEN_TEMPLATE, renderId(m.name, m.public, m.generics), args, m.data_type, renderPragmas(m.pragmas)
   ) & renderDocs(m.docs)
