@@ -401,27 +401,33 @@ suite "test ubernim":
     check(rr.cleanupReport.isEmpty())
     removeFiles("emit_code.unim", "emit_code.nim", "emit_code")
 
-  template testLanguageCommand(name, input, output: string, debug: bool = false) =
+  template testLanguageCommand(name, input, output: string, success: bool = true, onError: UbernimErrorHandler = nil, debug: bool = false) =
     writeFile(name & ".unim", lined(".nimc:project " & name, ".nimc:switch --hints:off", ".nimc:switch --warnings:off", input))
     let eng = makeTestEngine()
+    if assigned(onError):
+      eng.setErrorHandler(onError)
     let rr = eng.run(name & ".unim", newStringSeq())
-    check(rr.compilationErrorlevel == 0)
+    if success:
+      check(rr.compilationErrorlevel == 0)
+    else:
+      check(rr.compilationErrorlevel != 0)
     check(rr.cleanupReport.isEmpty())
     let sig = "static: echo \"" & name & ".nim testing\""
     let expected = if output.isEmpty(): sig else: lined(sig, output)
-    check(strip(readFile(name & ".nim")) == expected)
+    let found = strip(readFile(name & ".nim"))
+    check(found == expected)
     if debug:
-      echo "---"
-      echo strip(readFile(name & ".nim"))
-      echo "---"
+      echo "---[FOUND] " & parenthesize $found.len
+      echo found
+      echo "---[EXPECTED] " & parenthesize $expected.len
       echo expected
       echo "---"
     else:
       removeFiles(name & ".unim", name & ".nim", name)
 
-  test "test LANGUAGE push/pop":
+  test "test LANGUAGE push and pop":
     #
-    testLanguageCommand("push_pop", lined(
+    testLanguageCommand("push_and_pop", lined(
       ".push inline",
       "proc hey() = discard",
       ".pop",
@@ -749,6 +755,17 @@ suite "test ubernim":
       "var uninitializedVarWithPragma* {.threadvar.}: int"
     ))
 
+  test "test LANGUAGE empty-body routine":
+    #
+    testLanguageCommand("routine_emptybody", lined(
+      ".routine emptyBody()",
+      ".code",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "proc emptyBody() ="
+    ), false)
+
   test "test LANGUAGE routine simple":
     #
     testLanguageCommand("routine_simple", lined(
@@ -843,6 +860,28 @@ suite "test ubernim":
       "  join([\"hello\", name, \"!\"], \" \") & \" | \" & getMD5(name) # a preserved nim comment"
     ))
 
+  test "test LANGUAGE empty-body template":
+    #
+    testLanguageCommand("template_emptybody", lined(
+      ".template emptyBody*()",
+      ".code",
+      ".end"
+    ), lined(
+      STRINGS_EOL,
+      "template emptyBody*() ="
+    ), false)
+
+  test "test LANGUAGE template can not hold pragmas":
+    #
+    testLanguageCommand("template_nopragmas", lined(
+      ".template foo()",
+      ".pragmas final",
+      ".end"
+    ), STRINGS_EOL & lined(
+      STRINGS_EMPTY,
+      "(template_nopragmas.unim:5) errors.CANT_HOLD_PRAGMAS"
+    ), false, (msg: string) => check(msg == "(template_nopragmas.unim:5) errors.CANT_HOLD_PRAGMAS"))
+
   test "test LANGUAGE template simple":
     #
     testLanguageCommand("template_simple", lined(
@@ -870,6 +909,818 @@ suite "test ubernim":
       "template foo(something: int): string =",
       "  ##  This is a test template.",
       "  \"bar\""
+    ))
+
+  test "test LANGUAGE record empty":
+    #
+    testLanguageCommand("record_empty", """
+      .record Example
+      .end
+    """, lined(
+      STRINGS_EOL,
+      "type Example = tuple"
+    ))
+
+  test "test LANGUAGE record can not extend":
+    #
+    testLanguageCommand("record_noextend", lined(
+      ".record Example1",
+      ".end",
+      ".record Example2",
+      ".extends Example1",
+      ".end"
+    ), STRINGS_EOL & lined(
+      STRINGS_EMPTY,
+      "(record_noextend.unim:7) errors.RECORDS_CANT_EXTEND"
+    ), false, (msg: string) => check(msg == "(record_noextend.unim:7) errors.RECORDS_CANT_EXTEND"))
+
+  test "test LANGUAGE record pragmas":
+    #
+    testLanguageCommand("record_pragmas", """
+      .record Example
+      .pragmas final
+      .end
+    """, lined(
+      STRINGS_EOL,
+      "type Example {.final.} = tuple"
+    ))
+
+  test "test LANGUAGE record with docs":
+    #
+    testLanguageCommand("record_with_docs", """
+      .record Example
+      .docs
+  This is a simple record.
+      .end
+    """, lined(
+      STRINGS_EOL,
+      "type Example = tuple",
+      "  ##  This is a simple record."
+    ))
+
+  test "test LANGUAGE record with fields":
+    #
+    testLanguageCommand("record_with_fields", """
+      .record Example
+      .fields
+     aaa: string
+  bbb:bool # ubernim comments will not be preserved
+           ccc:    int
+      .end
+    """, lined(
+      STRINGS_EOL,
+      "type Example = tuple",
+      "  aaa: string",
+      "  bbb: bool",
+      "  ccc: int"
+    ))
+
+  test "test LANGUAGE record with empty-body method":
+    #
+    testLanguageCommand("record_with_emptybody_method", """
+.record Example
+.methods
+  emptyBody()
+.end
+
+.# NOTE: if you want a trully empty body (which will not compile in nim)
+.# that could be useful in some edge cases (appending your own custom code
+.# with an external tool, including a large file with the method body, etc),
+.# you have to declare an empty .code clause.
+.# This applies for routines, methods and templates.
+
+.method Example.emptyBody()
+.code
+.end
+    """, lined(
+      STRINGS_EOL,
+      "type Example = tuple",
+      STRINGS_EMPTY,
+      "proc emptyBody(self: Example) ="
+    ), false)
+
+  test "test LANGUAGE record with fields and methods":
+    #
+    testLanguageCommand("record_with_fields_and_methods", """
+      .record Example
+      .fields
+        aaa: string
+      .methods
+        foo()
+      .fields
+        bbb: bool
+        ccc: int
+      .methods
+        bar()
+      .end
+
+      .method Example.foo()
+      .end
+
+      .method Example.bar()
+      .end
+    """, lined(
+      STRINGS_EOL,
+      "type Example = tuple",
+      "  aaa: string",
+      "  bbb: bool",
+      "  ccc: int",
+      STRINGS_EMPTY,
+      "proc foo(self: Example) =",
+      "  discard",
+      STRINGS_EMPTY,
+      "proc bar(self: Example) =",
+      "  discard"
+    ))
+
+  test "test LANGUAGE record with methods":
+    #
+    testLanguageCommand("record_with_methods", """
+.record Example
+.fields
+  something: string
+.methods
+  mutable()
+foo (   ) : string # with a comment
+  bar():int
+  abc[T](): T
+  abc2[T]() :T
+    abcd  ()
+.end
+
+.method var Example.mutable()
+.code
+  self.something = "hey"
+.end
+
+.method Example.foo(): string
+.code
+  "hello"
+.end
+
+.method Example.bar(): int
+.code
+  123
+.end
+
+.method Example.abcd()
+.code
+  discard
+.end
+
+.method Example.abc[T](): T # code-less methods will be automatically filled with discard
+.end
+
+.method Example.abc2[T](): T # code-less methods can have docs and pragmas too
+.pragmas deprecated: "do not use it"
+.docs
+  Here a method automatically filled with discard
+.end
+    """, lined(
+      STRINGS_EOL,
+      "type Example = tuple",
+      "  something: string",
+      STRINGS_EMPTY,
+      "proc mutable(self: var Example) =",
+      "  self.something = \"hey\"",
+      STRINGS_EMPTY,
+      "proc foo(self: Example): string =",
+      "  \"hello\"",
+      STRINGS_EMPTY,
+      "proc bar(self: Example): int =",
+      "  123",
+      STRINGS_EMPTY,
+      "proc abcd(self: Example) =",
+      "  discard",
+      STRINGS_EMPTY,
+      "proc abc[T](self: Example): T =",
+      "  discard",
+      STRINGS_EMPTY,
+      "proc abc2[T](self: Example): T {.deprecated: \"do not use it\".} =",
+      "  ##  Here a method automatically filled with discard",
+      "  discard"
+    ))
+
+  test "test LANGUAGE record with templates":
+    #
+    testLanguageCommand("record_with_templates", """
+.record Example
+.templates
+  foo(code: untyped): untyped
+  bar(): int
+.end
+
+.template Example.foo(code: untyped): untyped
+.docs
+  This is an example template of a record.
+.code
+  discard
+.end
+
+.template Example.bar(): int
+.code
+  123
+.end
+    """, lined(
+      STRINGS_EOL,
+      "type Example = tuple",
+      STRINGS_EMPTY,
+      "template foo(self: Example, code: untyped): untyped =",
+      "  ##  This is an example template of a record.",
+      "  discard",
+      STRINGS_EMPTY,
+      "template bar(self: Example): int =",
+      "  123"
+    ))
+
+  test "test LANGUAGE class empty":
+    #
+    testLanguageCommand("class_empty", """
+      .class Example
+      .end
+    """, lined(
+      STRINGS_EOL,
+      "type Example = ref object"
+    ))
+
+  test "test LANGUAGE class extends":
+    #
+    testLanguageCommand("class_extends", """
+      .class Example1
+      .end
+      .class Example2
+      .extends Example1
+      .end
+    """, lined(
+      STRINGS_EOL,
+      "type Example1 = ref object of RootObj",
+      STRINGS_EMPTY,
+      "type Example2 = ref object of Example1"
+    ))
+
+  test "test LANGUAGE class pragmas":
+    #
+    testLanguageCommand("class_pragmas", """
+      .class Example
+      .pragmas final
+      .end
+    """, lined(
+      STRINGS_EOL,
+      "type Example {.final.} = ref object"
+    ))
+
+  test "test LANGUAGE class with docs":
+    #
+    testLanguageCommand("class_with_docs", """
+      .class Example
+      .docs
+  This is a simple class.
+      .end
+    """, lined(
+      STRINGS_EOL,
+      "type Example = ref object",
+      "  ##  This is a simple class."
+    ))
+
+  test "test LANGUAGE class with fields":
+    #
+    testLanguageCommand("class_with_fields", """
+      .class Example
+      .fields
+     aaa: string
+  bbb:bool # ubernim comments will not be preserved
+           ccc:    int
+      .end
+    """, lined(
+      STRINGS_EOL,
+      "type Example = ref object",
+      "  aaa: string",
+      "  bbb: bool",
+      "  ccc: int"
+    ))
+
+  test "test LANGUAGE class with empty-body method":
+    #
+    testLanguageCommand("class_with_emptybody_method", """
+.class Example
+.methods
+  emptyBody()
+.end
+
+.# NOTE: if you want a trully empty body (which will not compile in nim)
+.# that could be useful in some edge cases (appending your own custom code
+.# with an external tool, including a large file with the method body, etc),
+.# you have to declare an empty .code clause.
+.# This applies for routines, methods and templates.
+
+.method Example.emptyBody()
+.code
+.end
+    """, lined(
+      STRINGS_EOL,
+      "type Example = ref object",
+      STRINGS_EMPTY,
+      "proc emptyBody(self: Example) ="
+    ), false)
+
+  test "test LANGUAGE class with fields and methods":
+    #
+    testLanguageCommand("record_with_fields_and_methods", """
+      .class Example
+      .fields
+        aaa: string
+      .methods
+        foo()
+      .fields
+        bbb: bool
+        ccc: int
+      .methods
+        bar()
+      .end
+
+      .method Example.foo()
+      .end
+
+      .method Example.bar()
+      .end
+    """, lined(
+      STRINGS_EOL,
+      "type Example = ref object",
+      "  aaa: string",
+      "  bbb: bool",
+      "  ccc: int",
+      STRINGS_EMPTY,
+      "proc foo(self: Example) =",
+      "  discard",
+      STRINGS_EMPTY,
+      "proc bar(self: Example) =",
+      "  discard"
+    ))
+
+  test "test LANGUAGE record with getters and setters":
+    #
+    testLanguageCommand("record_with_getters_and_setters", """
+.record Person
+.fields
+  fName: string
+.methods
+  <name*: string
+  >name*(value: string)
+.end
+
+.getter Person.name*: string
+.code
+  self.fName
+.end
+
+.setter var Person.name*(value: string)
+.code
+  self.fName = value
+.end
+    """, lined(
+      STRINGS_EOL,
+      "type Person = tuple",
+      "  fName: string",
+      STRINGS_EMPTY,
+      "proc name*(self: Person): string =",
+      "  self.fName",
+      STRINGS_EMPTY,
+      "proc `name=`*(self: var Person, value: string) =",
+      "  self.fName = value"
+    ))
+
+  test "test LANGUAGE class with methods":
+    #
+    testLanguageCommand("class_with_methods", """
+.class Example
+.fields
+  something: string
+.methods
+  mutable()
+foo (   ) : string # with a comment
+  bar():int
+  abc[T](): T
+  abc2[T]() :T
+    abcd  ()
+.end
+
+.method var Example.mutable()
+.code
+  self.something = "hey"
+.end
+
+.method Example.foo(): string
+.code
+  "hello"
+.end
+
+.method Example.bar(): int
+.code
+  123
+.end
+
+.method Example.abcd()
+.code
+  discard
+.end
+
+.method Example.abc[T](): T # code-less methods will be automatically filled with discard
+.end
+
+.method Example.abc2[T](): T # code-less methods can have docs and pragmas too
+.pragmas deprecated: "do not use it"
+.docs
+  Here a method automatically filled with discard
+.end
+    """, lined(
+      STRINGS_EOL,
+      "type Example = ref object",
+      "  something: string",
+      STRINGS_EMPTY,
+      "proc mutable(self: var Example) =",
+      "  self.something = \"hey\"",
+      STRINGS_EMPTY,
+      "proc foo(self: Example): string =",
+      "  \"hello\"",
+      STRINGS_EMPTY,
+      "proc bar(self: Example): int =",
+      "  123",
+      STRINGS_EMPTY,
+      "proc abcd(self: Example) =",
+      "  discard",
+      STRINGS_EMPTY,
+      "proc abc[T](self: Example): T =",
+      "  discard",
+      STRINGS_EMPTY,
+      "proc abc2[T](self: Example): T {.deprecated: \"do not use it\".} =",
+      "  ##  Here a method automatically filled with discard",
+      "  discard"
+    ))
+
+  test "test LANGUAGE class with templates":
+    #
+    testLanguageCommand("class_with_templates", """
+.class Example
+.templates
+  foo(code: untyped): untyped
+  bar(): int
+.end
+
+.template Example.foo(code: untyped): untyped
+.docs
+  This is an example template of a class.
+.code
+  discard
+.end
+
+.template Example.bar(): int
+.code
+  123
+.end
+    """, lined(
+      STRINGS_EOL,
+      "type Example = ref object",
+      STRINGS_EMPTY,
+      "template foo(self: Example, code: untyped): untyped =",
+      "  ##  This is an example template of a class.",
+      "  discard",
+      STRINGS_EMPTY,
+      "template bar(self: Example): int =",
+      "  123"
+    ))
+
+  test "test LANGUAGE class with constructors":
+    #
+    testLanguageCommand("class_with_constructors", """
+.class Person
+.fields
+  age: int
+  name: string
+.methods
+  +create*(age: int, name: string)
+  +create*()
+.end
+
+.constructor Person.create*()
+.pragmas noSideEffect
+.docs
+  This is an example constructor of a class.
+.code
+  self.age = 42 # self is allowed in constructors
+.end
+
+.constructor Person.create*(age: int, name: string)
+.code
+  self.age = age
+  self.name = name
+.end
+    """, lined(
+      STRINGS_EOL,
+      "type Person = ref object",
+      "  age: int",
+      "  name: string",
+      STRINGS_EMPTY,
+      "func create*(datatype: typedesc[Person]): Person =",
+      "  ##  This is an example constructor of a class.",
+      "  var self = (result = Person(); result)",
+      "  self.age = 42 # self is allowed in constructors",
+      STRINGS_EMPTY,
+      "proc create*(datatype: typedesc[Person], age: int, name: string): Person =",
+      "  var self = (result = Person(); result)",
+      "  self.age = age",
+      "  self.name = name"
+    ))
+
+  test "test LANGUAGE class with getters and setters":
+    #
+    testLanguageCommand("class_with_getters_and_setters", """
+.class Person
+.fields
+  fName: string
+.methods
+  <name*: string
+  >name*(value: string)
+.end
+
+.getter Person.name*: string
+.code
+  self.fName
+.end
+
+.setter var Person.name*(value: string)
+.code
+  self.fName = value
+.end
+    """, lined(
+      STRINGS_EOL,
+      "type Person = ref object",
+      "  fName: string",
+      STRINGS_EMPTY,
+      "proc name*(self: Person): string =",
+      "  self.fName",
+      STRINGS_EMPTY,
+      "proc `name=`*(self: var Person, value: string) =",
+      "  self.fName = value"
+    ))
+
+  test "test LANGUAGE compound definition":
+    #
+    testLanguageCommand("compound_definition", """
+.compound Named
+.fields
+  fName: string
+.end
+    """, STRINGS_EMPTY)
+
+  test "test LANGUAGE compound extends":
+    #
+    testLanguageCommand("compound_extends", """
+.compound Named
+.fields
+  fName: string
+.end
+
+.compound NamedExtended
+.extends Named
+.fields
+  fAge: int
+.end
+    """, STRINGS_EMPTY)
+
+  test "test LANGUAGE compound bad definition":
+    #
+    testLanguageCommand("compound_bad_definition", """
+.compound Named
+.methods
+  getName(): string
+.end
+    """, STRINGS_EOL & lined(
+      STRINGS_EMPTY,
+      "(compound_bad_definition.unim:5) errors.CANT_HOLD_METHODS"
+    ),
+    false, (msg: string) => check(msg == "(compound_bad_definition.unim:5) errors.CANT_HOLD_METHODS"))
+
+  test "test LANGUAGE compound wrongly defined":
+    #
+    testLanguageCommand("compound_wrongly_defined", """
+.compound Named
+.fields
+  getName(): string
+.end
+    """, STRINGS_EOL & lined(
+      STRINGS_EMPTY,
+      "(compound_wrongly_defined.unim:6) errors.INVALID_IDENTIFIER"
+    ),
+    false, (msg: string) => check(msg == "(compound_wrongly_defined.unim:6) errors.INVALID_IDENTIFIER"))
+
+  test "test LANGUAGE compound bad extends":
+    #
+    testLanguageCommand("compound_bad_extends", """
+.compound Named
+.fields
+  fName: string
+.end
+
+.compound NamedExtended
+.extends Named
+.fields
+  fName: string
+  fAge: int
+.end
+    """, STRINGS_EOL & lined(
+      STRINGS_EMPTY,
+      "(compound_bad_extends.unim:12) errors.ALREADY_DEFINED"
+    ),
+    false, (msg: string) => check(msg == "(compound_bad_extends.unim:12) errors.ALREADY_DEFINED"))
+
+  test "test LANGUAGE compound bad apply":
+    #
+    testLanguageCommand("compound_bad_apply", """
+.compound Named
+.fields
+  fName: string
+.end
+
+.class Person
+.applies Named
+.fields
+  fAge: int
+.end
+    """, STRINGS_EOL & lined(
+      STRINGS_EMPTY,
+      "(compound_bad_apply.unim:9) errors.MISSING_MEMBER"
+    ),
+    false, (msg: string) => check(msg == "(compound_bad_apply.unim:9) errors.MISSING_MEMBER"))
+
+  test "test LANGUAGE class applying compound":
+    #
+    testLanguageCommand("class_applying_compound", """
+.compound Named
+.fields
+  fName: string
+.end
+
+.class Person
+.applies Named
+.fields
+  fName: string
+  fAge: int
+.end
+    """, lined(
+      STRINGS_EOL,
+      "type Person = ref object",
+      "  fName: string",
+      "  fAge: int"
+    ))
+
+  test "test LANGUAGE record applying compound":
+    #
+    testLanguageCommand("record_applying_compound", """
+.compound Named
+.fields
+  fName: string
+.end
+
+.record Person
+.applies Named
+.fields
+  fName: string
+  fAge: int
+.end
+    """, lined(
+      STRINGS_EOL,
+      "type Person = tuple",
+      "  fName: string",
+      "  fAge: int"
+    ))
+
+  test "test LANGUAGE interface definition":
+    #
+    testLanguageCommand("interface_definition", """
+.interface Named
+.methods
+  getName(): string
+.end
+    """, STRINGS_EMPTY)
+
+  test "test LANGUAGE interface extends":
+    #
+    testLanguageCommand("interface_extends", """
+.interface Named
+.methods
+  getName(): string
+.end
+
+.interface NamedExtended
+.extends Named
+.methods
+  getAge(): int
+.end
+    """, STRINGS_EMPTY)
+
+  test "test LANGUAGE interface bad definition":
+    #
+    testLanguageCommand("interface_bad_definition", """
+.interface Named
+.fields
+  fName: string
+.end
+    """, STRINGS_EOL & lined(
+      STRINGS_EMPTY,
+      "(interface_bad_definition.unim:5) errors.CANT_HOLD_FIELDS"
+    ),
+    false, (msg: string) => check(msg == "(interface_bad_definition.unim:5) errors.CANT_HOLD_FIELDS"))
+
+  test "test LANGUAGE interface wrongly defined":
+    #
+    testLanguageCommand("interface_wrongly_defined", """
+.interface Named
+.methods
+  fName: string
+.end
+    """, STRINGS_EOL & lined(
+      STRINGS_EMPTY,
+      "(interface_wrongly_defined.unim:6) errors.WRONGLY_DEFINED"
+    ),
+    false, (msg: string) => check(msg == "(interface_wrongly_defined.unim:6) errors.WRONGLY_DEFINED"))
+
+  test "test LANGUAGE interface redundant definition":
+    #
+    testLanguageCommand("interface_redundant_definition", """
+.interface Named
+.methods
+  getName(): string
+.end
+
+.interface NamedExtended
+.extends Named
+.methods
+  getName(): string
+  getAge(): int
+.end
+    """, STRINGS_EMPTY)
+
+  test "test LANGUAGE interface bad apply":
+    #
+    testLanguageCommand("interface_bad_apply", """
+.interface Named
+.methods
+  getName(): string
+.end
+
+.class Person
+.applies Named
+.methods
+  getAge(): int
+.end
+
+.method Person.getAge(): int
+.code
+  42
+.end
+    """, STRINGS_EOL & lined(
+      STRINGS_EMPTY,
+      "(interface_bad_apply.unim:9) errors.MISSING_MEMBER"
+    ),
+    false, (msg: string) => check(msg == "(interface_bad_apply.unim:9) errors.MISSING_MEMBER"))
+
+  test "test LANGUAGE class applying interface with getters and setters":
+    #
+    testLanguageCommand("class_applying_interface_with_getters_and_setters", """
+.interface Named
+.methods
+  <name*: string
+  >name*(value: string)
+.end
+
+.class Person
+.applies Named
+.fields
+  fName: string
+.methods
+  <name*: string
+  >name*(value: string)
+.end
+
+.getter Person.name*: string
+.code
+  self.fName
+.end
+
+.setter var Person.name*(value: string)
+.code
+  self.fName = value
+.end
+    """, lined(
+      STRINGS_EOL,
+      "type Person = ref object",
+      "  fName: string",
+      STRINGS_EMPTY,
+      "proc name*(self: Person): string =",
+      "  self.fName",
+      STRINGS_EMPTY,
+      "proc `name=`*(self: var Person, value: string) =",
+      "  self.fName = value"
     ))
 
   test "test more commands of the LANGUAGE feature":

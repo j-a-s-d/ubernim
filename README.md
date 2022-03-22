@@ -34,6 +34,9 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 22-03-22 **[0.6.5]**
+	- added more test cases
+	- general improvements
 * 11-03-22 **[0.6.4]**
 	- added more test cases
 	- general improvements

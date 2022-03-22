@@ -48,7 +48,7 @@ proc validateDivision*(status: UbernimStatus, d: LanguageDivision): PreprodResul
       else:
         status.getFullDivisionItems(p).each b:
           if not isPresent(b):
-            return BAD(spaced(WORDS_MISSING, apostrophe(b.name), WORDS_FROM, apostrophe(a), WORDS_AT, apostrophe(status.getCurrentFile())))
+            return status.getError(errors.MISSING_MEMBER, apostrophe(b.name), apostrophe(a), apostrophe(status.getCurrentFile()))
     m = status.getDivision(m.extends)
 
 func renderDivision(status: UbernimStatus, d: LanguageDivision): string =

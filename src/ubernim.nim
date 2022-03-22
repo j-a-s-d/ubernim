@@ -20,7 +20,7 @@ use json,JsonNode
 
 const
   APP_NAME = "ubernim"
-  APP_VERSION = "0.6.4"
+  APP_VERSION = "0.6.5"
   APP_COPYRIGHT = "copyright (c) 2021-2022 by Javier Santo Domingo"
   APP_SWITCHES = (
     DEFINE: [STRINGS_MINUS & STRINGS_LOWERCASE_D & STRINGS_COLON, STRINGS_MINUS & STRINGS_MINUS & WORDS_DEFINE & STRINGS_COLON],
@@ -108,6 +108,7 @@ proc getENErrorMessages(): JsonNode =
     makeMessage(errors.CANT_HOLD_VALUE, "this can not hold value"),
     makeMessage(errors.CANT_OUTPUT_DOCS, "this can not output documentation"),
     makeMessage(errors.CANT_OUTPUT_CODE, "this can not output code"),
+    makeMessage(errors.MISSING_MEMBER, "missing $1 from $2 at $2"),
     makeMessage(errors.UNDEFINED_MEMBER_VALUE, "undefined value for immutable member"),
     makeMessage(errors.DEFINE_BEFORE_VALUE, "this must be defined before code or value"),
     makeMessage(errors.NOT_APPLIABLE, "only a compound, an interface or a protocol can be applied to something else"),

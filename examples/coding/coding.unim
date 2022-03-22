@@ -41,6 +41,7 @@
   toString2(): string
 toString3():string
   abc[T](): T
+  abc2[T](): T
 .docs # you can specifiy documentation inplace
   This is an example record.
   Applying compound Base, interface Stringable and protocol M0ABCT.
@@ -48,8 +49,20 @@ toString3():string
   foo(code: untyped): untyped
 .end
 
-.method Example.abc[T](): T = # empty methods will be filled with discard
+.method Example.abc[T](): T = # code-less methods will be automatically filled with discard
 .end
+
+.method Example.abc2[T](): T # code-less methods can have docs and pragmas too
+.pragmas deprecated: "do not use it"
+.docs
+  Here a method automatically filled with discard
+.end
+
+.# NOTE: if you want a trully empty body (which will not compile in nim)
+.# that could be useful in some edge cases (appending your own custom code
+.# with an external tool, including a large file with the method body, etc),
+.# you have to declare an empty .code clause.
+.# This applies for routines, methods and templates.
 
 .method Example.toString(): string
 .docs
