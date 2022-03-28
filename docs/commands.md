@@ -191,7 +191,7 @@ See them working in the *coding* example.
 	- example: `.fields`
 * **.methods** *(since 0.1.0)*
 	- specifies a group of methods
-	- values: method definitions after it (mostly like in regular nim), check the examples
+	- values: method definitions after it (for regular methods like in regular nim, and with a prefix for special methods: `+` for constructors, `>` for setters and `<` for getters -this ones using a field-like definition style-), check the examples
 	- example: `.methods`
 * **.templates** *(since 0.1.0)*
 	- specifies a group of templates

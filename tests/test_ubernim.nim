@@ -1723,6 +1723,198 @@ foo (   ) : string # with a comment
       "  self.fName = value"
     ))
 
-  test "test more commands of the LANGUAGE feature":
+  test "test LANGUAGE protocol definition":
     #
-    echo "TODO"
+    testLanguageCommand("protocol_definition", """
+.protocol Named
+.fields
+  fName: string
+.methods
+  getName(): string
+.end
+    """, STRINGS_EMPTY)
+
+  test "test LANGUAGE protocol extends":
+    #
+    testLanguageCommand("protocol_extends", """
+.protocol Named
+.fields
+  fName: string
+.methods
+  getName(): string
+.end
+
+.protocol NamedExtended
+.extends Named
+.fields
+  fAge: int
+.methods
+  getAge(): int
+.end
+    """, STRINGS_EMPTY)
+
+  test "test LANGUAGE protocol wrongly defined":
+    #
+    testLanguageCommand("protocol_wrongly_defined", """
+.protocol Named
+.methods
+  fName: string
+.end
+    """, STRINGS_EOL & lined(
+      STRINGS_EMPTY,
+      "(protocol_wrongly_defined.unim:6) errors.WRONGLY_DEFINED"
+    ),
+    false, (msg: string) => check(msg == "(protocol_wrongly_defined.unim:6) errors.WRONGLY_DEFINED"))
+
+  test "test LANGUAGE protocol bad extends":
+    #
+    testLanguageCommand("protocol_bad_extends", """
+.protocol Named
+.fields
+  fName: string
+.end
+
+.protocol NamedExtended
+.extends Named
+.fields
+  fName: string
+.methods
+  getName(): string
+.end
+    """, STRINGS_EOL & lined(
+      STRINGS_EMPTY,
+      "(protocol_bad_extends.unim:12) errors.ALREADY_DEFINED"
+    ),
+    false, (msg: string) => check(msg == "(protocol_bad_extends.unim:12) errors.ALREADY_DEFINED"))
+
+  test "test LANGUAGE protocol redundant definition":
+    #
+    testLanguageCommand("protocol_redundant_definition", """
+.protocol Named
+.fields
+  fName: string
+.methods
+  getName(): string
+.end
+
+.protocol NamedExtended
+.extends Named
+.methods
+  getName(): string
+  getAge(): int
+.end
+    """, STRINGS_EMPTY)
+
+  test "test LANGUAGE protocol bad apply":
+    #
+    testLanguageCommand("protocol_bad_apply", """
+.protocol Named
+.fields
+  fName: string
+.methods
+  getName(): string
+.end
+
+.class Person
+.applies Named
+.fields
+  fAge: int
+.methods
+  getAge(): int
+.end
+
+.method Person.getAge(): int
+.code
+  fAge
+.end
+    """, STRINGS_EOL & lined(
+      STRINGS_EMPTY,
+      "(protocol_bad_apply.unim:11) errors.MISSING_MEMBER"
+    ),
+    false, (msg: string) => check(msg == "(protocol_bad_apply.unim:11) errors.MISSING_MEMBER"))
+
+  test "test LANGUAGE record applying protocol with templates":
+    #
+    testLanguageCommand("record_applying_protocol_with_templates", """
+.protocol Named
+.templates
+  getName*(): string
+  setName*(value: string)
+.end
+
+.record Person
+.applies Named
+.fields
+  fName: string
+.templates
+  getName*(): string
+  setName*(value: string)
+.end
+
+.template Person.getName*(): string
+.code
+  self.fName
+.end
+
+.template Person.setName*(value: string)
+.code
+  self.fName = value
+.end
+    """, lined(
+      STRINGS_EOL,
+      "type Person = tuple",
+      "  fName: string",
+      STRINGS_EMPTY,
+      "template getName*(self: Person): string =",
+      "  self.fName",
+      STRINGS_EMPTY,
+      "template setName*(self: Person, value: string) =",
+      "  self.fName = value"
+    ))
+
+  test "test LANGUAGE applying":
+    #
+    writeFile("protocol.unim", """
+.unim:flush no
+
+.protocol TestingProtocol*
+.fields
+  uninitializedVar: int
+.methods
+  makeGreetingMessageTo(name: string): string
+.templates
+  globalTemplate()
+.end
+""")
+    writeFile("required.unim", """
+.require protocol.unim
+
+.member var uninitializedVar*:int
+.end
+
+.routine makeGreetingMessageTo(name: string): string
+.code
+  "hello " & name
+.end
+
+.template globalTemplate*()
+.code
+  echo "this is here to make the TestingProtocol fully applied to this file"
+.end
+
+.applying TestingProtocol
+""")
+    writeFile("require.unim", """
+.nimc:project require
+.nimc:switch --hints:off
+.nimc:switch --warnings:off
+.require required.unim
+import required
+
+uninitializedVar = 123
+""")
+    let eng = makeTestEngine()
+    let rr = eng.run("require.unim", newStringSeq())
+    check(rr.compilationErrorlevel == 0)
+    check(rr.cleanupReport == "")
+    removeFiles("require", "require.unim", "required.unim", "protocol.unim", "require.nim", "required.nim")
