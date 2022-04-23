@@ -124,7 +124,7 @@ suite "test ubernim":
     check(fileExists("informed_cleanup.nim"))
     check(fileExists("informed_cleanup"))
     check(rr.compilationErrorlevel == 0)
-    check(strip(rr.cleanupReport) == "* (GENERATED) informed_cleanup.nim")
+    check(strip(rr.cleanupReport) == "* (GENERATED FILE) informed_cleanup.nim")
     removeFiles("informed_cleanup.unim", "informed_cleanup.nim", "informed_cleanup")
 
   test "test UNIMCMDS performed unim:cleanup":
@@ -135,7 +135,7 @@ suite "test ubernim":
     check(not fileExists("performed_cleanup.nim"))
     check(fileExists("performed_cleanup"))
     check(rr.compilationErrorlevel == 0)
-    check(rr.cleanupReport == "(REMOVED) performed_cleanup.nim")
+    check(rr.cleanupReport == "(REMOVED FILE) performed_cleanup.nim")
     removeFiles("performed_cleanup.unim", "performed_cleanup")
 
   test "test UNIMCMDS disabled unim:flush":
@@ -158,6 +158,19 @@ suite "test ubernim":
     check(rr.compilationErrorlevel != 0)
     check(rr.cleanupReport.isEmpty())
     removeFiles("strict_mode.unim", "strict_mode.nim")
+
+  test "test UNIMCMDS unim:destination":
+    #
+    writeFile("destination.unim", lined(".unim:destination src", ".unim:cleanup informed", ".nimc:project destination.nim", ".nimc:config destination.nim.cfg"))
+    let eng = makeTestEngine()
+    let rr = eng.run("destination.unim", newStringSeq())
+    check(dirExists("src"))
+    check(fileExists("src/destination.nim"))
+    check(fileExists("src/destination.nim.cfg"))
+    check(rr.compilationErrorlevel == 0)
+    check(strip(rr.cleanupReport) == lined("* (GENERATED FILE) src/destination.nim", "* (GENERATED FILE) src/destination.nim.cfg", "* (GENERATED DIRECTORY) src/"))
+    removeFiles("destination.unim", "src/destination.nim", "src/destination.nim.cfg")
+    removeDirs("src")
 
   test "test SWITCHES nimc:project":
     #

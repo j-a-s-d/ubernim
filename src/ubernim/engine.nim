@@ -30,6 +30,14 @@ use os,getCurrentDir
 use os,setCurrentDir
 use strutils,endsWith
 
+proc getDestinationDirectory(status: UbernimStatus, state: PreprodState): string =
+  result = STRINGS_EMPTY
+  if state.hasPropertyValue(UNIM_DESTINATION_KEY):
+    let value = state.getPropertyValue(UNIM_DESTINATION_KEY)
+    if value != DEFAULT_DIR:
+      status.generateDirectory(value)
+      return value
+
 let DefaultCompilerInvoker: UbernimCompilerInvoker = proc (project: string, defines: StringSeq): int =
   execShellCmd(spaced(NIMC_INVOKATION, spaced(defines), project))
 
@@ -52,7 +60,8 @@ let DefaultPreprocessingHandler: UbernimPreprocessingHandler = proc (status: Ube
     status.preprocessing.errorHandler(r.output)
   # emit output
   if pp.state.getPropertyValue(UNIM_FLUSH_KEY) == FLAG_YES:
-    let uf = pp.state.getPropertyValue(UNIM_FILE_KEY)
+    let destination = getDestinationDirectory(status, pp.state)
+    let uf = destination & pp.state.getPropertyValue(UNIM_FILE_KEY)
     let txt = renderSignature(uf, status.info.signature) & r.output
     status.generateFile(uf, txt, "errors.CANT_WRITE_OUTPUT")
   pp.state
@@ -92,16 +101,17 @@ proc performCompilation(engine: UbernimEngine, state: var PreprodState): int =
   # setup switches
   var nimcSwitches = buildCommandLineSwitches(state)
   # setup config
+  let status = loadUbernimStatus(state)
+  let destination = getDestinationDirectory(status, state)
   if state.hasPropertyValue(NIMC_CFGFILE_KEY):
-    let status = loadUbernimStatus(state)
-    let cfg = state.getPropertyValue(NIMC_CFGFILE_KEY)
+    let cfg = destination & state.getPropertyValue(NIMC_CFGFILE_KEY)
     let txt = lined(spaced(STRINGS_NUMERAL, cfg, status.info.signature) & nimcSwitches)
     status.generateFile(cfg, txt, "errors.CANT_WRITE_CONFIG")
   else:
     clDefs &= nimcSwitches
   # compile
   if state.hasPropertyValue(NIMC_PROJECT_KEY):
-    return engine.compilerInvoker(state.getPropertyValue(NIMC_PROJECT_KEY), clDefs)
+    return engine.compilerInvoker(destination & state.getPropertyValue(NIMC_PROJECT_KEY), clDefs)
 
 proc performCleanup(engine: UbernimEngine, state: var PreprodState): string =
   withIt state.getPropertyValue(UNIM_CLEANUP_KEY):

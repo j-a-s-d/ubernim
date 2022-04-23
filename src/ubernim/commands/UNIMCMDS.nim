@@ -6,6 +6,8 @@ import
   common,
   ../constants, ../status
 
+use os,DirSep
+use strutils,endsWith
 use strutils,toLower
 
 # CALLBACKS
@@ -37,6 +39,12 @@ topCallback doFlush:
     state.setPropertyValue(UNIM_FLUSH_KEY, flag)
   return OK
 
+topCallback doDestination:
+  if state.isTranslating():
+    let value = if endsWith(parameters[0], DirSep): parameters[0] else: parameters[0] & DirSep
+    state.setPropertyValue(UNIM_DESTINATION_KEY, value)
+  return OK
+
 topCallback doMode:
   if state.isTranslating():
     let status = loadUbernimStatus(state)
@@ -54,3 +62,4 @@ proc initialize*(): UbernimFeature =
     cmd("unim:cleanup", PreprodArguments.uaOne, doCleanup)
     cmd("unim:flush", PreprodArguments.uaOne, doFlush)
     cmd("unim:mode", PreprodArguments.uaOne, doMode)
+    cmd("unim:destination", PreprodArguments.uaOne, doDestination)

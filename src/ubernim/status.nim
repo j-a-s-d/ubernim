@@ -25,6 +25,7 @@ type
     imported: StringSeq
     exported: StringSeq
     generated: StringSeq
+    generatedDirectories: StringSeq
   TUbernimLanguage = tuple
     currentName: string
     currentImplementation: LanguageItem
@@ -66,7 +67,8 @@ template makeUbernimStatus*(sver: SemanticVersion, sign: string, divs: LanguageD
       callstack: newStringSeq(),
       imported: newStringSeq(),
       exported: newStringSeq(),
-      generated: newStringSeq()
+      generated: newStringSeq(),
+      generatedDirectories: newStringSeq()
     ),
     projecting: TUbernimProjecting (
       isUnimp: false,
@@ -103,6 +105,9 @@ template getError*(status: UbernimStatus, code: string, values: varargs[string])
 
 # FILES
 
+use os,dirExists
+use os,createDir
+
 template inMainFile*(status: UbernimStatus): bool =
   status.files.callstack.len == 1
 
@@ -121,11 +126,17 @@ template getCurrentFile*(status: UbernimStatus): string =
 template isCircularReference*(status: UbernimStatus, name: string): bool =
   name in status.files.callstack
 
-template generateFile*(status: UbernimStatus, filename, content, errorCode: string) =
+proc generateFile*(status: UbernimStatus, filename, content, errorCode: string) =
   if writeToFile(filename, content):
     status.files.generated.add(filename)
   else:
     status.preprocessing.errorHandler(status.getError(errorCode).output)
+
+proc generateDirectory*(status: UbernimStatus, directory: string) =
+  if not dirExists(directory):
+    createDir(directory)
+    if dirExists(directory):
+      status.files.generatedDirectories.add(directory)
 
 # DIVISION
 

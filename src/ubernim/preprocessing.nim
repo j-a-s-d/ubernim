@@ -156,10 +156,10 @@ func translateImports(original: PreprodResult, state: PreprodState, status: Uber
 let ppTranslator: PreprodTranslator = proc (state: var PreprodState, original: PreprodResult): PreprodResult =
   result = original
   if hasText(original.output):
+    let status = loadUbernimStatus(state)
     if state.hasPropertyValue(KEY_DIVISION):
       let division = state.getPropertyValue(KEY_DIVISION)
       let subdivision = state.getPropertyValue(KEY_SUBDIVISION)
-      let status = loadUbernimStatus(state)
       if division == DIVISIONS_TARGETED:
         if original.output != CODEGEN_EMIT_CLOSE:
           return translateTargeted(original, subdivision)
@@ -183,7 +183,6 @@ let ppTranslator: PreprodTranslator = proc (state: var PreprodState, original: P
       else:
         state.setPropertyValue(PREPROD_LINE_APPENDIX_KEY, STRINGS_EOL)
     elif state.getPropertyValue(UNIM_MODE_KEY) == MODE_STRICT:
-      let status = loadUbernimStatus(state)
       return status.getError(errors.STRICT_MODE)
 
 let ppDummyTranslator: PreprodTranslator = proc (state: var PreprodState, original: PreprodResult): PreprodResult =
@@ -197,6 +196,7 @@ let getTranslator = proc (isProject: bool): PreprodTranslator =
 proc makePreprocessor*(isProject: bool, filename: string, defines: StringSeq = newStringSeq()): PreprodPreprocessor =
   result = newPreprodPreprocessor(filename, defines, getOptions(isProject), getCommands(isProject), getTranslator(isProject), getPreviewer(isProject))
   result.state.setPropertyValue(UNIM_FILE_KEY, filename.changeFileExt(NIM_EXTENSION))
+  result.state.setPropertyValue(UNIM_DESTINATION_KEY, DEFAULT_DIR)
   result.state.setPropertyValue(UNIM_FLUSH_KEY, if isProject: FLAG_NO else: FLAG_YES)
   result.state.setPropertyValue(UNIM_MODE_KEY, if isProject: MODE_STRICT else: MODE_FREE)
   result.state.setPropertyValue(UNIM_CLEANUP_KEY, VALUE_IGNORED)

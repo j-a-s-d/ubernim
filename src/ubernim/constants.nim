@@ -1,9 +1,16 @@
 # ubernim / CONSTANTS #
 #---------------------#
 
+import
+  xam
+
+use os,DirSep
+
 const
   UNIM_PROJECT_EXTENSION* = ".unimp"
   UNIM_FILE_KEY* = "UNIM_FILE"
+  UNIM_DESTINATION_KEY* = "UNIM_DESTINATION"
+  DEFAULT_DIR* = STRINGS_PERIOD & DirSep
   UNIM_FLUSH_KEY* = "UNIM_FLUSH"
   FLAG_YES* = "yes" # default
   FLAG_NO* = "no"

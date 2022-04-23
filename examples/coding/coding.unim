@@ -9,6 +9,10 @@
 .nimc:config coding.nim.cfg
 .nimc:define hello
 .nimc:switch -r
+.nimc:switch --outdir:bin
+
+.# you can specify the destination directory for the automatically generated files
+.unim:destination src
 
 .# the require commnad is into the REQUIRES Preprod feature,
 .# so you can disable it by a simple line: '.$ FEATURE REQUIRES off'
@@ -348,5 +352,5 @@ when defined(hello):
   echo addTwoIntegers(3, 7)
   echo makeGreetingMessageTo("world")
 
-.# you can specify to remove the generated files just to end up with the final binary only
+.# you can specify to remove the automatically generated files (and directories) just to end up with the final binary only
 .unim:cleanup performed

@@ -5,7 +5,6 @@ import
   xam, preprod,
   constants
 
-
 func buildCommandLineDefines*(state: PreprodState): StringSeq =
   result.add(if state.hasPropertyValue(NIMC_TARGET_KEY): state.getPropertyValue(NIMC_TARGET_KEY) else: TARGET_CC)
   if state.hasPropertyValue(NIMC_DEFINES_KEY):
