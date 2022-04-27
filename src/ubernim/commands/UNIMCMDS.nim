@@ -18,7 +18,7 @@ topCallback doVersion:
     if not isValidSemanticVersionString(parameters[0]):
       return status.getError(errors.BAD_VERSION)
     if newSemanticVersion(parameters[0]).isNewerThan(status.info.semver):
-      return status.getError(errors.OLD_VERSION, parenthesize(parameters[0]))
+      return status.getError(errors.OLD_VERSION, parameters[0])
   return OK
 
 topCallback doCleanup:

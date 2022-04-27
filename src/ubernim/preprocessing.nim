@@ -56,19 +56,19 @@ const
 
 proc previewItem(status: UbernimStatus, ld: LanguageDivision, lm: LanguageItem, inRecord: bool, line: string, original: PreprodResult): PreprodResult =
   if not lm.read(line):
-    return status.getError(errors.WRONGLY_DEFINED, WORDS_ITEM)
+    return status.getError(errors.WRONGLY_DEFINED, NAMES_ITEM)
   if not lm.hasValidIdentifier():
     return status.getError(errors.INVALID_IDENTIFIER)
   if lm.kind == SUBDIVISIONS_FIELDS:
     if lm.public and inRecord:
       return status.getError(errors.RECORDS_DONT_ASTERISK)
     if status.hasField(ld, lm.name):
-      return status.getError(errors.ALREADY_DEFINED, spaced(WORDS_FIELD, apostrophe(lm.name)))
+      return status.getError(errors.ALREADY_DEFINED, spaced(NAMES_FIELD, apostrophe(lm.name)))
     if status.hasMethod(ld, lm.name, SEALED_EXAMINER):
-      return status.getError(errors.ALREADY_DEFINED, spaced(WORDS_SEALED, WORDS_METHOD, apostrophe(lm.name)))
+      return status.getError(errors.ALREADY_DEFINED, spaced(NAMES_SEALED, NAMES_METHOD, apostrophe(lm.name)))
   else:
     if (lm.data_getter or lm.data_setter) and status.hasField(ld, lm.name):
-      return status.getError(errors.ALREADY_DEFINED, spaced(WORDS_FIELD, apostrophe(lm.name)))
+      return status.getError(errors.ALREADY_DEFINED, spaced(NAMES_FIELD, apostrophe(lm.name)))
   ld.items.add(lm)
   return original
 

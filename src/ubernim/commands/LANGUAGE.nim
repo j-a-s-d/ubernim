@@ -176,7 +176,7 @@ childCallback doPragmas:
       if not assigned(p):
         return status.getError(errors.BAD_STATE)
       if hasContent(p.pragmas):
-        return status.getError(errors.ALREADY_DEFINED, WORDS_PRAGMAS)
+        return status.getError(errors.ALREADY_DEFINED, NAMES_PRAGMAS)
       p.pragmas = spaced(parameters)
   elif state.isTranslating():
     if d != DIVISIONS_CLASS and d != DIVISIONS_RECORD:
@@ -190,7 +190,7 @@ childCallback doPragmas:
       if lm.rendered:
         return status.getError(errors.DEFINE_BEFORE_VALUE)
       if hasContent(lm.pragmas):
-        return status.getError(errors.ALREADY_DEFINED, WORDS_PRAGMAS)
+        return status.getError(errors.ALREADY_DEFINED, NAMES_PRAGMAS)
       lm.pragmas = spaced(parameters)
   return OK
 
@@ -240,22 +240,22 @@ topCallback doConstructor:
     let status = loadUbernimStatus(state)
     let parts = parameters.join(STRINGS_SPACE).split(STRINGS_PERIOD)
     if parts.len != 2:
-      return status.getError(errors.WRONGLY_DEFINED, WORDS_CONSTRUCTOR)
+      return status.getError(errors.WRONGLY_DEFINED, NAMES_CONSTRUCTOR)
     var p = status.getDivision(parts[0])
     if not assigned(p):
       return status.getError(errors.NEVER_DEFINED, apostrophe(parts[0]))
     var lm = newLanguageItem(SUBDIVISIONS_METHODS)
     if not lm.read(STRINGS_PLUS & parts[1]):
-      return status.getError(errors.WRONGLY_DEFINED, WORDS_CONSTRUCTOR)
+      return status.getError(errors.WRONGLY_DEFINED, NAMES_CONSTRUCTOR)
     if not lm.hasValidIdentifier():
       return status.getError(errors.INVALID_IDENTIFIER)
     if not status.hasMethod(p, lm.name):
-      return status.getError(errors.NEVER_DEFINED, spaced(WORDS_CONSTRUCTOR, apostrophe(parts[1])))
+      return status.getError(errors.NEVER_DEFINED, spaced(NAMES_CONSTRUCTOR, apostrophe(parts[1])))
     let pm = status.getItem(p, SUBDIVISIONS_METHODS, lm.name)
     if not assigned(pm):
       return status.getError(errors.BAD_STATE)
     if pm.public != lm.public:
-      return status.getError(errors.VISIBILITY_DOESNT_MATCH, spaced(WORDS_FOR, WORDS_CONSTRUCTOR, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
+      return status.getError(errors.VISIBILITY_DOESNT_MATCH, spaced(NAMES_CONSTRUCTOR, apostrophe(lm.name & parenthesize(lm.data_extra)), STRINGS_AT, apostrophe(p.name)))
     status.language.currentName = p.name
     status.language.currentImplementation = lm
   return OK
@@ -267,7 +267,7 @@ topCallback doGetter:
     let status = loadUbernimStatus(state)
     let parts = parameters.join(STRINGS_SPACE).split(STRINGS_PERIOD)
     if parts.len != 2:
-      return status.getError(errors.WRONGLY_DEFINED, WORDS_GETTER)
+      return status.getError(errors.WRONGLY_DEFINED, NAMES_GETTER)
     var p = status.getDivision(parts[0])
     if not assigned(p):
       return status.getError(errors.NEVER_DEFINED, apostrophe(parts[0]))
@@ -275,16 +275,16 @@ topCallback doGetter:
     # NOTE: due to the differences between definition and implementation special flag has to be set
     lm.data_getter = true # before reading (for the getter)
     if not lm.read(parts[1]):
-      return status.getError(errors.WRONGLY_DEFINED, WORDS_GETTER)
+      return status.getError(errors.WRONGLY_DEFINED, NAMES_GETTER)
     if not lm.hasValidIdentifier():
       return status.getError(errors.INVALID_IDENTIFIER)
     if not status.hasMethod(p, lm.name, (item: LanguageItem) => item.data_getter):
-      return status.getError(errors.NEVER_DEFINED, spaced(WORDS_GETTER, apostrophe(parts[1])))
+      return status.getError(errors.NEVER_DEFINED, spaced(NAMES_GETTER, apostrophe(parts[1])))
     let pm = status.getItem(p, SUBDIVISIONS_METHODS, lm.name)
     if not assigned(pm):
       return status.getError(errors.BAD_STATE)
     if pm.public != lm.public:
-      return status.getError(errors.VISIBILITY_DOESNT_MATCH, spaced(WORDS_FOR, WORDS_GETTER, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
+      return status.getError(errors.VISIBILITY_DOESNT_MATCH, spaced(NAMES_GETTER, apostrophe(lm.name & parenthesize(lm.data_extra)), STRINGS_AT, apostrophe(p.name)))
     status.language.currentName = p.name
     status.language.currentImplementation = lm
   return OK
@@ -297,24 +297,24 @@ topCallback doSetter:
     let isVar = parameters[0] == CODEGEN_VAR
     let parts = (if isVar: parameters[1..^1] else: parameters).join(STRINGS_SPACE).split(STRINGS_PERIOD)
     if parts.len != 2:
-      return status.getError(errors.WRONGLY_DEFINED, WORDS_SETTER)
+      return status.getError(errors.WRONGLY_DEFINED, NAMES_SETTER)
     var p = status.getDivision(parts[0])
     if not assigned(p):
       return status.getError(errors.NEVER_DEFINED, apostrophe(parts[0]))
     var lm = newLanguageItem(SUBDIVISIONS_METHODS)
     if not lm.read(parts[1]):
-      return status.getError(errors.WRONGLY_DEFINED, WORDS_SETTER)
+      return status.getError(errors.WRONGLY_DEFINED, NAMES_SETTER)
     # NOTE: due to the differences between definition and implementation special flag has to be set
     lm.data_setter = true # after reading (for the setter)
     if not lm.hasValidIdentifier():
       return status.getError(errors.INVALID_IDENTIFIER)
     if not status.hasMethod(p, lm.name, (item: LanguageItem) => item.data_setter):
-      return status.getError(errors.NEVER_DEFINED, spaced(WORDS_SETTER, apostrophe(parts[1])))
+      return status.getError(errors.NEVER_DEFINED, spaced(NAMES_SETTER, apostrophe(parts[1])))
     let pm = status.getItem(p, SUBDIVISIONS_METHODS, lm.name)
     if not assigned(pm):
       return status.getError(errors.BAD_STATE)
     if pm.public != lm.public:
-      return status.getError(errors.VISIBILITY_DOESNT_MATCH, spaced(WORDS_FOR, WORDS_SETTER, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
+      return status.getError(errors.VISIBILITY_DOESNT_MATCH, spaced(NAMES_SETTER, apostrophe(lm.name & parenthesize(lm.data_extra)), STRINGS_AT, apostrophe(p.name)))
     status.language.currentName = p.name
     lm.data_var = isVar
     status.language.currentImplementation = lm
@@ -328,22 +328,22 @@ topCallback doMethod:
     let isVar = parameters[0] == CODEGEN_VAR
     let parts = (if isVar: parameters[1..^1] else: parameters).join(STRINGS_SPACE).split(STRINGS_PERIOD)
     if parts.len != 2:
-      return status.getError(errors.WRONGLY_DEFINED, WORDS_METHOD)
+      return status.getError(errors.WRONGLY_DEFINED, NAMES_METHOD)
     var p = status.getDivision(parts[0])
     if not assigned(p):
       return status.getError(errors.NEVER_DEFINED, apostrophe(parts[0]))
     var lm = newLanguageItem(SUBDIVISIONS_METHODS)
     if not lm.read(parts[1]):
-      return status.getError(errors.WRONGLY_DEFINED, WORDS_METHOD)
+      return status.getError(errors.WRONGLY_DEFINED, NAMES_METHOD)
     if not lm.hasValidIdentifier():
       return status.getError(errors.INVALID_IDENTIFIER)
     if not status.hasMethod(p, lm.name):
-      return status.getError(errors.NEVER_DEFINED, spaced(WORDS_METHOD, apostrophe(parts[1])))
+      return status.getError(errors.NEVER_DEFINED, spaced(NAMES_METHOD, apostrophe(parts[1])))
     let pm = status.getItem(p, SUBDIVISIONS_METHODS, lm.name)
     if not assigned(pm):
       return status.getError(errors.BAD_STATE)
     if pm.public != lm.public:
-      return status.getError(errors.VISIBILITY_DOESNT_MATCH, spaced(WORDS_FOR, WORDS_METHOD, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
+      return status.getError(errors.VISIBILITY_DOESNT_MATCH, spaced(NAMES_METHOD, apostrophe(lm.name & parenthesize(lm.data_extra)), STRINGS_AT, apostrophe(p.name)))
     status.language.currentName = p.name
     lm.data_var = isVar
     status.language.currentImplementation = lm
@@ -364,21 +364,21 @@ topCallback doTemplate:
       return status.getError(errors.NEVER_DEFINED, apostrophe(parts[0]))
     var lm = newLanguageItem(SUBDIVISIONS_TEMPLATES)
     if not lm.read(parts[1]):
-      return status.getError(errors.WRONGLY_DEFINED, WORDS_TEMPLATE)
+      return status.getError(errors.WRONGLY_DEFINED, NAMES_TEMPLATE)
     if not lm.hasValidIdentifier():
       return status.getError(errors.INVALID_IDENTIFIER)
     if parts[0] == SCOPE_GLOBAL:
       if status.hasTemplate(p, lm.name):
-        return status.getError(errors.ALREADY_DEFINED, spaced(WORDS_TEMPLATE, apostrophe(parts[1])))
+        return status.getError(errors.ALREADY_DEFINED, spaced(NAMES_TEMPLATE, apostrophe(parts[1])))
       p.items.add(lm)
     else:
       if not status.hasTemplate(p, lm.name):
-        return status.getError(errors.NEVER_DEFINED, spaced(WORDS_TEMPLATE, apostrophe(parts[1])))
+        return status.getError(errors.NEVER_DEFINED, spaced(NAMES_TEMPLATE, apostrophe(parts[1])))
       let pm = status.getItem(p, SUBDIVISIONS_TEMPLATES, lm.name)
       if not assigned(pm):
         return status.getError(errors.BAD_STATE)
       if pm.public != lm.public:
-        return status.getError(errors.VISIBILITY_DOESNT_MATCH, spaced(WORDS_FOR, WORDS_TEMPLATE, apostrophe(lm.name & parenthesize(lm.data_extra)), WORDS_AT, apostrophe(p.name)))
+        return status.getError(errors.VISIBILITY_DOESNT_MATCH, spaced(NAMES_TEMPLATE, apostrophe(lm.name & parenthesize(lm.data_extra)), STRINGS_AT, apostrophe(p.name)))
     status.language.currentName = p.name
     status.language.currentImplementation = lm
   return OK
@@ -391,17 +391,17 @@ topCallback doRoutine:
     let full = parameters.join(STRINGS_SPACE)
     let parts = full.split(STRINGS_PERIOD)
     if parts.len == 2:
-      return status.getError(errors.WRONGLY_DEFINED, WORDS_ROUTINE)
+      return status.getError(errors.WRONGLY_DEFINED, NAMES_ROUTINE)
     var p = status.getDivision(SCOPE_GLOBAL)
     if not assigned(p):
       return status.getError(errors.BAD_STATE)
     var lm = newLanguageItem(SUBDIVISIONS_ROUTINES)
     if not lm.read(full):
-      return status.getError(errors.WRONGLY_DEFINED, WORDS_ROUTINE)
+      return status.getError(errors.WRONGLY_DEFINED, NAMES_ROUTINE)
     if not lm.hasValidIdentifier():
       return status.getError(errors.INVALID_IDENTIFIER)
     if status.hasMethod(p, lm.name):
-      return status.getError(errors.ALREADY_DEFINED, spaced(WORDS_ROUTINE, apostrophe(full)))
+      return status.getError(errors.ALREADY_DEFINED, spaced(NAMES_ROUTINE, apostrophe(full)))
     status.language.currentName = p.name
     status.language.currentImplementation = lm
     p.items.add(lm)
@@ -484,11 +484,11 @@ topCallback doMember:
     let l = (if isVar: parameters[1..^1] else: parameters).join(STRINGS_SPACE)
     var lm = newLanguageItem(SUBDIVISIONS_MEMBERS)
     if not lm.read(l):
-      return status.getError(errors.WRONGLY_DEFINED, WORDS_MEMBER)
+      return status.getError(errors.WRONGLY_DEFINED, NAMES_MEMBER)
     if not lm.hasValidIdentifier():
       return status.getError(errors.INVALID_IDENTIFIER)
     if status.hasField(p, lm.name):
-      return status.getError(errors.ALREADY_DEFINED, spaced(WORDS_MEMBER, apostrophe(lm.name)))
+      return status.getError(errors.ALREADY_DEFINED, spaced(NAMES_MEMBER, apostrophe(lm.name)))
     status.language.currentName = p.name
     lm.data_var = isVar
     status.language.currentImplementation = lm

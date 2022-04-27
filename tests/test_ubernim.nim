@@ -4,7 +4,7 @@ import
   unittest,
   os,
   xam,
-  .. / src / ubernim / engine
+  .. / src / ubernim / [constants, engine]
 
 use strutils,strip
 
@@ -415,11 +415,11 @@ suite "test ubernim":
     removeFiles("emit_code.unim", "emit_code.nim", "emit_code")
 
   template testLanguageCommand(name, input, output: string, success: bool = true, onError: UbernimErrorHandler = nil, debug: bool = false) =
-    writeFile(name & ".unim", lined(".nimc:project " & name, ".nimc:switch --hints:off", ".nimc:switch --warnings:off", input))
+    writeFile(name & UNIM_EXTENSION, lined(".nimc:project " & name, ".nimc:switch --hints:off", ".nimc:switch --warnings:off", input))
     let eng = makeTestEngine()
     if assigned(onError):
       eng.setErrorHandler(onError)
-    let rr = eng.run(name & ".unim", newStringSeq())
+    let rr = eng.run(name & UNIM_EXTENSION, newStringSeq())
     if success:
       check(rr.compilationErrorlevel == 0)
     else:
@@ -427,7 +427,7 @@ suite "test ubernim":
     check(rr.cleanupReport.isEmpty())
     let sig = "static: echo \"" & name & ".nim testing\""
     let expected = if output.isEmpty(): sig else: lined(sig, output)
-    let found = strip(readFile(name & ".nim"))
+    let found = strip(readFile(name & NIM_EXTENSION))
     check(found == expected)
     if debug:
       echo "---[FOUND] " & parenthesize $found.len
@@ -436,7 +436,7 @@ suite "test ubernim":
       echo expected
       echo "---"
     else:
-      removeFiles(name & ".unim", name & ".nim", name)
+      removeFiles(name & UNIM_EXTENSION, name & NIM_EXTENSION, name)
 
   test "test LANGUAGE push and pop":
     #

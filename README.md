@@ -34,6 +34,9 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 27-04-22 **[0.7.1]**
+	- updated xam dependency to 1.7.4
+	- general improvements
 * 23-04-22 **[0.7.0]**
 	- added .unim:destination to UNIMCMDS feature to allow the modification of the autocatically generated files directory
 	- added the official Ubernim plugin for Lite XL editor to the extras directory
