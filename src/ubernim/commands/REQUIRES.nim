@@ -14,6 +14,8 @@ topCallback doRequire:
   result = OK
   if state.isPreviewing():
     let status = loadUbernimStatus(state)
+    if not filesExist(parameters[0]):
+      return status.getError(errors.INEXISTENT_FILE_REQUIRED, parameters[0])
     if status.isMainFile(parameters[0]):
       return status.getError(errors.CANT_BE_REQUIRED)
     if status.isCurrentFile(parameters[0]):

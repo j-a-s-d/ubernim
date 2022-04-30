@@ -5,14 +5,16 @@ import
   xam, preprod,
   constants, status, preprocessing, compilation, cleanup, rendering
 
+export
+  UbernimErrorHandler,
+  UbernimErrorGetter,
+  UbernimPreprocessingHandler
+
 # TYPES
 
 type
   UbernimCompilerInvoker* = DoubleArgsProc[string, StringSeq, int]
   UbernimCleanupFormatter* = DoubleArgsProc[string, string, string]
-  UbernimErrorHandler* = SingleArgVoidProc[string]
-  UbernimErrorGetter* = DoubleArgsProc[string, varargs[string], string]
-  UbernimPreprocessingHandler* = SingleArgProc[UbernimStatus, var PreprodState]
   UbernimEngine* = ref object
     executable: string
     version: SemanticVersion

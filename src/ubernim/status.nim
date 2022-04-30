@@ -12,6 +12,9 @@ use strutils,strip
 # TYPES
 
 type
+  UbernimErrorHandler* = SingleArgVoidProc[string]
+  UbernimErrorGetter* = DoubleArgsProc[string, varargs[string], string]
+  UbernimPreprocessingHandler* = SingleArgProc[UbernimStatus, var PreprodState]
   UbernimResult* = tuple
     isProject: bool
     compilationErrorlevel: int
@@ -33,9 +36,9 @@ type
   TUbernimPreprocessing = tuple
     target: string
     defines: StringSeq
-    performingHandler: SingleArgProc[UbernimStatus, var PreprodState]
-    errorHandler: SingleArgVoidProc[string]
-    errorGetter: DoubleArgsProc[string, varargs[string], string]
+    performingHandler: UbernimPreprocessingHandler
+    errorHandler: UbernimErrorHandler
+    errorGetter: UbernimErrorGetter
   TUbernimProject = tuple
     name: string
     defines: StringSeq
