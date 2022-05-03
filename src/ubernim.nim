@@ -20,13 +20,14 @@ use os,fileExists
 
 const
   APP_NAME = "ubernim"
-  APP_VERSION = "0.7.2"
+  APP_VERSION = "0.7.3"
   APP_COPYRIGHT = "copyright (c) 2021-2022 by Javier Santo Domingo"
   LANGUAGE_CODES = (
     EN: "EN",
-    ES: "ES"
+    ES: "ES",
+    PT: "PT"
   )
-  APP_LANGUAGES = [LANGUAGE_CODES.EN, LANGUAGE_CODES.ES]
+  APP_LANGUAGES = [LANGUAGE_CODES.EN, LANGUAGE_CODES.ES, LANGUAGE_CODES.PT]
   APP_SWITCHES = (
     DEFINE: [STRINGS_MINUS & STRINGS_LOWERCASE_D & STRINGS_COLON, STRINGS_MINUS & STRINGS_MINUS & COMMANDS_DEFINE & STRINGS_COLON],
     LANGUAGE: [STRINGS_MINUS & STRINGS_LOWERCASE_L & STRINGS_COLON, STRINGS_MINUS & STRINGS_MINUS & COMMANDS_LANGUAGE & STRINGS_COLON],
@@ -195,6 +196,60 @@ template getESErrorMessages(): JArrayBuilder =
     .addMessage(errors.FAILURE_PROCESSING, "una falla ha ocurrido cuando se procesaba $1")
     .addMessage(errors.MINIMUM_NIM_VERSION, "la versión instalada de nim no alcanza el mínimo especificado")
 
+template getPTErrorMessages(): JArrayBuilder =
+  newJArrayBuilder()
+    .addMessage(errors.UNEXPECTED, "um erro inesperado ocorreu $1")
+    .addMessage(errors.BAD_STATE, "estado interno incorreto")
+    .addMessage(errors.OLD_VERSION, "uma versão mais nova é requerida: $1")
+    .addMessage(errors.BAD_VERSION, "só valores de semantic version são permitidos")
+    .addMessage(errors.BAD_FLAG, "só os valores yes/no são permitidos")
+    .addMessage(errors.BAD_MODE, "só os valores free/strict são permitidos")
+    .addMessage(errors.BAD_FREQUENCY, "só os valores always/once são permitidos")
+    .addMessage(errors.BAD_CLEANUP, "só os valores ignored/informed/performed são permitidos")
+    .addMessage(errors.BAD_TARGET, "só os valores cc/cpp/objc/js são permitidos")
+    .addMessage(errors.STRICT_MODE, "só código ubernim é permitido em modo strict")
+    .addMessage(errors.ONLY_TOP_LEVEL, "isso só pode ser definido no nível superior")
+    .addMessage(errors.DONT_TOP_LEVEL, "isso não pode ser definido no nível superior")
+    .addMessage(errors.INEXISTENT_FILE_REQUIRED, "arquivo inexistente '$1' não pode ser requerido")
+    .addMessage(errors.CANT_BE_REQUIRED, "este arquivo não pode ser requerido")
+    .addMessage(errors.NO_RECURSIVE_REQUIRE, "requerimentos recursivos não permitidos")
+    .addMessage(errors.NO_CIRCULAR_REFERENCE, "referências circulares não permitidas")
+    .addMessage(errors.INVALID_IDENTIFIER, "identificador inválido")
+    .addMessage(errors.UNDEFINED_REFERENCE, "referência indefinida $1")
+    .addMessage(errors.ALREADY_DEFINED, "já definido $1")
+    .addMessage(errors.NEVER_DEFINED, "nunca definido $1")
+    .addMessage(errors.WRONGLY_DEFINED, "mal definido $1")
+    .addMessage(errors.CANT_HOLD_FIELDS, "este elemento não pode conter fields")
+    .addMessage(errors.CANT_HOLD_METHODS, "este elemento não pode conter methods")
+    .addMessage(errors.CANT_HOLD_TEMPLATES, "este elemento não pode conter templates")
+    .addMessage(errors.CANT_HOLD_PRAGMAS, "este elemento não pode conter pragmas")
+    .addMessage(errors.CANT_HOLD_VALUE, "este elemento não pode conter value")
+    .addMessage(errors.CANT_OUTPUT_DOCS, "este elemento não pode emitir documentação")
+    .addMessage(errors.CANT_OUTPUT_CODE, "este elemento não pode emitir código")
+    .addMessage(errors.MISSING_MEMBER, "falta $1 de $2 em $3")
+    .addMessage(errors.UNDEFINED_MEMBER_VALUE, "valor indefinido para membro imutável")
+    .addMessage(errors.DEFINE_BEFORE_VALUE, "isso deve ser definido antes do code ou value")
+    .addMessage(errors.NOT_APPLIABLE, "só um compound, uma interface ou um protocol pode ser aplicado a algo mais")
+    .addMessage(errors.ALREADY_APPLYING, "isso já está aplicando $1")
+    .addMessage(errors.ALREADY_RENDERED, "isso já está renderizado")
+    .addMessage(errors.ALREADY_EXTENDING, "isso já está estendendo $1")
+    .addMessage(errors.CANT_EXTEND_INEXISTENT, "não se pode estender do inexistente $1")
+    .addMessage(errors.CANT_EXTEND_DIFFERENT, "não se pode estender de uma espécie de tipo diferente")
+    .addMessage(errors.CANT_EXTEND_SEALED, "não se pode estender do selado $1")
+    .addMessage(errors.RECORDS_CANT_EXTEND, "os records não se podem estender")
+    .addMessage(errors.RECORDS_DONT_ASTERISK,  "o modificador * não está permitido em fields de records")
+    .addMessage(errors.VISIBILITY_DOESNT_MATCH, "a visibilidade não coincide com a definição para $1")
+    .addMessage(errors.NOT_IN_TARGETED, "não se está num bloco targeted")
+    .addMessage(errors.NOT_IN_PROJECT, "não se está num bloco project")
+    .addMessage(errors.CANT_CREATE_DIRECTORY, "não se pode criar o diretório $1")
+    .addMessage(errors.CANT_APPEND_FILE, "não se pode adicionar ao arquivo $1")
+    .addMessage(errors.CANT_WRITE_FILE, "não se pode escrever o arquivo $1")
+    .addMessage(errors.CANT_REMOVE_FILE, "não se pode remover o arquivo $1")
+    .addMessage(errors.CANT_WRITE_CONFIG, "não se pode escrever o arquivo de configuração")
+    .addMessage(errors.CANT_WRITE_OUTPUT, "não se pode escrever o arquivo de saída")
+    .addMessage(errors.FAILURE_PROCESSING, "uma falha ocorreu quando foi processado $1")
+    .addMessage(errors.MINIMUM_NIM_VERSION, "à versão instalada de nim não atinge o mínimo especificado")
+
 # EVENTS
 
 template getUbernimSwitchValue(nfo: RodsterAppInformation, switch: openarray[string], default: string): string =
@@ -210,6 +265,7 @@ let events = (
     let loadLanguageErrorMessages = proc (language: string, builder: JArrayBuilder) = (discard loc.loadTextsFromJArray(language, builder.getAsJArray()));
     loadLanguageErrorMessages(LANGUAGE_CODES.EN, getENErrorMessages());
     loadLanguageErrorMessages(LANGUAGE_CODES.ES, getESErrorMessages());
+    loadLanguageErrorMessages(LANGUAGE_CODES.PT, getPTErrorMessages());
     # load parameters
     let kvm = app.getKvm();
     let nfo = app.getInformation();
