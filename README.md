@@ -34,8 +34,12 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 11-05-22 **[0.7.4]**
+	- localized all other non-error messages too
+	- updated xam dependency to 1.8.0
+	- general improvements
 * 03-05-22 **[0.7.3]**
-	- added PT (portguese) language for displaying error messages
+	- added PT (portuguese) language for displaying error messages
 * 30-04-22 **[0.7.2]**
 	- added command line error messages language specification handling
 	- added ES (spanish) language for displaying error messages

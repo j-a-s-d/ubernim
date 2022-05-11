@@ -16,13 +16,13 @@ type
   UbernimCompilerInvoker* = DoubleArgsProc[string, StringSeq, int]
   UbernimCleanupFormatter* = DoubleArgsProc[string, string, string]
   UbernimEngine* = ref object
-    executable: string
     version: SemanticVersion
     signature: string
     compilerInvoker: UbernimCompilerInvoker
     cleanupFormatter: UbernimCleanupFormatter
     errorGetter: UbernimErrorGetter
     errorHandler: UbernimErrorHandler
+    executableInvoker: UbernimExecutableInvoker
     preprocessingHandler: UbernimPreprocessingHandler
 
 # DEFAULTS
@@ -52,6 +52,9 @@ let DefaultErrorHandler: UbernimErrorHandler = proc (msg: string) =
 let DefaultErrorGetter: UbernimErrorGetter = proc (msg: string, values: varargs[string]): string =
   msg
 
+let DefaultExecutableInvoker: UbernimExecutableInvoker = proc (definesCsv, file: string): bool =
+  execShellCmd(spaced(UNIM_INVOKATION, NIMC_DEFINE & definesCsv, file)) != 0
+
 let DefaultPreprocessingHandler: UbernimPreprocessingHandler = proc (status: UbernimStatus): var PreprodState =
   # setup preprocessor
   var pp = makePreprocessor(status.projecting.isUnimp, status.getCurrentFile(), status.preprocessing.defines)
@@ -70,9 +73,8 @@ let DefaultPreprocessingHandler: UbernimPreprocessingHandler = proc (status: Ube
 
 # ENGINE
 
-proc newUbernimEngine*(executable: string, version: SemanticVersion, signature: string): UbernimEngine =
+proc newUbernimEngine*(version: SemanticVersion, signature: string): UbernimEngine =
   result = new UbernimEngine
-  result.executable = executable
   result.version = version
   result.signature = signature
   result.compilerInvoker = DefaultCompilerInvoker
@@ -80,6 +82,10 @@ proc newUbernimEngine*(executable: string, version: SemanticVersion, signature: 
   result.preprocessingHandler = DefaultPreprocessingHandler
   result.errorHandler = DefaultErrorHandler
   result.errorGetter = DefaultErrorGetter
+  result.executableInvoker = DefaultExecutableInvoker
+
+proc setExecutableInvoker*(engine: UbernimEngine, handler: UbernimExecutableInvoker) =
+  engine.executableInvoker = handler
 
 proc setErrorGetter*(engine: UbernimEngine, handler: UbernimErrorGetter) =
   engine.errorGetter = handler
@@ -122,7 +128,7 @@ proc performCleanup(engine: UbernimEngine, state: var PreprodState): string =
       return if it == VALUE_PERFORMED:
         removeGeneratedFiles(status, engine.cleanupFormatter)
       else: # value == VALUE_INFORMED
-        informGeneratedFiles(status)
+        informGeneratedFiles(status, engine.cleanupFormatter)
 
 proc invokePerformers(engine: UbernimEngine, status: UbernimStatus): UbernimResult =
   let dir = getCurrentDir()
@@ -138,8 +144,8 @@ proc run*(engine: UbernimEngine, main: string, defines: StringSeq): UbernimResul
   status.preprocessing.performingHandler = engine.preprocessingHandler
   status.preprocessing.errorHandler = engine.errorHandler
   status.preprocessing.errorGetter = engine.errorGetter
+  status.preprocessing.executableInvoker = engine.executableInvoker
   status.preprocessing.defines = defines
   status.projecting.isUnimp = main.endsWith(UNIM_PROJECT_EXTENSION)
   status.files.callstack.add(main)
-  status.files.executable = engine.executable
   engine.invokePerformers(status)

@@ -7,6 +7,7 @@ import
 use os,DirSep
 
 const
+  UNIM_INVOKATION* = "ubernim"
   UNIM_EXTENSION* = ".unim"
   UNIM_PROJECT_EXTENSION* = ".unimp"
   UNIM_FILE_KEY* = "UNIM_FILE"
@@ -52,10 +53,6 @@ const
   NIMC_TARGETS* = [TARGET_CC, TARGET_CPP, TARGET_OBJC, TARGET_JS]
   NIMC_INVOKATION* = "nim"
   NIMC_DEFINE* = "--define:"
-  COMMANDS_HELP* = "help"
-  COMMANDS_DEFINE* = "define"
-  COMMANDS_LANGUAGE* = "language"
-  COMMANDS_VERSION* = "version"
   NAMES_ITEM* = "item"
   NAMES_FIELD* = "field"
   NAMES_GETTER* = "getter"
@@ -120,4 +117,13 @@ let errors* = (
   CANT_WRITE_CONFIG: "errors.CANT_WRITE_CONFIG",
   CANT_WRITE_OUTPUT: "errors.CANT_WRITE_OUTPUT",
   MINIMUM_NIM_VERSION: "errors.MINIMUM_NIM_VERSION"
+)
+
+let messages* = (
+  GENERATED_FILE: "messages.GENERATED_FILE",
+  GENERATED_DIRECTORY: "messages.GENERATED_DIRECTORY",
+  REMOVED_FILE: "messages.REMOVED_FILE",
+  UNREMOVABLE_FILE: "messages.UNREMOVABLE_FILE",
+  REMOVED_DIRECTORY: "messages.REMOVED_DIRECTORY",
+  UNREMOVABLE_DIRECTORY: "messages.UNREMOVABLE_DIRECTORY"
 )

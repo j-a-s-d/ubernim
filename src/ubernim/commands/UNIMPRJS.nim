@@ -10,7 +10,6 @@ use strutils,join
 use strutils,split
 use strutils,strip
 use sequtils,filter
-use os,execShellCmd
 
 # CALLBACKS
 
@@ -76,7 +75,7 @@ topCallback doMake:
         var defines = status.preprocessing.defines
         prj.defines.each define: defines.add(define)
         prj.undefines.each define: defines.remove(define)
-        if execShellCmd(spaced(status.files.executable, prj.main, NIMC_DEFINE & defines.filter((it) => it != STRINGS_EMPTY).join(STRINGS_COMMA))) != 0:
+        if status.preprocessing.executableInvoker(defines.filter((it) => it != STRINGS_EMPTY).join(STRINGS_COMMA), prj.main):
           return status.getError(errors.FAILURE_PROCESSING, prj.name)
   return OK
 

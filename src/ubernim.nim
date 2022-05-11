@@ -11,84 +11,70 @@ import
   rodster, xam,
   ubernim / [constants, engine]
 
+use strutils,toLowerAscii
 use strutils,split
 use strutils,join
 use strutils,replace
+use os,execShellCmd
 use os,fileExists
 
 # CONSTANTS
 
 const
-  APP_NAME = "ubernim"
-  APP_VERSION = "0.7.3"
-  APP_COPYRIGHT = "copyright (c) 2021-2022 by Javier Santo Domingo"
-  LANGUAGE_CODES = (
-    EN: "EN",
-    ES: "ES",
-    PT: "PT"
+  APP = (
+    NAME: "ubernim",
+    VERSION: "0.7.4",
+    COPYRIGHT: "copyright (c) 2021-2022 by Javier Santo Domingo",
+    LANGUAGES: [LANGUAGE_CODES.EN, LANGUAGE_CODES.ES, LANGUAGE_CODES.PT]
   )
-  APP_LANGUAGES = [LANGUAGE_CODES.EN, LANGUAGE_CODES.ES, LANGUAGE_CODES.PT]
-  APP_SWITCHES = (
-    DEFINE: [STRINGS_MINUS & STRINGS_LOWERCASE_D & STRINGS_COLON, STRINGS_MINUS & STRINGS_MINUS & COMMANDS_DEFINE & STRINGS_COLON],
-    LANGUAGE: [STRINGS_MINUS & STRINGS_LOWERCASE_L & STRINGS_COLON, STRINGS_MINUS & STRINGS_MINUS & COMMANDS_LANGUAGE & STRINGS_COLON],
-    VERSION: [STRINGS_MINUS & STRINGS_LOWERCASE_V, STRINGS_MINUS & STRINGS_MINUS & COMMANDS_VERSION],
-    HELP: [STRINGS_MINUS & STRINGS_LOWERCASE_H, STRINGS_MINUS & STRINGS_MINUS & COMMANDS_HELP, STRINGS_MINUS & STRINGS_QUESTION, STRINGS_SLASH & STRINGS_QUESTION, STRINGS_QUESTION]
-  )
-  APP_TEXTS = (
-    VERSION: spaced(APP_NAME, STRINGS_LOWERCASE_V & APP_VERSION),
-    SIGNATURE: spaced("generated", "with", APP_NAME, STRINGS_LOWERCASE_V & APP_VERSION),
-    FLAGS_LINES: spaced(STRINGS_MINUS, lined(
-      "commands" & STRINGS_COLON,
-      spaced(STRINGS_TAB, COMMANDS_DEFINE),
-      spaced(STRINGS_TAB, STRINGS_TAB, "flags" & STRINGS_COLON, APP_SWITCHES.DEFINE.join(STRINGS_COMMA & STRINGS_SPACE).replace(STRINGS_COLON, STRINGS_EMPTY)),
-      spaced(STRINGS_TAB, STRINGS_TAB, "usage" & STRINGS_COLON, APP_NAME, bracketize(chevronize("define-flag") & STRINGS_COLON & chevronize("defines.csv"))),
-      spaced(STRINGS_TAB, COMMANDS_LANGUAGE),
-      spaced(STRINGS_TAB, STRINGS_TAB, "flags" & STRINGS_COLON, APP_SWITCHES.LANGUAGE.join(STRINGS_COMMA & STRINGS_SPACE)),
-      spaced(STRINGS_TAB, STRINGS_TAB, "usage" & STRINGS_COLON, APP_NAME, bracketize(chevronize("language-flag") & STRINGS_COLON & chevronize("language"))),
-      spaced(STRINGS_TAB, STRINGS_TAB, "supported" & STRINGS_COLON, APP_LANGUAGES.join(STRINGS_COMMA & STRINGS_SPACE)),
-      spaced(STRINGS_TAB, COMMANDS_VERSION),
-      spaced(STRINGS_TAB, STRINGS_TAB, "flags" & STRINGS_COLON, APP_SWITCHES.VERSION.join(STRINGS_COMMA & STRINGS_SPACE)),
-      spaced(STRINGS_TAB, STRINGS_TAB, "usage" & STRINGS_COLON, APP_NAME, chevronize("version-flag")),
-      spaced(STRINGS_TAB, COMMANDS_HELP),
-      spaced(STRINGS_TAB, STRINGS_TAB, "flags" & STRINGS_COLON, APP_SWITCHES.HELP.join(STRINGS_COMMA & STRINGS_SPACE)),
-      spaced(STRINGS_TAB, STRINGS_TAB, "usage" & STRINGS_COLON, APP_NAME, bracketize(chevronize("help-flag")))
-    )),
-    EXAMPLES_LINES: spaced(STRINGS_MINUS, lined(
-      "examples" & STRINGS_COLON,
-      spaced(STRINGS_TAB, APP_NAME, "myfile.unim"),
-      spaced(STRINGS_TAB, STRINGS_MINUS, "preprocess myfile.unim"),
-      spaced(STRINGS_TAB, APP_NAME, "-d:BLAH,FOO,BAR", "myfile.unim"),
-      spaced(STRINGS_TAB, STRINGS_MINUS, "preprocess myfile.unim with conditional defines BLAH, FOO and BAR"),
-      spaced(STRINGS_TAB, APP_NAME, "-l:ES", "myfile.unim"),
-      spaced(STRINGS_TAB, STRINGS_MINUS, "preprocess myfile.unim using Spanish as the language to display errors"),
-      spaced(STRINGS_TAB, APP_NAME, "-l:ES", "-d:DEF1,DEF2", "myfile.unim"),
-      spaced(STRINGS_TAB, STRINGS_MINUS, "preprocess myfile.unim with conditional defines DEF1 and DEF2 using Spanish as the language to display errors"),
-      spaced(STRINGS_TAB, APP_NAME, "-v"),
-      spaced(STRINGS_TAB, STRINGS_MINUS, "get version info"),
-      spaced(STRINGS_TAB, APP_NAME, "-h"),
-      spaced(STRINGS_TAB, STRINGS_MINUS, "show this message")
-    )),
-  )
-  APP_MSGS = (
-    VERSION: lined(APP_TEXTS.VERSION, APP_COPYRIGHT),
-    HELP: lined(APP_TEXTS.VERSION, APP_COPYRIGHT, STRINGS_EMPTY, APP_TEXTS.FLAGS_LINES, STRINGS_EMPTY, APP_TEXTS.EXAMPLES_LINES, STRINGS_EMPTY),
-    ERROR: spaced(STRINGS_ASTERISK, bracketize("ERROR")),
-    DONE: spaced(STRINGS_ASTERISK, bracketize("DONE")),
-    TITLE: ansiMagenta(spaced(STRINGS_ASTERISK, APP_TEXTS.VERSION))
-  )
-  APP_KEYS = (
+  TITLE = spaced(APP.NAME, STRINGS_LOWERCASE_V & APP.VERSION)
+  KEYS = (
     INPUT: "app:input",
     DEFINES: "app:defines",
     ERRORLEVEL: "app:errorlevel",
     REPORT: "app:report"
   )
+  COMMANDS = (
+    HELP: "help",
+    DEFINE: "define",
+    LANGUAGE: "language",
+    VERSION: "version"
+  )
+  SWITCHES = (
+    DEFINE: [STRINGS_MINUS & STRINGS_LOWERCASE_D & STRINGS_COLON, STRINGS_MINUS & STRINGS_MINUS & COMMANDS.DEFINE & STRINGS_COLON],
+    LANGUAGE: [STRINGS_MINUS & STRINGS_LOWERCASE_L & STRINGS_COLON, STRINGS_MINUS & STRINGS_MINUS & COMMANDS.LANGUAGE & STRINGS_COLON],
+    VERSION: [STRINGS_MINUS & STRINGS_LOWERCASE_V, STRINGS_MINUS & STRINGS_MINUS & COMMANDS.VERSION],
+    HELP: [STRINGS_MINUS & STRINGS_LOWERCASE_H, STRINGS_MINUS & STRINGS_MINUS & COMMANDS.HELP, STRINGS_MINUS & STRINGS_QUESTION, STRINGS_SLASH & STRINGS_QUESTION, STRINGS_QUESTION]
+  )
 
-# ERRORS
+# MESSAGES
+
+let captions = (
+  COMMANDS: "captions.COMMANDS",
+  HELP: "captions.HELP",
+  DEFINE: "captions.DEFINE",
+  LANGUAGE: "captions.LANGUAGE",
+  VERSION: "captions.VERSION",
+  FLAGS: "captions.FLAGS",
+  USAGE: "captions.USAGE",
+  SUPPORTED: "captions.SUPPORTED",
+  EXAMPLES: "captions.EXAMPLES"
+)
+
+let texts = (
+  GENERATED_WITH: "texts.GENERATED_WITH",
+  PREPROCESS_FILE: "texts.PREPROCESS_FILE",
+  PREPROCESS_DEFINES: "texts.PREPROCESS_DEFINES",
+  PREPROCESS_LANGUAGE: "texts.PREPROCESS_LANGUAGE",
+  PREPROCESS_DEFINES_AND_LANGUAGE: "texts.PREPROCESS_DEFINES_AND_LANGUAGE",
+  VERSION_INFO: "texts.VERSION_INFO",
+  SHOW_MESSAGE: "texts.SHOW_MESSAGE"
+)
 
 template addMessage(builder: JArrayBuilder, code, message: string): JArrayBuilder =
   builder.add(newJObjectBuilder().set("code", code).set("message", message).getAsJObject())
 
-template getENErrorMessages(): JArrayBuilder =
+template getENMessages(): JArrayBuilder =
   newJArrayBuilder()
     .addMessage(errors.UNEXPECTED, "an unexpected error occurred $1")
     .addMessage(errors.BAD_STATE, "incorrect internal state")
@@ -141,8 +127,30 @@ template getENErrorMessages(): JArrayBuilder =
     .addMessage(errors.CANT_WRITE_OUTPUT, "can not write output file")
     .addMessage(errors.FAILURE_PROCESSING, "a failure ocurred when processing $1")
     .addMessage(errors.MINIMUM_NIM_VERSION, "the installed nim version does not met the specified minimum")
+    .addMessage(messages.GENERATED_FILE, "GENERATED FILE")
+    .addMessage(messages.GENERATED_DIRECTORY, "GENERATED DIRECTORY")
+    .addMessage(messages.REMOVED_FILE, "REMOVED FILE")
+    .addMessage(messages.UNREMOVABLE_FILE, "UNREMOVABLE FILE")
+    .addMessage(messages.REMOVED_DIRECTORY, "REMOVED DIRECTORY")
+    .addMessage(messages.UNREMOVABLE_DIRECTORY, "UNREMOVABLE DIRECTORY")
+    .addMessage(captions.COMMANDS, "commands")
+    .addMessage(captions.HELP, "help")
+    .addMessage(captions.DEFINE, "define")
+    .addMessage(captions.LANGUAGE, "language")
+    .addMessage(captions.VERSION, "version")
+    .addMessage(captions.FLAGS, "flags")
+    .addMessage(captions.USAGE, "usage")
+    .addMessage(captions.SUPPORTED, "supported")
+    .addMessage(captions.EXAMPLES, "examples")
+    .addMessage(texts.GENERATED_WITH, "generated with $1")
+    .addMessage(texts.PREPROCESS_FILE, "preprocess $1")
+    .addMessage(texts.PREPROCESS_DEFINES, "preprocess $1 with conditional defines $2, $3 and $4")
+    .addMessage(texts.PREPROCESS_LANGUAGE, "preprocess $1 using $2 as the language to display errors")
+    .addMessage(texts.PREPROCESS_DEFINES_AND_LANGUAGE, "preprocess $1 with conditional defines $2 and $3 using $4 as the language to display errors")
+    .addMessage(texts.VERSION_INFO, "get version info")
+    .addMessage(texts.SHOW_MESSAGE, "show this message")
 
-template getESErrorMessages(): JArrayBuilder =
+template getESMessages(): JArrayBuilder =
   newJArrayBuilder()
     .addMessage(errors.UNEXPECTED, "un error inesperado ha ocurrido $1")
     .addMessage(errors.BAD_STATE, "estado interno incorrecto")
@@ -195,8 +203,30 @@ template getESErrorMessages(): JArrayBuilder =
     .addMessage(errors.CANT_WRITE_OUTPUT, "no se puede escribir el archivo de salida")
     .addMessage(errors.FAILURE_PROCESSING, "una falla ha ocurrido cuando se procesaba $1")
     .addMessage(errors.MINIMUM_NIM_VERSION, "la versión instalada de nim no alcanza el mínimo especificado")
+    .addMessage(messages.GENERATED_FILE, "ARCHIVO GENERADO")
+    .addMessage(messages.GENERATED_DIRECTORY, "DIRECTORIO GENERADO")
+    .addMessage(messages.REMOVED_FILE, "ARCHIVO REMOVIDO")
+    .addMessage(messages.UNREMOVABLE_FILE, "ARCHIVO IRREMOVIBLE")
+    .addMessage(messages.REMOVED_DIRECTORY, "DIRECTORIO REMOVIDO")
+    .addMessage(messages.UNREMOVABLE_DIRECTORY, "DIRECTORIO IRREMOVIBLE")
+    .addMessage(captions.COMMANDS, "comandos")
+    .addMessage(captions.HELP, "ayuda")
+    .addMessage(captions.DEFINE, "definir")
+    .addMessage(captions.LANGUAGE, "languaje")
+    .addMessage(captions.VERSION, "versión")
+    .addMessage(captions.FLAGS, "banderas")
+    .addMessage(captions.USAGE, "uso")
+    .addMessage(captions.SUPPORTED, "soportado")
+    .addMessage(captions.EXAMPLES, "ejemplos")
+    .addMessage(texts.GENERATED_WITH, "generado con $1")
+    .addMessage(texts.PREPROCESS_FILE, "preprocesar $1")
+    .addMessage(texts.PREPROCESS_DEFINES, "preprocesar $1 con definiciones conditionales $2, $3 y $4")
+    .addMessage(texts.PREPROCESS_LANGUAGE, "preprocesar $1 usando $2 como language para mostrar errores")
+    .addMessage(texts.PREPROCESS_DEFINES_AND_LANGUAGE, "preprocesar $1 con definiciones conditionales $2 y $3 usando $4 como language para mostrar errores")
+    .addMessage(texts.VERSION_INFO, "obtener información de la versión")
+    .addMessage(texts.SHOW_MESSAGE, "mostrar este mensaje")
 
-template getPTErrorMessages(): JArrayBuilder =
+template getPTMessages(): JArrayBuilder =
   newJArrayBuilder()
     .addMessage(errors.UNEXPECTED, "um erro inesperado ocorreu $1")
     .addMessage(errors.BAD_STATE, "estado interno incorreto")
@@ -249,62 +279,129 @@ template getPTErrorMessages(): JArrayBuilder =
     .addMessage(errors.CANT_WRITE_OUTPUT, "não se pode escrever o arquivo de saída")
     .addMessage(errors.FAILURE_PROCESSING, "uma falha ocorreu quando foi processado $1")
     .addMessage(errors.MINIMUM_NIM_VERSION, "à versão instalada de nim não atinge o mínimo especificado")
+    .addMessage(messages.GENERATED_FILE, "ARQUIVO GERADO")
+    .addMessage(messages.GENERATED_DIRECTORY, "DIRECTORIO GERADO")
+    .addMessage(messages.REMOVED_FILE, "ARQUIVO REMOVIDO")
+    .addMessage(messages.UNREMOVABLE_FILE, "ARQUIVO IRREMOVIBLE")
+    .addMessage(messages.REMOVED_DIRECTORY, "DIRECTORIO REMOVIDO")
+    .addMessage(messages.UNREMOVABLE_DIRECTORY, "DIRECTORIO IRREMOVIBLE")
+    .addMessage(captions.COMMANDS, "comandos")
+    .addMessage(captions.HELP, "ajuda")
+    .addMessage(captions.DEFINE, "definir")
+    .addMessage(captions.LANGUAGE, "linguagem")
+    .addMessage(captions.VERSION, "versão")
+    .addMessage(captions.FLAGS, "bandeiras")
+    .addMessage(captions.USAGE, "uso")
+    .addMessage(captions.SUPPORTED, "suportado")
+    .addMessage(captions.EXAMPLES, "exemplos")
+    .addMessage(texts.GENERATED_WITH, "gerado com $1")
+    .addMessage(texts.PREPROCESS_FILE, "preprocessar $1")
+    .addMessage(texts.PREPROCESS_DEFINES, "preprocessar $1 com definições condicionais $2, $3 e $4")
+    .addMessage(texts.PREPROCESS_LANGUAGE, "preprocessar $1 usando $2 como linguagem para mostrar erros")
+    .addMessage(texts.PREPROCESS_DEFINES_AND_LANGUAGE, "preprocessar $1 com definições condicionais $2 e $3 usando $4 como linguagem para mostrar erros")
+    .addMessage(texts.VERSION_INFO, "obter informação da versão")
+    .addMessage(texts.SHOW_MESSAGE, "mostrar esta mensagem")
 
 # EVENTS
 
-template getUbernimSwitchValue(nfo: RodsterAppInformation, switch: openarray[string], default: string): string =
-  let idxs = nfo.findArgumentsWithPrefix(switch)
-  if idxs.len > 1: quit(APP_MSGS.HELP, 0)
-  elif idxs.len == 0: default
-  else: nfo.getArgumentWithoutPrefix(idxs[0], switch)
+template loadParameters(kvm: RodsterAppKvm, nfo: RodsterAppInformation, loc: RodsterAppI18n) =
+  const HELP_BUILDERS = (
+    example: func (parameters: openarray[string], description: string): string = lined(
+      spaced(STRINGS_TAB, APP.NAME, spaced(parameters)),
+      spaced(STRINGS_TAB, STRINGS_MINUS & STRINGS_MINUS, description)
+    ),
+    detail: func (name: string, items: openarray[string]): string = spaced(
+      name & STRINGS_COLON, spaced(items)
+    ),
+    command: func (name: string, lines: openarray[string]): string = (
+      result = spaced(STRINGS_TAB, name);
+      for line in lines:
+        result &= STRINGS_EOL & spaced(STRINGS_TAB, STRINGS_TAB, line)
+    ),
+    section: func (name: string, lines: openarray[string]): string = lined(
+      spaced(STRINGS_MINUS, name & STRINGS_COLON), lined(lines)
+    ),
+    content: func (parts: varargs[string]): string = (
+      result = lined(TITLE, APP.COPYRIGHT, STRINGS_EMPTY);
+      for part in parts:
+        result &= enclose(part, STRINGS_EOL)
+    )
+  )
+  template showHelp() =
+    withIt HELP_BUILDERS:
+      quit(it.content(it.section(loc.getText(captions.COMMANDS), [
+        it.command(loc.getText(captions.DEFINE), [
+          it.detail(loc.getText(captions.FLAGS), [SWITCHES.DEFINE.join(STRINGS_COMMA & STRINGS_SPACE).replace(STRINGS_COLON, STRINGS_EMPTY)]),
+          it.detail(loc.getText(captions.USAGE), [APP.NAME, bracketize(chevronize("define-flag") & STRINGS_COLON & chevronize("defines.csv"))])
+        ]),
+        it.command(loc.getText(captions.LANGUAGE), [
+          it.detail(loc.getText(captions.FLAGS), [SWITCHES.LANGUAGE.join(STRINGS_COMMA & STRINGS_SPACE)]),
+          it.detail(loc.getText(captions.USAGE), [APP.NAME, bracketize(chevronize("language-flag") & STRINGS_COLON & chevronize("language"))]),
+          it.detail(loc.getText(captions.SUPPORTED), [APP.LANGUAGES.join(STRINGS_COMMA & STRINGS_SPACE)])
+        ]),
+        it.command(loc.getText(captions.VERSION), [
+          it.detail(loc.getText(captions.FLAGS), [SWITCHES.VERSION.join(STRINGS_COMMA & STRINGS_SPACE)]),
+          it.detail(loc.getText(captions.USAGE), [APP.NAME, chevronize("version-flag")])
+        ]),
+        it.command(loc.getText(captions.HELP), [
+          it.detail(loc.getText(captions.FLAGS), [SWITCHES.HELP.join(STRINGS_COMMA & STRINGS_SPACE)]),
+          it.detail(loc.getText(captions.USAGE), [APP.NAME, bracketize(chevronize("help-flag"))])
+        ])
+      ]), it.section(loc.getText(captions.EXAMPLES), [
+        it.example(["myfile.unim"], loc.getText(texts.PREPROCESS_FILE, @["myfile.unim"])),
+        it.example(["-d:BLAH,FOO,BAR", "myfile.unim"], loc.getText(texts.PREPROCESS_DEFINES, @["myfile.unim", "BLAH", "FOO", "BAR"])),
+        it.example(["-l:es", "myfile.unim"], loc.getText(texts.PREPROCESS_LANGUAGE, @["myfile.unim", "Spanish"])),
+        it.example(["-l:PT", "-d:DEF1,DEF2", "myfile.unim"], loc.getText(texts.PREPROCESS_DEFINES_AND_LANGUAGE, @["myfile.unim", "DEF1", "DEF2", "Portuguese"])),
+        it.example(["-v"], loc.getText(texts.VERSION_INFO)),
+        it.example(["-h"], loc.getText(texts.SHOW_MESSAGE))
+      ])), 0)
+  template getSwitchValue(switch: openarray[string], default: string): string =
+    let idxs = nfo.findArgumentsWithPrefix(switch)
+    if idxs.len > 1: showHelp()
+    elif idxs.len == 0: default
+    else: nfo.getArgumentWithoutPrefix(idxs[0], switch)
+  template loadLanguageMessages(language: string, builder: JArrayBuilder) =
+    discard loc.loadTextsFromJArray(language, builder.getAsJArray())
+  loadLanguageMessages(LANGUAGE_CODES.EN, getENMessages())
+  loadLanguageMessages(LANGUAGE_CODES.ES, getESMessages())
+  loadLanguageMessages(LANGUAGE_CODES.PT, getPTMessages())
+  let lang = toLowerAscii(getSwitchValue(SWITCHES.LANGUAGE, LANGUAGE_CODES.EN))
+  if lang notin APP.LANGUAGES:
+    showHelp()
+  loc.setCurrentLocale(lang)
+  let args = nfo.getArguments()
+  if args.len == 0 or nfo.hasArgument(SWITCHES.HELP):
+    showHelp()
+  if nfo.hasArgument(SWITCHES.VERSION):
+    quit(lined(TITLE, APP.COPYRIGHT), 0)
+  let input = args[^1]
+  if not fileExists(input):
+    showHelp()
+  kvm[KEYS.INPUT] = input
+  kvm[KEYS.DEFINES] = getSwitchValue(SWITCHES.DEFINE, STRINGS_EMPTY)
+
+template useEngine(kvm: RodsterAppKvm, nfo: RodsterAppInformation, loc: RodsterAppI18n) =
+  let engine = newUbernimEngine(nfo.getVersion(), spaced(loc.getText(texts.GENERATED_WITH, @[TITLE])))
+  engine.setExecutableInvoker(proc (definesCsv, file: string): bool = execShellCmd(spaced(nfo.getFilename(), STRINGS_MINUS & STRINGS_LOWERCASE_L & STRINGS_COLON & loc.getCurrentLocale(), NIMC_DEFINE & definesCsv, file)) != 0)
+  engine.setErrorGetter(proc (msg: string, values: varargs[string]): string = loc.getText(msg, newStringSeq(values)))
+  engine.setErrorHandler((msg: string) => quit(spaced(ansiRed(spaced(STRINGS_ASTERISK, bracketize("ERROR"))), msg), -1))
+  engine.setCleanupFormatter(proc (action, file: string): string = spaced(STRINGS_ASTERISK, parenthesize(loc.getText(action)), file) & STRINGS_EOL)
+  withIt engine.run(kvm[KEYS.INPUT], kvm[KEYS.DEFINES].split(STRINGS_COMMA)):
+    kvm[KEYS.ERRORLEVEL] = $(if it.isProject: 0 else: it.compilationErrorlevel)
+    kvm[KEYS.REPORT] = it.cleanupReport
+
+template informResult(kvm: RodsterAppKvm) =
+  let errorlevel = tryParseInt(kvm[KEYS.ERRORLEVEL], -1)
+  let highlighter = if errorlevel == 0: ansiGreen else: ansiBlue
+  let output = kvm[KEYS.REPORT] & highlighter(spaced(spaced(STRINGS_ASTERISK, bracketize("OK")), parenthesize($errorlevel)))
+  quit(lined(ansiMagenta(spaced(STRINGS_ASTERISK, TITLE, parenthesize(kvm[KEYS.INPUT]))), output), errorlevel)
 
 let events = (
-  initializer: RodsterAppEvent (app: RodsterApplication) => (
-    # load messages
-    let loc = app.getI18n();
-    let loadLanguageErrorMessages = proc (language: string, builder: JArrayBuilder) = (discard loc.loadTextsFromJArray(language, builder.getAsJArray()));
-    loadLanguageErrorMessages(LANGUAGE_CODES.EN, getENErrorMessages());
-    loadLanguageErrorMessages(LANGUAGE_CODES.ES, getESErrorMessages());
-    loadLanguageErrorMessages(LANGUAGE_CODES.PT, getPTErrorMessages());
-    # load parameters
-    let kvm = app.getKvm();
-    let nfo = app.getInformation();
-    let args = nfo.getArguments();
-    if args.len == 0 or nfo.hasArgument(APP_SWITCHES.HELP): quit(APP_MSGS.HELP, 0);
-    if nfo.hasArgument(APP_SWITCHES.VERSION): quit(APP_MSGS.VERSION, 0);
-    let lang = nfo.getUbernimSwitchValue(APP_SWITCHES.LANGUAGE, LANGUAGE_CODES.EN);
-    if lang notin APP_LANGUAGES: quit(APP_MSGS.HELP, 0);
-    loc.setCurrentLocale(lang);
-    kvm[APP_KEYS.DEFINES] = nfo.getUbernimSwitchValue(APP_SWITCHES.DEFINE, STRINGS_EMPTY);
-    let input = args[^1];
-    if not fileExists(input): quit(APP_MSGS.HELP, 0);
-    kvm[APP_KEYS.INPUT] = input;
-  ),
-  main: RodsterAppEvent (app: RodsterApplication) => (
-    # use engine
-    let kvm = app.getKvm();
-    let nfo = app.getInformation();
-    let loc = app.getI18n();
-    let engine = newUbernimEngine(nfo.getFilename(), nfo.getVersion(), APP_TEXTS.SIGNATURE);
-    engine.setErrorGetter(proc (msg: string, values: varargs[string]): string = loc.getText(msg, newStringSeq(values)));
-    engine.setErrorHandler((msg: string) => quit(spaced(ansiRed(APP_MSGS.ERROR), msg), -1));
-    engine.setCleanupFormatter(proc (action, file: string): string = spaced(STRINGS_ASTERISK, parenthesize(action), file) & STRINGS_EOL);
-    withIt engine.run(kvm[APP_KEYS.INPUT], kvm[APP_KEYS.DEFINES].split(STRINGS_COMMA)): (
-      kvm[APP_KEYS.ERRORLEVEL] = $(if it.isProject: 0 else: it.compilationErrorlevel);
-      kvm[APP_KEYS.REPORT] = it.cleanupReport
-    )
-  ),
-  finalizer: RodsterAppEvent (app: RodsterApplication) => (
-    # inform result
-    let kvm = app.getKvm();
-    let errorlevel = tryParseInt(kvm[APP_KEYS.ERRORLEVEL], -1);
-    let donemsg = spaced(APP_MSGS.DONE, parenthesize($errorlevel));
-    let highlighter = if errorlevel == 0: ansiGreen else: ansiBlue;
-    let output = kvm[APP_KEYS.REPORT] & highlighter(donemsg);
-    quit(lined(APP_MSGS.TITLE, output), errorlevel)
-  )
+  initializer: RodsterAppEvent (app: RodsterApplication) => loadParameters(app.getKvm(), app.getInformation(), app.getI18n()),
+  main: RodsterAppEvent (app: RodsterApplication) => useEngine(app.getKvm(), app.getInformation(), app.getI18n()),
+  finalizer: RodsterAppEvent (app: RodsterApplication) => informResult(app.getKvm())
 )
 
 # MAIN
 
-run newRodsterApplication(APP_NAME, APP_VERSION, events)
+run newRodsterApplication(APP.NAME, APP.VERSION, events)

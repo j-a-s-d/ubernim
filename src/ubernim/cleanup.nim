@@ -3,7 +3,7 @@
 
 import
   xam,
-  status
+  constants, status
 
 use os,tryRemoveFile
 use os,removeDir
@@ -12,19 +12,19 @@ use os,dirExists
 proc removeGeneratedFiles*(status: UbernimStatus, formatter: DoubleArgsProc[string, string, string]): string =
   status.files.generated.each gf:
     if tryRemoveFile(gf):
-      result &= formatter("REMOVED FILE", gf)
+      result &= formatter(messages.REMOVED_FILE, gf)
     else:
-      result &= spaced(STRINGS_ASTERISK, parenthesize("UNREMOVABLE FILE"), gf) & STRINGS_EOL
+      result &= formatter(messages.UNREMOVABLE_FILE, gf)
   status.files.generatedDirectories.each gd:
     if dirExists(gd):
       removeDir(gd)
       if not dirExists(gd):
-        result &= formatter("REMOVED DIRECTORY", gd)
+        result &= formatter(messages.REMOVED_DIRECTORY, gd)
       else:
-        result &= spaced(STRINGS_ASTERISK, parenthesize("UNREMOVABLE DIRECTORY"), gd) & STRINGS_EOL
+        result &= formatter(messages.UNREMOVABLE_DIRECTORY, gd)
 
-proc informGeneratedFiles*(status: UbernimStatus): string =
+proc informGeneratedFiles*(status: UbernimStatus, formatter: DoubleArgsProc[string, string, string]): string =
   status.files.generated.each gf:
-    result &= spaced(STRINGS_ASTERISK, parenthesize("GENERATED FILE"), gf) & STRINGS_EOL
+    result &= formatter(messages.GENERATED_FILE, gf)
   status.files.generatedDirectories.each gd:
-    result &= spaced(STRINGS_ASTERISK, parenthesize("GENERATED DIRECTORY"), gd) & STRINGS_EOL
+    result &= formatter(messages.GENERATED_DIRECTORY, gd)

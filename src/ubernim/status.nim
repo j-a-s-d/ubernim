@@ -12,6 +12,7 @@ use strutils,strip
 # TYPES
 
 type
+  UbernimExecutableInvoker* = DoubleArgsProc[string, string, bool]
   UbernimErrorHandler* = SingleArgVoidProc[string]
   UbernimErrorGetter* = DoubleArgsProc[string, varargs[string], string]
   UbernimPreprocessingHandler* = SingleArgProc[UbernimStatus, var PreprodState]
@@ -23,7 +24,6 @@ type
     semver: SemanticVersion
     signature: string
   TUbernimFiles = tuple
-    executable: string
     callstack: StringSeq
     imported: StringSeq
     exported: StringSeq
@@ -36,6 +36,7 @@ type
   TUbernimPreprocessing = tuple
     target: string
     defines: StringSeq
+    executableInvoker: UbernimExecutableInvoker
     performingHandler: UbernimPreprocessingHandler
     errorHandler: UbernimErrorHandler
     errorGetter: UbernimErrorGetter
@@ -66,7 +67,6 @@ template makeUbernimStatus*(sver: SemanticVersion, sign: string, divs: LanguageD
       signature: sign
     ),
     files: TUbernimFiles (
-      executable: STRINGS_EMPTY,
       callstack: newStringSeq(),
       imported: newStringSeq(),
       exported: newStringSeq(),
@@ -81,6 +81,7 @@ template makeUbernimStatus*(sver: SemanticVersion, sign: string, divs: LanguageD
     preprocessing: TUbernimPreprocessing (
       target: STRINGS_EMPTY,
       defines: newStringSeq(),
+      executableInvoker: nil,
       performingHandler: nil,
       errorHandler: nil,
       errorGetter: nil
