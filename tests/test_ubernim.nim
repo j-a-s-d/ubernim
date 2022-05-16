@@ -10,7 +10,7 @@ use strutils,strip
 
 suite "test ubernim":
 
-  template makeTestEngine(): UbernimEngine = newUbernimEngine("test_ubernim", newSemanticVersion("1.0.0"), "testing")
+  template makeTestEngine(): UbernimEngine = newUbernimEngine(newSemanticVersion("1.0.0"), "testing")
 
   test "test assigned":
     #
@@ -124,7 +124,7 @@ suite "test ubernim":
     check(fileExists("informed_cleanup.nim"))
     check(fileExists("informed_cleanup"))
     check(rr.compilationErrorlevel == 0)
-    check(strip(rr.cleanupReport) == "* (GENERATED FILE) informed_cleanup.nim")
+    check(strip(rr.cleanupReport) == "(messages.GENERATED_FILE) informed_cleanup.nim")
     removeFiles("informed_cleanup.unim", "informed_cleanup.nim", "informed_cleanup")
 
   test "test UNIMCMDS performed unim:cleanup":
@@ -135,7 +135,7 @@ suite "test ubernim":
     check(not fileExists("performed_cleanup.nim"))
     check(fileExists("performed_cleanup"))
     check(rr.compilationErrorlevel == 0)
-    check(rr.cleanupReport == "(REMOVED FILE) performed_cleanup.nim")
+    check(strip(rr.cleanupReport) == "(messages.REMOVED_FILE) performed_cleanup.nim")
     removeFiles("performed_cleanup.unim", "performed_cleanup")
 
   test "test UNIMCMDS disabled unim:flush":
@@ -168,7 +168,7 @@ suite "test ubernim":
     check(fileExists("src/destination.nim"))
     check(fileExists("src/destination.nim.cfg"))
     check(rr.compilationErrorlevel == 0)
-    check(strip(rr.cleanupReport) == lined("* (GENERATED FILE) src/destination.nim", "* (GENERATED FILE) src/destination.nim.cfg", "* (GENERATED DIRECTORY) src/"))
+    check(strip(rr.cleanupReport) == lined("(messages.GENERATED_FILE) src/destination.nim", "(messages.GENERATED_FILE) src/destination.nim.cfg", "(messages.GENERATED_DIRECTORY) src/"))
     removeFiles("destination.unim", "src/destination.nim", "src/destination.nim.cfg")
     removeDirs("src")
 

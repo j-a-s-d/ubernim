@@ -35,7 +35,7 @@ let ppUnimpFeatures = DEFAULT_FEATURES & @[
 # OPTIONS
 
 let getOptions = proc (isProject: bool): PreprodOptions =
-  result = PREPROD_DEFAULT_OPTIONS
+  result = newPreprodOptions()
   result.keepBlankLines = false
   (if isProject: ppUnimpFeatures else: ppUnimFeatures).each x:
     result.initialEnabledFeatures &= x.name

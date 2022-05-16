@@ -34,6 +34,10 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 16-05-22 **[0.7.5]**
+	- localized all preprod's errors too
+	- updated preprod dependency to 1.1.1
+	- added LICENSE file (MIT)
 * 11-05-22 **[0.7.4]**
 	- localized all other non-error messages too
 	- updated xam dependency to 1.8.0

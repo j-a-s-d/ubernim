@@ -8,7 +8,7 @@ when defined(js):
 # IMPORTS
 
 import
-  rodster, xam,
+  rodster, xam, preprod,
   ubernim / [constants, engine]
 
 use strutils,toLowerAscii
@@ -16,14 +16,13 @@ use strutils,split
 use strutils,join
 use strutils,replace
 use os,execShellCmd
-use os,fileExists
 
 # CONSTANTS
 
 const
   APP = (
     NAME: "ubernim",
-    VERSION: "0.7.4",
+    VERSION: "0.7.5",
     COPYRIGHT: "copyright (c) 2021-2022 by Javier Santo Domingo",
     LANGUAGES: [LANGUAGE_CODES.EN, LANGUAGE_CODES.ES, LANGUAGE_CODES.PT]
   )
@@ -69,6 +68,23 @@ let texts = (
   PREPROCESS_DEFINES_AND_LANGUAGE: "texts.PREPROCESS_DEFINES_AND_LANGUAGE",
   VERSION_INFO: "texts.VERSION_INFO",
   SHOW_MESSAGE: "texts.SHOW_MESSAGE"
+)
+
+let preprods = (
+  UNCLOSED_BRANCH: "preprods.UNCLOSED_BRANCH",
+  INEXISTENT_FILE: "preprods.INEXISTENT_FILE",
+  INEXISTENT_INCLUDE: "preprods.INEXISTENT_INCLUDE",
+  UNEXPECTED_COMMAND: "preprods.UNEXPECTED_COMMAND",
+  NO_PREFIX: "preprods.NO_PREFIX",
+  PREFIX_LENGTH: "preprods.PREFIX_LENGTH",
+  UNDEFERRABLE_COMMAND: "preprods.UNDEFERRABLE_COMMAND",
+  MANDATORY_STANDARD: "preprods.MANDATORY_STANDARD",
+  BOOLEAN_ONLY: "preprods.BOOLEAN_ONLY",
+  UNKNOWN_FEATURE: "preprods.UNKNOWN_FEATURE",
+  ARGUMENTS_COUNT: "preprods.ARGUMENTS_COUNT",
+  NO_ARGUMENTS: "preprods.NO_ARGUMENTS",
+  DISABLED_COMMAND: "preprods.DISABLED_COMMAND",
+  UNKNOWN_COMMAND: "preprods.UNKNOWN_COMMAND"
 )
 
 template addMessage(builder: JArrayBuilder, code, message: string): JArrayBuilder =
@@ -149,6 +165,20 @@ template getENMessages(): JArrayBuilder =
     .addMessage(texts.PREPROCESS_DEFINES_AND_LANGUAGE, "preprocess $1 with conditional defines $2 and $3 using $4 as the language to display errors")
     .addMessage(texts.VERSION_INFO, "get version info")
     .addMessage(texts.SHOW_MESSAGE, "show this message")
+    .addMessage(preprods.UNCLOSED_BRANCH, "this branch was not closed")
+    .addMessage(preprods.INEXISTENT_FILE, "the file '$1' does not exist")
+    .addMessage(preprods.INEXISTENT_INCLUDE, "the included file '$1' does not exist")
+    .addMessage(preprods.UNEXPECTED_COMMAND, "unexpected '$1' command")
+    .addMessage(preprods.NO_PREFIX, "no comment prefix supplied")
+    .addMessage(preprods.PREFIX_LENGTH, "the comment prefix must be only one character long")
+    .addMessage(preprods.UNDEFERRABLE_COMMAND, "can not defer a '$1' command")
+    .addMessage(preprods.MANDATORY_STANDARD, "the STANDARD feature commands can not be disabled")
+    .addMessage(preprods.BOOLEAN_ONLY, "only on/off values are valid")
+    .addMessage(preprods.UNKNOWN_FEATURE, "feature '$1' is unknown")
+    .addMessage(preprods.ARGUMENTS_COUNT, "arguments expected: $1")
+    .addMessage(preprods.NO_ARGUMENTS, "no arguments supplied")
+    .addMessage(preprods.DISABLED_COMMAND, "command '$1' belongs to a disabled feature")
+    .addMessage(preprods.UNKNOWN_COMMAND,"command '$1' is unknown")
 
 template getESMessages(): JArrayBuilder =
   newJArrayBuilder()
@@ -225,6 +255,20 @@ template getESMessages(): JArrayBuilder =
     .addMessage(texts.PREPROCESS_DEFINES_AND_LANGUAGE, "preprocesar $1 con definiciones conditionales $2 y $3 usando $4 como language para mostrar errores")
     .addMessage(texts.VERSION_INFO, "obtener información de la versión")
     .addMessage(texts.SHOW_MESSAGE, "mostrar este mensaje")
+    .addMessage(preprods.UNCLOSED_BRANCH, "esta rama no ha sido cerrada")
+    .addMessage(preprods.INEXISTENT_FILE, "el archivo '$1' no existe")
+    .addMessage(preprods.INEXISTENT_INCLUDE, "el archivo incluído '$1' no existe")
+    .addMessage(preprods.UNEXPECTED_COMMAND, "comando '$1' inesperado")
+    .addMessage(preprods.NO_PREFIX, "prefijo de comentario no suministrado")
+    .addMessage(preprods.PREFIX_LENGTH, "el prefijo de comentario debe ser sólo de un caracter de largo")
+    .addMessage(preprods.UNDEFERRABLE_COMMAND, "no se puede diferir un comando '$1'")
+    .addMessage(preprods.MANDATORY_STANDARD, "los comandos del feature STANDARD no se pueden deshabilitar")
+    .addMessage(preprods.BOOLEAN_ONLY, "sólo valores on/off son válidos")
+    .addMessage(preprods.UNKNOWN_FEATURE, "el feature '$1' es desconocido")
+    .addMessage(preprods.ARGUMENTS_COUNT, "argumentos esperados: $1")
+    .addMessage(preprods.NO_ARGUMENTS, "sin argumentos suministrados")
+    .addMessage(preprods.DISABLED_COMMAND, "el comando '$1' pertenece a un feature deshabilitado")
+    .addMessage(preprods.UNKNOWN_COMMAND,"el comando '$1' es desconocido")
 
 template getPTMessages(): JArrayBuilder =
   newJArrayBuilder()
@@ -301,6 +345,20 @@ template getPTMessages(): JArrayBuilder =
     .addMessage(texts.PREPROCESS_DEFINES_AND_LANGUAGE, "preprocessar $1 com definições condicionais $2 e $3 usando $4 como linguagem para mostrar erros")
     .addMessage(texts.VERSION_INFO, "obter informação da versão")
     .addMessage(texts.SHOW_MESSAGE, "mostrar esta mensagem")
+    .addMessage(preprods.UNCLOSED_BRANCH, "este ramo não foi fechado")
+    .addMessage(preprods.INEXISTENT_FILE, "o arquivo '$1' não existe")
+    .addMessage(preprods.INEXISTENT_INCLUDE, "o arquivo incluído '$1' não existe")
+    .addMessage(preprods.UNEXPECTED_COMMAND, "comando '$1' inesperado")
+    .addMessage(preprods.NO_PREFIX, "prefixo de comentário não fornecido")
+    .addMessage(preprods.PREFIX_LENGTH, "o prefixo de comentário deve ser só de um caractere de comprimento")
+    .addMessage(preprods.UNDEFERRABLE_COMMAND, "não se pode adiar um comando '$1'")
+    .addMessage(preprods.MANDATORY_STANDARD, "os comandos do feature STANDARD não podem ser desabilitados")
+    .addMessage(preprods.BOOLEAN_ONLY, "só valores on/off são válidos")
+    .addMessage(preprods.UNKNOWN_FEATURE, "o feature '$1' é desconhecido")
+    .addMessage(preprods.ARGUMENTS_COUNT, "argumentos esperados: $1")
+    .addMessage(preprods.NO_ARGUMENTS, "sem argumentos fornecidos")
+    .addMessage(preprods.DISABLED_COMMAND, "o comando '$1' pertence a um feature desabilitado")
+    .addMessage(preprods.UNKNOWN_COMMAND,"o comando '$1' é desconhecido")
 
 # EVENTS
 
@@ -375,17 +433,38 @@ template loadParameters(kvm: RodsterAppKvm, nfo: RodsterAppInformation, loc: Rod
   if nfo.hasArgument(SWITCHES.VERSION):
     quit(lined(TITLE, APP.COPYRIGHT), 0)
   let input = args[^1]
-  if not fileExists(input):
+  if filesDontExist(input):
     showHelp()
   kvm[KEYS.INPUT] = input
   kvm[KEYS.DEFINES] = getSwitchValue(SWITCHES.DEFINE, STRINGS_EMPTY)
 
 template useEngine(kvm: RodsterAppKvm, nfo: RodsterAppInformation, loc: RodsterAppI18n) =
   let engine = newUbernimEngine(nfo.getVersion(), spaced(loc.getText(texts.GENERATED_WITH, @[TITLE])))
-  engine.setExecutableInvoker(proc (definesCsv, file: string): bool = execShellCmd(spaced(nfo.getFilename(), STRINGS_MINUS & STRINGS_LOWERCASE_L & STRINGS_COLON & loc.getCurrentLocale(), NIMC_DEFINE & definesCsv, file)) != 0)
-  engine.setErrorGetter(proc (msg: string, values: varargs[string]): string = loc.getText(msg, newStringSeq(values)))
-  engine.setErrorHandler((msg: string) => quit(spaced(ansiRed(spaced(STRINGS_ASTERISK, bracketize("ERROR"))), msg), -1))
-  engine.setCleanupFormatter(proc (action, file: string): string = spaced(STRINGS_ASTERISK, parenthesize(loc.getText(action)), file) & STRINGS_EOL)
+  engine.setExecutableInvoker proc (definesCsv, file: string): bool =
+    execShellCmd(spaced(nfo.getFilename(), STRINGS_MINUS & STRINGS_LOWERCASE_L & STRINGS_COLON & loc.getCurrentLocale(), NIMC_DEFINE & definesCsv, file)) != 0
+  engine.setErrorGetter proc (msg: string, values: varargs[string]): string =
+    loc.getText(msg, newStringSeq(values))
+  engine.setErrorHandler proc (msg: string) =
+    quit(spaced(ansiRed(spaced(STRINGS_ASTERISK, bracketize("ERROR"))), msg), -1)
+  engine.setCleanupFormatter proc (action, file: string): string =
+    spaced(STRINGS_ASTERISK, parenthesize(loc.getText(action)), file) & STRINGS_EOL
+  engine.setPreprodFormatter proc (code: PreprodError, argument: string = STRINGS_EMPTY): string =
+    case code:
+      of peUnknownError: argument
+      of peUnclosedBranch: loc.getText(preprods.UNCLOSED_BRANCH, @[argument])
+      of peInexistentFile: loc.getText(preprods.INEXISTENT_FILE, @[argument])
+      of peInexistentInclude: loc.getText(preprods.INEXISTENT_INCLUDE, @[argument])
+      of peUnexpectedCommand: loc.getText(preprods.UNEXPECTED_COMMAND, @[argument])
+      of peNoPrefix: loc.getText(preprods.NO_PREFIX, @[argument])
+      of pePrefixLength: loc.getText(preprods.PREFIX_LENGTH, @[argument])
+      of peUndeferrableCommand: loc.getText(preprods.UNDEFERRABLE_COMMAND, @[argument])
+      of peMandatoryStandard: loc.getText(preprods.MANDATORY_STANDARD, @[argument])
+      of peBooleanOnly: loc.getText(preprods.BOOLEAN_ONLY, @[argument])
+      of peUnknownFeature: loc.getText(preprods.UNKNOWN_FEATURE, @[argument])
+      of peArgumentsCount: loc.getText(preprods.ARGUMENTS_COUNT, @[argument])
+      of peNoArguments: loc.getText(preprods.NO_ARGUMENTS, @[argument])
+      of peDisabledCommand: loc.getText(preprods.DISABLED_COMMAND, @[argument])
+      of peUnknownCommand: loc.getText(preprods.UNKNOWN_COMMAND, @[argument])
   withIt engine.run(kvm[KEYS.INPUT], kvm[KEYS.DEFINES].split(STRINGS_COMMA)):
     kvm[KEYS.ERRORLEVEL] = $(if it.isProject: 0 else: it.compilationErrorlevel)
     kvm[KEYS.REPORT] = it.cleanupReport
@@ -393,8 +472,9 @@ template useEngine(kvm: RodsterAppKvm, nfo: RodsterAppInformation, loc: RodsterA
 template informResult(kvm: RodsterAppKvm) =
   let errorlevel = tryParseInt(kvm[KEYS.ERRORLEVEL], -1)
   let highlighter = if errorlevel == 0: ansiGreen else: ansiBlue
-  let output = kvm[KEYS.REPORT] & highlighter(spaced(spaced(STRINGS_ASTERISK, bracketize("OK")), parenthesize($errorlevel)))
-  quit(lined(ansiMagenta(spaced(STRINGS_ASTERISK, TITLE, parenthesize(kvm[KEYS.INPUT]))), output), errorlevel)
+  let report = kvm[KEYS.REPORT] & highlighter(spaced(spaced(STRINGS_ASTERISK, bracketize("OK")), parenthesize($errorlevel)))
+  let heading = ansiMagenta(spaced(STRINGS_ASTERISK, TITLE, parenthesize(kvm[KEYS.INPUT])))
+  quit(lined(heading, report), errorlevel)
 
 let events = (
   initializer: RodsterAppEvent (app: RodsterApplication) => loadParameters(app.getKvm(), app.getInformation(), app.getI18n()),

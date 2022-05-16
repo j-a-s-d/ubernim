@@ -18,10 +18,11 @@ type
   UbernimEngine* = ref object
     version: SemanticVersion
     signature: string
-    compilerInvoker: UbernimCompilerInvoker
+    preprodFormatter: PreprodFormatter
     cleanupFormatter: UbernimCleanupFormatter
     errorGetter: UbernimErrorGetter
     errorHandler: UbernimErrorHandler
+    compilerInvoker: UbernimCompilerInvoker
     executableInvoker: UbernimExecutableInvoker
     preprocessingHandler: UbernimPreprocessingHandler
 
@@ -44,7 +45,7 @@ let DefaultCompilerInvoker: UbernimCompilerInvoker = proc (project: string, defi
   execShellCmd(spaced(NIMC_INVOKATION, spaced(defines), project))
 
 let DefaultCleanupFormatter: UbernimCleanupFormatter = proc (action, file: string): string =
-  spaced(parenthesize(action), file)
+  spaced(parenthesize(action), file) & STRINGS_EOL
 
 let DefaultErrorHandler: UbernimErrorHandler = proc (msg: string) =
   quit(msg, -1)
@@ -58,6 +59,8 @@ let DefaultExecutableInvoker: UbernimExecutableInvoker = proc (definesCsv, file:
 let DefaultPreprocessingHandler: UbernimPreprocessingHandler = proc (status: UbernimStatus): var PreprodState =
   # setup preprocessor
   var pp = makePreprocessor(status.projecting.isUnimp, status.getCurrentFile(), status.preprocessing.defines)
+  if assigned(status.preprocessing.preprodFormatter):
+    pp.state.formatter = status.preprocessing.preprodFormatter
   pp.state.storeUbernimStatus(status)
   # run preprocessor
   var r = pp.run()
@@ -102,6 +105,9 @@ proc setCompilerInvoker*(engine: UbernimEngine, invoker: UbernimCompilerInvoker)
 proc setCleanupFormatter*(engine: UbernimEngine, formatter: UbernimCleanupFormatter) =
   engine.cleanupFormatter = formatter
 
+proc setPreprodFormatter*(engine: UbernimEngine, ppformatter: PreprodFormatter) =
+  engine.preprodFormatter = ppformatter
+
 proc performCompilation(engine: UbernimEngine, state: var PreprodState): int =
   result = low(int)
   # setup defines
@@ -141,6 +147,7 @@ proc invokePerformers(engine: UbernimEngine, status: UbernimStatus): UbernimResu
 
 proc run*(engine: UbernimEngine, main: string, defines: StringSeq): UbernimResult =
   var status = makeUbernimStatus(engine.version, engine.signature)
+  status.preprocessing.preprodFormatter = engine.preprodFormatter
   status.preprocessing.performingHandler = engine.preprocessingHandler
   status.preprocessing.errorHandler = engine.errorHandler
   status.preprocessing.errorGetter = engine.errorGetter

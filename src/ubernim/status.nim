@@ -40,6 +40,7 @@ type
     performingHandler: UbernimPreprocessingHandler
     errorHandler: UbernimErrorHandler
     errorGetter: UbernimErrorGetter
+    preprodFormatter: PreprodFormatter
   TUbernimProject = tuple
     name: string
     defines: StringSeq
@@ -84,7 +85,8 @@ template makeUbernimStatus*(sver: SemanticVersion, sign: string, divs: LanguageD
       executableInvoker: nil,
       performingHandler: nil,
       errorHandler: nil,
-      errorGetter: nil
+      errorGetter: nil,
+      preprodFormatter: nil
     ),
     language: TUbernimLanguage (
       currentName: STRINGS_EMPTY,
