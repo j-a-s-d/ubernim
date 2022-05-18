@@ -34,6 +34,10 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 18-05-22 **[0.7.6]**
+	- improved .require to enforce .unim extension in required files (extension-less require specified names will be appended with a .unim extension before load)
+	- improved .applying command to support multiple comma separated values
+	- updated xam dependency to 1.8.1
 * 16-05-22 **[0.7.5]**
 	- localized all preprod's errors too
 	- updated preprod dependency to 1.1.1

@@ -147,12 +147,12 @@ proc invokePerformers(engine: UbernimEngine, status: UbernimStatus): UbernimResu
 
 proc run*(engine: UbernimEngine, main: string, defines: StringSeq): UbernimResult =
   var status = makeUbernimStatus(engine.version, engine.signature)
+  status.preprocessing.defines = defines
   status.preprocessing.preprodFormatter = engine.preprodFormatter
   status.preprocessing.performingHandler = engine.preprocessingHandler
   status.preprocessing.errorHandler = engine.errorHandler
   status.preprocessing.errorGetter = engine.errorGetter
   status.preprocessing.executableInvoker = engine.executableInvoker
-  status.preprocessing.defines = defines
   status.projecting.isUnimp = main.endsWith(UNIM_PROJECT_EXTENSION)
   status.files.callstack.add(main)
   engine.invokePerformers(status)

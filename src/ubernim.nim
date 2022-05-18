@@ -22,7 +22,7 @@ use os,execShellCmd
 const
   APP = (
     NAME: "ubernim",
-    VERSION: "0.7.5",
+    VERSION: "0.7.6",
     COPYRIGHT: "copyright (c) 2021-2022 by Javier Santo Domingo",
     LANGUAGES: [LANGUAGE_CODES.EN, LANGUAGE_CODES.ES, LANGUAGE_CODES.PT]
   )

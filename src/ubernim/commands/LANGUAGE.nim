@@ -586,15 +586,17 @@ topCallback doApplying:
     var p = status.getDivision(SCOPE_GLOBAL)
     if not assigned(p):
       return status.getError(errors.BAD_STATE)
-    let ld = status.getDivision(parameters[0])
-    if not assigned(ld):
-      return status.getError(errors.UNDEFINED_REFERENCE, apostrophe(parameters[0]))
-    if ld.kind notin DIVISIONS_ON_APPLY:
-      return status.getError(errors.NOT_APPLIABLE)
-    if parameters[0] in p.applies:
-      return status.getError(errors.ALREADY_APPLYING, apostrophe(parameters[0]))
-    p.applies.add(parameters[0])
-    return validateDivision(status, p)
+    parameters.join(STRINGS_SPACE).split(STRINGS_COMMA).each u:
+      let lu = strip(u)
+      let ld = status.getDivision(lu)
+      if not assigned(ld):
+        return status.getError(errors.UNDEFINED_REFERENCE, apostrophe(lu))
+      if ld.kind notin DIVISIONS_ON_APPLY:
+        return status.getError(errors.NOT_APPLIABLE)
+      if lu in p.applies:
+        return status.getError(errors.ALREADY_APPLYING, apostrophe(lu))
+      p.applies.add(lu)
+    return status.validateDivision(p)
   return OK
 
 # INITIALIZATION
@@ -606,7 +608,7 @@ proc initialize*(): UbernimFeature =
     cmd("exports", PreprodArguments.uaNone, doExports)
     cmd("importing", PreprodArguments.uaOne, doImporting)
     cmd("exporting", PreprodArguments.uaOne, doExporting)
-    cmd("applying", PreprodArguments.uaOne, doApplying)
+    cmd("applying", PreprodArguments.uaNonZero, doApplying)
     cmd("push", PreprodArguments.uaNonZero, doPush)
     cmd("pop", PreprodArguments.uaNone, doPop)
     cmd("pragmas", PreprodArguments.uaNonZero, doPragmas)

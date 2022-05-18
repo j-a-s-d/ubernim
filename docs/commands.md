@@ -145,8 +145,8 @@ See them working in the *actions* example.
 
 * **.require** *(since 0.1.0)*
 	- specifies another ubernim file to be preprocessed, importing all the exported symbols from it to be used in the current one
-	- values: any valid file name (typically a .unim extension file)
-	- note: require does not generates a line in the output including the generated .nim file, you have to add it yourself if it is required
+	- values: any valid file name (since 0.7.6 extension-less file names will be appended with a .unim extension before load)
+	- note: the self file, the main project file and .unimp extension files can not be required; also note that .require does not generates a line in the output including the generated .nim file, you have to add it yourself if it is required
 	- example: `.require file.unim`
 * **.requirable** *(since 0.2.2)*
 	- specifies if the current ubernim file can be required from other ubernim file
@@ -278,9 +278,9 @@ See them working in the *coding* example.
 	- example: `.exporting once`
 * **.applying** *(since 0.5.0)*
 	- specifies a compound, interface or protocol that will be applied to this file
-	- values: any valid existing compound, interface or protocol
+	- values: any valid existing compounds, interfaces or protocols in a comma separated fashion (prior to 0.7.6 only a single one can be specified per clause)
 	- note: fields are fulfilled with members, and methods with routines
-	- example: `.applying MyInterface`
+	- example: `.applying MyInterface, MyProtocol`
 * **.push** *(since 0.2.0)*
 	- specifies pragmas that will be pushed to the nim's pragma stack
 	- values: any valid pragma values you would push in nim

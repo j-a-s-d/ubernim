@@ -21,7 +21,7 @@
 .# so you can disable them by a simple line: '.$ FEATURE LANGUAGE off'
 
 .require compounds.unim
-.require interfaces.unim
+.require interfaces
 
 .protocol M0ABCT # a protocol can have fields and methods
 .fields

@@ -14,20 +14,24 @@ topCallback doRequire:
   result = OK
   if state.isPreviewing():
     let status = loadUbernimStatus(state)
-    if not filesExist(parameters[0]):
-      return status.getError(errors.INEXISTENT_FILE_REQUIRED, parameters[0])
-    if status.isMainFile(parameters[0]):
+    if checkFileExtension(parameters[0], UNIM_PROJECT_EXTENSION):
       return status.getError(errors.CANT_BE_REQUIRED)
-    if status.isCurrentFile(parameters[0]):
+    let fn = if extractFileExtension(parameters[0]) == STRINGS_EMPTY: parameters[0] & UNIM_EXTENSION else: parameters[0]
+    if filesDontExist(fn):
+      return status.getError(errors.INEXISTENT_FILE_REQUIRED, fn)
+    if status.isMainFile(fn):
+      return status.getError(errors.CANT_BE_REQUIRED)
+    if status.isCurrentFile(fn):
       return status.getError(errors.NO_RECURSIVE_REQUIRE)
-    if status.isCircularReference(parameters[0]):
+    if status.isCircularReference(fn):
       return status.getError(errors.NO_CIRCULAR_REFERENCE)
     var rls = makeUbernimStatus(status.info.semver, status.info.signature)
     rls.preprocessing.defines = status.preprocessing.defines
+    rls.preprocessing.preprodFormatter = status.preprocessing.preprodFormatter
     rls.preprocessing.performingHandler = status.preprocessing.performingHandler
     rls.preprocessing.errorHandler = status.preprocessing.errorHandler
     rls.preprocessing.errorGetter = status.preprocessing.errorGetter
-    rls.files.callstack.add(status.files.callstack & parameters[0])
+    rls.files.callstack.add(status.files.callstack & fn)
     var rstate = status.preprocessing.performingHandler(rls)
     status.files.generated.add(rls.files.generated)
     rls.language.divisions.each d:

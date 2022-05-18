@@ -24,10 +24,7 @@ topCallback doChDir:
 
 topCallback doMkDir:
   if state.isTranslating():
-    # NOTE: avoid using existsOrCreateDir
-    if not dirExists(parameters[0]):
-      createDir(parameters[0])
-    if not dirExists(parameters[0]):
+    if not ensureDir(parameters[0]):
       let status = loadUbernimStatus(state)
       return status.getError("errors.CANT_CREATE_DIRECTORY", apostrophe(parameters[0]))
   return OK
