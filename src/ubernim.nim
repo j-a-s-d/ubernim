@@ -22,7 +22,7 @@ use os,execShellCmd
 const
   APP = (
     NAME: "ubernim",
-    VERSION: "0.7.6",
+    VERSION: "0.7.7",
     COPYRIGHT: "copyright (c) 2021-2022 by Javier Santo Domingo",
     LANGUAGES: [LANGUAGE_CODES.EN, LANGUAGE_CODES.ES, LANGUAGE_CODES.PT]
   )
@@ -386,6 +386,7 @@ template loadParameters(kvm: RodsterAppKvm, nfo: RodsterAppInformation, loc: Rod
     )
   )
   template showHelp() =
+    const MYFILE_UNIM = "myfile.unim"
     withIt HELP_BUILDERS:
       quit(it.content(it.section(loc.getText(captions.COMMANDS), [
         it.command(loc.getText(captions.DEFINE), [
@@ -406,10 +407,10 @@ template loadParameters(kvm: RodsterAppKvm, nfo: RodsterAppInformation, loc: Rod
           it.detail(loc.getText(captions.USAGE), [APP.NAME, bracketize(chevronize("help-flag"))])
         ])
       ]), it.section(loc.getText(captions.EXAMPLES), [
-        it.example(["myfile.unim"], loc.getText(texts.PREPROCESS_FILE, @["myfile.unim"])),
-        it.example(["-d:BLAH,FOO,BAR", "myfile.unim"], loc.getText(texts.PREPROCESS_DEFINES, @["myfile.unim", "BLAH", "FOO", "BAR"])),
-        it.example(["-l:es", "myfile.unim"], loc.getText(texts.PREPROCESS_LANGUAGE, @["myfile.unim", "Spanish"])),
-        it.example(["-l:PT", "-d:DEF1,DEF2", "myfile.unim"], loc.getText(texts.PREPROCESS_DEFINES_AND_LANGUAGE, @["myfile.unim", "DEF1", "DEF2", "Portuguese"])),
+        it.example([MYFILE_UNIM], loc.getText(texts.PREPROCESS_FILE, [MYFILE_UNIM])),
+        it.example(["-d:BLAH,FOO,BAR", MYFILE_UNIM], loc.getText(texts.PREPROCESS_DEFINES, [MYFILE_UNIM, "BLAH", "FOO", "BAR"])),
+        it.example(["-l:es", MYFILE_UNIM], loc.getText(texts.PREPROCESS_LANGUAGE, [MYFILE_UNIM, "Spanish"])),
+        it.example(["-l:PT", "-d:DEF1,DEF2", MYFILE_UNIM], loc.getText(texts.PREPROCESS_DEFINES_AND_LANGUAGE, [MYFILE_UNIM, "DEF1", "DEF2", "Portuguese"])),
         it.example(["-v"], loc.getText(texts.VERSION_INFO)),
         it.example(["-h"], loc.getText(texts.SHOW_MESSAGE))
       ])), 0)
@@ -427,19 +428,18 @@ template loadParameters(kvm: RodsterAppKvm, nfo: RodsterAppInformation, loc: Rod
   if lang notin APP.LANGUAGES:
     showHelp()
   loc.setCurrentLocale(lang)
-  let args = nfo.getArguments()
-  if args.len == 0 or nfo.hasArgument(SWITCHES.HELP):
+  if not nfo.hasArguments() or nfo.hasArgument(SWITCHES.HELP):
     showHelp()
   if nfo.hasArgument(SWITCHES.VERSION):
     quit(lined(TITLE, APP.COPYRIGHT), 0)
-  let input = args[^1]
+  let input = nfo.getArguments()[^1]
   if filesDontExist(input):
     showHelp()
   kvm[KEYS.INPUT] = input
   kvm[KEYS.DEFINES] = getSwitchValue(SWITCHES.DEFINE, STRINGS_EMPTY)
 
 template useEngine(kvm: RodsterAppKvm, nfo: RodsterAppInformation, loc: RodsterAppI18n) =
-  let engine = newUbernimEngine(nfo.getVersion(), spaced(loc.getText(texts.GENERATED_WITH, @[TITLE])))
+  let engine = newUbernimEngine(nfo.getVersion(), spaced(loc.getText(texts.GENERATED_WITH, [TITLE])))
   engine.setExecutableInvoker proc (definesCsv, file: string): bool =
     execShellCmd(spaced(nfo.getFilename(), STRINGS_MINUS & STRINGS_LOWERCASE_L & STRINGS_COLON & loc.getCurrentLocale(), NIMC_DEFINE & definesCsv, file)) != 0
   engine.setErrorGetter proc (msg: string, values: varargs[string]): string =
@@ -451,20 +451,20 @@ template useEngine(kvm: RodsterAppKvm, nfo: RodsterAppInformation, loc: RodsterA
   engine.setPreprodFormatter proc (code: PreprodError, argument: string = STRINGS_EMPTY): string =
     case code:
       of peUnknownError: argument
-      of peUnclosedBranch: loc.getText(preprods.UNCLOSED_BRANCH, @[argument])
-      of peInexistentFile: loc.getText(preprods.INEXISTENT_FILE, @[argument])
-      of peInexistentInclude: loc.getText(preprods.INEXISTENT_INCLUDE, @[argument])
-      of peUnexpectedCommand: loc.getText(preprods.UNEXPECTED_COMMAND, @[argument])
-      of peNoPrefix: loc.getText(preprods.NO_PREFIX, @[argument])
-      of pePrefixLength: loc.getText(preprods.PREFIX_LENGTH, @[argument])
-      of peUndeferrableCommand: loc.getText(preprods.UNDEFERRABLE_COMMAND, @[argument])
-      of peMandatoryStandard: loc.getText(preprods.MANDATORY_STANDARD, @[argument])
-      of peBooleanOnly: loc.getText(preprods.BOOLEAN_ONLY, @[argument])
-      of peUnknownFeature: loc.getText(preprods.UNKNOWN_FEATURE, @[argument])
-      of peArgumentsCount: loc.getText(preprods.ARGUMENTS_COUNT, @[argument])
-      of peNoArguments: loc.getText(preprods.NO_ARGUMENTS, @[argument])
-      of peDisabledCommand: loc.getText(preprods.DISABLED_COMMAND, @[argument])
-      of peUnknownCommand: loc.getText(preprods.UNKNOWN_COMMAND, @[argument])
+      of peUnclosedBranch: loc.getText(preprods.UNCLOSED_BRANCH, [argument])
+      of peInexistentFile: loc.getText(preprods.INEXISTENT_FILE, [argument])
+      of peInexistentInclude: loc.getText(preprods.INEXISTENT_INCLUDE, [argument])
+      of peUnexpectedCommand: loc.getText(preprods.UNEXPECTED_COMMAND, [argument])
+      of peNoPrefix: loc.getText(preprods.NO_PREFIX, [argument])
+      of pePrefixLength: loc.getText(preprods.PREFIX_LENGTH, [argument])
+      of peUndeferrableCommand: loc.getText(preprods.UNDEFERRABLE_COMMAND, [argument])
+      of peMandatoryStandard: loc.getText(preprods.MANDATORY_STANDARD, [argument])
+      of peBooleanOnly: loc.getText(preprods.BOOLEAN_ONLY, [argument])
+      of peUnknownFeature: loc.getText(preprods.UNKNOWN_FEATURE, [argument])
+      of peArgumentsCount: loc.getText(preprods.ARGUMENTS_COUNT, [argument])
+      of peNoArguments: loc.getText(preprods.NO_ARGUMENTS, [argument])
+      of peDisabledCommand: loc.getText(preprods.DISABLED_COMMAND, [argument])
+      of peUnknownCommand: loc.getText(preprods.UNKNOWN_COMMAND, [argument])
   withIt engine.run(kvm[KEYS.INPUT], kvm[KEYS.DEFINES].split(STRINGS_COMMA)):
     kvm[KEYS.ERRORLEVEL] = $(if it.isProject: 0 else: it.compilationErrorlevel)
     kvm[KEYS.REPORT] = it.cleanupReport

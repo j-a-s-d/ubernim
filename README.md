@@ -34,6 +34,10 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 20-05-22 **[0.7.7]**
+	- improved test cases structure
+	- added test.sh shell script file
+	- updated rodster dependency to 1.3.1
 * 18-05-22 **[0.7.6]**
 	- improved .require to enforce .unim extension in required files (extension-less require specified names will be appended with a .unim extension before load)
 	- improved .applying command to support multiple comma separated values
