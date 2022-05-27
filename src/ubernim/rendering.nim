@@ -5,11 +5,13 @@ import
   xam,
   language / header
 
+use sequtils,cycle
 use sequtils,filter
 use strutils,split
 use strutils,strip
 use strutils,join
 use strutils,find
+use strutils,replace
 
 const
   NIMLANG_NOSIDEEFFECT = "noSideEffect"
@@ -204,3 +206,15 @@ func renderPush*(pragmas: string): string =
 
 func renderPop*(): string =
   renderPragmas(CODEGEN_POP, false)
+
+func renderPattern*(pattern: LanguagePattern, parameters: openarray[string]): string =
+  result = pattern.data
+  var s = newStringSeq(STRINGS_EMPTY).cycle(pattern.parameters.len)
+  var x = min(pattern.parameters.len, parameters.len)
+  while x > 0:
+    dec x
+    s[x] = parameters[x]
+  x = s.len
+  while x > 0:
+    dec x
+    result = result.replace(pattern.parameters[x], s[x])

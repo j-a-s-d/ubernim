@@ -289,6 +289,24 @@ See them working in the *coding* example.
 	- specifies a pop from the nim's pragma stack
 	- values: none
 	- example: `.pop`
+* **.pattern** *(since 0.8.0)*
+	- specifies a new pattern template
+	- values: any valid identifier
+	- note: patterns are simple string replace dumb-but-safe templates
+	- example: `.pattern MyPattern`
+* **.parameters** *(since 0.8.0)*
+	- specifies the parameter list for the pattern being defined
+	- values: any valid parameter names in a comma separated fashion
+	- example: `.parameters $a, $b, $c`
+* **.data** *(since 0.8.0)*
+	- specifies the template data for the pattern being defined
+	- values: any valid nim lines after it
+	- example: `.data`
+* **.stamp** *(since 0.8.0)*
+	- specifies the pattern template and parameters to imprint in the output
+	- values: any valid pattern name followed by the parameters values in a comma separated fashion
+	- note: spaces before and after a comma are not ignored on purpose so you can insert spaces in the final result as needed; also note that if a parameter is not supplied it will be an empty string as a result; and also note that if you provide more parameters than defined in .parameters then they will be ignored
+	- example: `.stamp MyPattern param1,param2,param3`
 
 See them working in the *coding* example.
 
@@ -298,27 +316,22 @@ See them working in the *coding* example.
 	- specifies the target compiler of this block
 	- values: cc, cpp, objc or js (default: cc)
 	- example: `.targeted cc`
-
 * **.targeted:pass** *(since 0.5.3)*
 	- specifies compiler and linker flags
 	- values: literal values prefixed with 'to:compiler', 'to:local' and 'to:linker' to what you would pass to 'passC', 'localPassC' and 'passL' pragmas
 	- example: `.targeted:pass`
-
 * **.targeted:compile** *(since 0.5.3)*
 	- specifies a list of files to compile
 	- values: any valid nim value for pragma compile including or not compilation parameters (for example, some .c files)
 	- example: `.targeted:compile`
-
 * **.targeted:link** *(since 0.5.3)*
 	- specifies a list of files to link
 	- values: any valid nim value for pragma link (for example, some .o files)
 	- example: `.targeted:link`
-
 * **.targeted:emit** *(since 0.5.3)*
 	- specifies code to emit directly
 	- values: any valid nim emit block code (for example, regular c code)
 	- example: `.targeted:emit`
-
 * **.targeted:end** *(since 0.5.3)*
 	- specifies the end of this targeted block
 	- values: none

@@ -155,8 +155,15 @@ func translateImports(original: PreprodResult, state: PreprodState, status: Uber
 
 let ppTranslator: PreprodTranslator = proc (state: var PreprodState, original: PreprodResult): PreprodResult =
   result = original
-  if hasText(original.output):
-    let status = loadUbernimStatus(state)
+  let status = loadUbernimStatus(state)
+  if state.hasPropertyValue(RAW_DATA_KEY):
+    let pat = status.getLastPattern()
+    if not pat.capturing:
+      pat.capturing = true
+    else:
+      pat.data &= original.output & STRINGS_EOL
+    return OK
+  elif hasText(original.output):
     if state.hasPropertyValue(KEY_DIVISION):
       let division = state.getPropertyValue(KEY_DIVISION)
       let subdivision = state.getPropertyValue(KEY_SUBDIVISION)

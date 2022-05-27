@@ -1,5 +1,5 @@
 --
--- Ubernim 0.7.0 plugin for Lite XL editor
+-- Ubernim 0.8.0 plugin for Lite XL editor
 --
 -- NOTE: the following is from language_nim.lua plugin ...
 --
@@ -158,6 +158,10 @@ local upatterns = {
   { pattern = "%.value", type = utype },
   { pattern = "%.fields", type = utype },
   { pattern = "%.methods", type = utype },
+  { pattern = "%.pattern", type = utype },
+  { pattern = "%.parameters", type = utype },
+  { pattern = "%.data", type = utype },
+  { pattern = "%.stamp", type = utype },
   { pattern = "%.end", type = utype },
   -- TARGETED
   { pattern = "%.targeted[:]pass", type = utype },

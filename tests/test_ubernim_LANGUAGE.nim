@@ -1521,3 +1521,90 @@ uninitializedVar = 123
     check(rr.compilationErrorlevel == 0)
     check(rr.cleanupReport == "")
     removeFiles("require", "require.unim", "required.unim", "protocol.unim", "require.nim", "required.nim")
+
+  test "test LANGUAGE parameters not in pattern":
+    #
+    testLanguageCommand("parameters_not_in_pattern", """
+.template Blah()
+.parameters $foo, $bar
+.end
+    """, STRINGS_EOL & lined(
+      STRINGS_EMPTY,
+      "(parameters_not_in_pattern.unim:5) errors.NOT_IN_PATTERN"
+    ),
+    false, (msg: string) => check(msg == "(parameters_not_in_pattern.unim:5) errors.NOT_IN_PATTERN"))
+
+  test "test LANGUAGE data not in pattern":
+    #
+    testLanguageCommand("data_not_in_pattern", """
+.routine Blah()
+.data
+discard
+.end
+    """, STRINGS_EOL & lined(
+      STRINGS_EMPTY,
+      "(data_not_in_pattern.unim:5) errors.NOT_IN_PATTERN"
+    ),
+    false, (msg: string) => check(msg == "(data_not_in_pattern.unim:5) errors.NOT_IN_PATTERN"))
+
+  test "test LANGUAGE data-less pattern":
+    #
+    testLanguageCommand("data_less_pattern", """
+.pattern NoData
+.parameters $foo, $bar
+.end
+    """, STRINGS_EOL & lined(
+      STRINGS_EMPTY,
+      "(data_less_pattern.unim:6) errors.EMPTY_PATTERN"
+    ),
+    false, (msg: string) => check(msg == "(data_less_pattern.unim:6) errors.EMPTY_PATTERN"))
+
+  test "test LANGUAGE empty data pattern":
+    #
+    testLanguageCommand("empty_data_pattern", """
+.pattern Empty
+.parameters $foo, $bar
+.data
+
+.end
+    """, STRINGS_EOL & lined(
+      STRINGS_EMPTY,
+      "(empty_data_pattern.unim:8) errors.EMPTY_PATTERN"
+    ),
+    false, (msg: string) => check(msg == "(empty_data_pattern.unim:8) errors.EMPTY_PATTERN"))
+
+  test "test LANGUAGE pattern":
+    #
+    testLanguageCommand("pattern", """
+.pattern Greet
+.parameters $a, $b, $c
+.data
+echo "hi $a, $b, $c!"
+.end
+    """, STRINGS_EMPTY)
+
+  test "test LANGUAGE stamp unknown pattern":
+    #
+    testLanguageCommand("stamp_unknown_pattern", """
+.pattern Greet
+.parameters $a, $b, $c
+.data
+echo "hi $a, $b, $c!"
+.end
+.stamp Blah
+    """, STRINGS_EOL & lined(
+      STRINGS_EMPTY,
+      "(stamp_unknown_pattern.unim:9) errors.UNDEFINED_REFERENCE"
+    ),
+    false, (msg: string) => check(msg == "(stamp_unknown_pattern.unim:9) errors.UNDEFINED_REFERENCE"))
+
+  test "test LANGUAGE stamp":
+    #
+    testLanguageCommand("stamp", """
+.pattern Greet
+.parameters $a, $b, $c
+.data
+echo "hi $a, $b, $c!"
+.end
+.stamp Greet Dick,Harry,Tom
+    """, STRINGS_EOL & "echo \"hi Dick, Harry, Tom!\"")

@@ -347,10 +347,17 @@ if aaa.testing(1):
 
 proc addTwoIntegers(a, b: cint): cint {.importc.}
 
+.pattern Bye
+.parameters $name, $surname
+.data
+  echo "Bye bye $name $surname!"
+.end
+
 .# and more regular nim code
 when defined(hello):
   echo addTwoIntegers(3, 7)
   echo makeGreetingMessageTo("world")
+.stamp Bye Joe,Doe
 
 .# you can specify to remove the automatically generated files (and directories) just to end up with the final binary only
 .unim:cleanup performed

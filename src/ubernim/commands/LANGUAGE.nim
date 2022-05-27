@@ -550,6 +550,13 @@ childCallback doEnd:
       return GOOD(p & renderMemberEnd())
     elif d == DIVISIONS_NOTE or d == DIVISIONS_IMPORTS or d == DIVISIONS_EXPORTS:
       return GOOD(STRINGS_EOL)
+    elif d == DIVISIONS_PATTERN:
+      if state.hasPropertyValue(RAW_DATA_KEY):
+        state.removePropertyValue(RAW_DATA_KEY)
+      let pat = status.getLastPattern()
+      pat.capturing = false
+      if not hasText(pat.data):
+        return status.getError(errors.EMPTY_PATTERN)
   return OK
 
 topCallback doPush:
@@ -599,6 +606,52 @@ topCallback doApplying:
     return status.validateDivision(p)
   return OK
 
+topCallback doPattern:
+  setDivision(state, DIVISIONS_PATTERN)
+  setSubdivision(state, SUBDIVISIONS_CLAUSES)
+  if state.isTranslating():
+    let status = loadUbernimStatus(state)
+    let name = parameters[0].toLower()
+    status.language.patterns.each pattern:
+      if pattern.name == name:
+        return status.getError(errors.ALREADY_DEFINED, name)
+    status.language.patterns.add(LanguagePattern(name: name, parameters: newStringSeq(), capturing: false, data: STRINGS_EMPTY))
+  return OK
+
+childCallback doParameters:
+  if state.isTranslating():
+    let status = loadUbernimStatus(state)
+    let d = fetchDivision(state)
+    if d != DIVISIONS_PATTERN:
+      return status.getError(errors.NOT_IN_PATTERN)
+    let pat = status.getLastPattern()
+    parameters.join(STRINGS_SPACE).split(STRINGS_COMMA).each u:
+      let lu = strip(u)
+      pat.parameters &= lu
+    pat.capturing = false
+  return OK
+
+childCallback doData:
+  if state.isTranslating():
+    let status = loadUbernimStatus(state)
+    let d = fetchDivision(state)
+    if d != DIVISIONS_PATTERN:
+      return status.getError(errors.NOT_IN_PATTERN)
+    setSubdivision(state, SUBDIVISIONS_BODY)
+    state.setPropertyValue(RAW_DATA_KEY, STRINGS_EMPTY)
+    status.getLastPattern().capturing = false
+  return OK
+
+topCallback doStamp:
+  if state.isTranslating():
+    let status = loadUbernimStatus(state)
+    let name = parameters[0].toLower()
+    status.language.patterns.each pattern:
+      if pattern.name == name:
+        return GOOD(renderPattern(pattern, parameters.slice(1).join(STRINGS_SPACE).split(STRINGS_COMMA)))
+    return status.getError(errors.UNDEFINED_REFERENCE, parameters[0])
+  return OK
+
 # INITIALIZATION
 
 proc initialize*(): UbernimFeature =
@@ -633,4 +686,8 @@ proc initialize*(): UbernimFeature =
     cmd("uses", PreprodArguments.uaNonZero, doUses)
     cmd("member", PreprodArguments.uaNonZero, doMember)
     cmd("value", PreprodArguments.uaNonZero, doValue)
+    cmd("pattern", PreprodArguments.uaOne, doPattern)
+    cmd("parameters", PreprodArguments.uaNonZero, doParameters)
+    cmd("data", PreprodArguments.uaNone, doData)
+    cmd("stamp", PreprodArguments.uaNonZero, doStamp)
     cmd("end", PreprodArguments.uaNone, doEnd)

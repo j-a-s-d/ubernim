@@ -22,7 +22,7 @@ use os,execShellCmd
 const
   APP = (
     NAME: "ubernim",
-    VERSION: "0.7.7",
+    VERSION: "0.8.0",
     COPYRIGHT: "copyright (c) 2021-2022 by Javier Santo Domingo",
     LANGUAGES: [LANGUAGE_CODES.EN, LANGUAGE_CODES.ES, LANGUAGE_CODES.PT]
   )
@@ -101,6 +101,7 @@ template getENMessages(): JArrayBuilder =
     .addMessage(errors.BAD_FREQUENCY, "only always/once values are allowed")
     .addMessage(errors.BAD_CLEANUP, "only ignored/informed/performed values are allowed")
     .addMessage(errors.BAD_TARGET, "only cc/cpp/objc/js values are allowed")
+    .addMessage(errors.EMPTY_PATTERN, "a pattern can not be empty")
     .addMessage(errors.STRICT_MODE, "only ubernim code is allowed in strict mode")
     .addMessage(errors.ONLY_TOP_LEVEL, "this can only be defined in the top level")
     .addMessage(errors.DONT_TOP_LEVEL, "this can not be defined in the top level")
@@ -135,6 +136,7 @@ template getENMessages(): JArrayBuilder =
     .addMessage(errors.VISIBILITY_DOESNT_MATCH, "visibility does not match definition for $1")
     .addMessage(errors.NOT_IN_TARGETED, "not in a targeted block")
     .addMessage(errors.NOT_IN_PROJECT, "not in a project block")
+    .addMessage(errors.NOT_IN_PATTERN, "not in a pattern block")
     .addMessage(errors.CANT_CREATE_DIRECTORY, "can not create directory $1")
     .addMessage(errors.CANT_APPEND_FILE, "can not append file $1")
     .addMessage(errors.CANT_WRITE_FILE, "can not write file $1")
@@ -191,6 +193,7 @@ template getESMessages(): JArrayBuilder =
     .addMessage(errors.BAD_FREQUENCY, "sólo los valores always/once son permitidos")
     .addMessage(errors.BAD_CLEANUP, "sólo los valores ignored/informed/performed son permitidos")
     .addMessage(errors.BAD_TARGET, "sólo los valores cc/cpp/objc/js son permitidos")
+    .addMessage(errors.EMPTY_PATTERN, "un pattern no puede estar vacío")
     .addMessage(errors.STRICT_MODE, "sólo código ubernim es permitido en modo strict")
     .addMessage(errors.ONLY_TOP_LEVEL, "esto sólo puede ser definido en el nivel tope")
     .addMessage(errors.DONT_TOP_LEVEL, "esto no puede ser definido en el nivel tope")
@@ -225,6 +228,7 @@ template getESMessages(): JArrayBuilder =
     .addMessage(errors.VISIBILITY_DOESNT_MATCH, "la visibilidad no coincide con la definición para $1")
     .addMessage(errors.NOT_IN_TARGETED, "no se está en un bloque targeted")
     .addMessage(errors.NOT_IN_PROJECT, "no se está en un bloque project")
+    .addMessage(errors.NOT_IN_PATTERN, "no se está en un bloque pattern")
     .addMessage(errors.CANT_CREATE_DIRECTORY, "no se puede crear el directorio $1")
     .addMessage(errors.CANT_APPEND_FILE, "no se puede agregar al archivo $1")
     .addMessage(errors.CANT_WRITE_FILE, "no se puede escribir el archivo $1")
@@ -281,6 +285,7 @@ template getPTMessages(): JArrayBuilder =
     .addMessage(errors.BAD_FREQUENCY, "só os valores always/once são permitidos")
     .addMessage(errors.BAD_CLEANUP, "só os valores ignored/informed/performed são permitidos")
     .addMessage(errors.BAD_TARGET, "só os valores cc/cpp/objc/js são permitidos")
+    .addMessage(errors.EMPTY_PATTERN, "um pattern não pode estar vazio")
     .addMessage(errors.STRICT_MODE, "só código ubernim é permitido em modo strict")
     .addMessage(errors.ONLY_TOP_LEVEL, "isso só pode ser definido no nível superior")
     .addMessage(errors.DONT_TOP_LEVEL, "isso não pode ser definido no nível superior")
@@ -315,6 +320,7 @@ template getPTMessages(): JArrayBuilder =
     .addMessage(errors.VISIBILITY_DOESNT_MATCH, "a visibilidade não coincide com a definição para $1")
     .addMessage(errors.NOT_IN_TARGETED, "não se está num bloco targeted")
     .addMessage(errors.NOT_IN_PROJECT, "não se está num bloco project")
+    .addMessage(errors.NOT_IN_PATTERN, "não se está num bloco pattern")
     .addMessage(errors.CANT_CREATE_DIRECTORY, "não se pode criar o diretório $1")
     .addMessage(errors.CANT_APPEND_FILE, "não se pode adicionar ao arquivo $1")
     .addMessage(errors.CANT_WRITE_FILE, "não se pode escrever o arquivo $1")

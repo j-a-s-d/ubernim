@@ -11,6 +11,7 @@ const
   UNIMLANG_PARENT* = "parent"
   UNIMLANG_KEYWORDS* = [UNIMLANG_SELF, UNIMLANG_PARENT]
   SCOPE_GLOBAL* = "<GLOBAL>"
+  DIVISIONS_PATTERN* = "PATTERN"
   DIVISIONS_NOTE* = "NOTE"
   DIVISIONS_IMPORTS* = "IMPORTS"
   DIVISIONS_EXPORTS* = "EXPORTS"
@@ -74,3 +75,13 @@ type
     extends*: string
     items*: LanguageItems
   LanguageDivisions* = seq[LanguageDivision]
+
+# PATTERN
+
+type
+  LanguagePattern* = ref object of RootObj
+    name*: string
+    parameters*: StringSeq
+    capturing*: bool
+    data*: string
+  LanguagePatterns* = seq[LanguagePattern]

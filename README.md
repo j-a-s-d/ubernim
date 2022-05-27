@@ -34,6 +34,11 @@ You may also want to check my other nimlang projects:
 
 ## HISTORY
 
+* 27-05-22 **[0.8.0]**
+	- added .pattern and .stamp to LANGUAGE feature to allow straightforward templating
+	- updated the Ubernim plugin for Lite XL editor at the extras directory
+	- updated rodster dependency to 1.4.0
+	- updated xam dependency to 1.9.1
 * 20-05-22 **[0.7.7]**
 	- improved test cases structure
 	- added test.sh shell script file

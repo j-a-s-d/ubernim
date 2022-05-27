@@ -33,6 +33,7 @@ type
     currentName: string
     currentImplementation: LanguageItem
     divisions: LanguageDivisions
+    patterns: LanguagePatterns
   TUbernimPreprocessing = tuple
     target: string
     defines: StringSeq
@@ -91,7 +92,8 @@ template makeUbernimStatus*(sver: SemanticVersion, sign: string, divs: LanguageD
     language: TUbernimLanguage (
       currentName: STRINGS_EMPTY,
       currentImplementation: nil,
-      divisions: divs
+      divisions: divs,
+      patterns: @[]
     )
   )
   addr(ads)
@@ -211,6 +213,11 @@ func hasMethod*(status: UbernimStatus, d: LanguageDivision, name: string, examin
 
 func hasTemplate*(status: UbernimStatus, d: LanguageDivision, name: string, examiner: SingleArgProc[LanguageItem, bool] = DUMMY_EXAMINER): bool =
   status.hasItem(d, SUBDIVISIONS_TEMPLATES, name, examiner)
+
+# PATTERN
+
+template getLastPattern*(status: UbernimStatus): LanguagePattern =
+  status.language.patterns[^1]
 
 # PROJECT
 
